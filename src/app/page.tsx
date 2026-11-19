@@ -1,7 +1,5 @@
 import type { Metadata } from "next";
 
-import { SiteHeader } from "@/components/layout/site-header";
-import { SiteFooter } from "@/components/layout/site-footer";
 import { HeroSection } from "@/components/sections/hero-section";
 import { WhatIsSection } from "@/components/sections/what-is-section";
 import { WhyJoinSection } from "@/components/sections/what-is-section";
@@ -31,18 +29,14 @@ export const metadata: Metadata = {
 
 export default function HomePage() {
   return (
-    <>
-      <SiteHeader />
-      <main id="main" className="flex-1">
-        <HeroSection />
-        <WhatIsSection />
-        <WhyJoinSection />
-        <CommunityExperienceSection />
-        <FoundingIdentitySection />
-        <ApplicationSection />
-        <FAQSection />
-      </main>
-      <SiteFooter />
-    </>
+    <main id="main" className="flex-1">
+      <HeroSection />
+      <WhatIsSection />
+      <WhyJoinSection />
+      <CommunityExperienceSection />
+      <FoundingIdentitySection />
+      <ApplicationSection />
+      <FAQSection />
+    </main>
   );
 }
