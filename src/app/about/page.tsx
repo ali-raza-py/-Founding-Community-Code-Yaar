@@ -102,15 +102,16 @@ export default function AboutPage() {
         <div className="grid gap-10 lg:grid-cols-[0.85fr_1.15fr] lg:gap-16">
           <SectionHeading
             number="04"
-            eyebrow="Community"
-            title={communityVision.title}
+            eyebrow="Founding vision"
+            title="Why Code Yaar is establishing its first founding community."
           />
           <div className="space-y-5 lg:pt-1">
-            {communityVision.paragraphs.map((paragraph) => (
-              <p key={paragraph} className="text-[0.9375rem] leading-relaxed text-ink-muted">
-                {paragraph}
-              </p>
-            ))}
+            Code Yaar is building a learning and developer ecosystem where ambitious
+            students and developers can come together. The founding community exists
+            to test practical activities, gather feedback, and establish the norms that
+            later members will inherit. It is deliberately small: not a beta test with
+            fixed deliverables, but a genuine early participant program where everyone
+            helps shape the culture and direction of what Code Yaar becomes.
           </div>
         </div>
       </Section>

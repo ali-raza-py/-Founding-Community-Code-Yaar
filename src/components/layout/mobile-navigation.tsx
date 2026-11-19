@@ -44,10 +44,10 @@ export function MobileNavigation() {
       <div
         id={panelId}
         hidden={!open}
-        className="absolute inset-x-0 top-full border-b border-line bg-canvas shadow-sm"
+        className="absolute inset-x-0 top-full border-b border-line bg-canvas shadow-sm transform transition-transform duration-300 ease-out"
       >
         <nav aria-label="Mobile" className="px-5 py-4 sm:px-8">
-          <ul className="flex flex-col">
+          <ul className="flex flex-col space-y-2">
             {NAV_LINKS.map((link) => (
               <li key={link.href}>
                 <Link
@@ -55,13 +55,12 @@ export function MobileNavigation() {
                   onClick={() => setOpen(false)}
                   aria-current={pathname === link.href ? "page" : undefined}
                   className={cn(
-                    "flex min-h-12 items-center border-b border-line text-[0.9375rem]",
-                    pathname === link.href
-                      ? "font-medium text-ink"
-                      : "text-ink-muted",
+                    "flex min-h-12 items-center border-b border-line text-[0.9375rem]"
                   )}
                 >
-                  {link.label}
+                  <span className={cn("flex-1", pathname === link.href ? "font-medium text-ink" : "text-ink-muted")}>
+                    {link.label}
+                  </span>
                 </Link>
               </li>
             ))}
@@ -69,8 +68,7 @@ export function MobileNavigation() {
           <ButtonLink
             href="/apply"
             onClick={() => setOpen(false)}
-            className="mt-5 w-full"
-            size="lg"
+            className="mt-4 w-full rounded-[6px] bg-[var(--color-emerald-600)] text-white text-sm font-medium text-center"
           >
             Apply for the Founding Cohort
           </ButtonLink>

@@ -1,3 +1,9 @@
+/* ============ TAIWIND DIRECTIVES ============ */
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
 /* ============ DESIGN TOKENS ============ */
 
 /* Color system based on emerald/teal identity */

@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
+import { ButtonLink } from "@/components/ui/button";
 import { NAV_LINKS } from "@/lib/constants";
 import { cn } from "@/lib/utils";
 
@@ -20,17 +21,31 @@ export function DesktopNav() {
                 href={link.href}
                 aria-current={isActive ? "page" : undefined}
                 className={cn(
-                  "text-[0.875rem] transition-colors duration-150",
+                  "relative group",
                   isActive
-                    ? "font-medium text-ink"
-                    : "text-ink-muted hover:text-ink",
+                    ? "after-pointer-events-none bg-[var(--color-emerald-600)] text-white"
+                    : "after:hidden after:border-b after:border-b-[var(--color-emerald-600)] after:after-2 after:after-[var(--color-emerald-600)]",
                 )}
               >
-                {link.label}
+                <span className={cn("block transition-colors duration-150", isActive ? "text-white" : "text-ink-muted")}>
+                  {link.label}
+                </span>
               </Link>
             </li>
           );
         })}
+        {NAV_LINKS.some((l) => l.label === "Apply") && (
+          <li className="relative shrink-0">
+            <ButtonLink
+              href="/apply"
+              className={cn(
+                "inline-flex items-center gap-2 rounded-[6px] bg-[var(--color-emerald-600)] px-4 py-2 text-sm font-medium text-white hover:bg-[var(--color-emerald-700)] transition-colors"
+              )}
+            >
+              Apply Now
+            </ButtonLink>
+          </li>
+        )}
       </ul>
     </nav>
   );

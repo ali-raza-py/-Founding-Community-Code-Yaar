@@ -5,6 +5,7 @@ import { MissionSection } from "@/components/sections/mission-section";
 import { PrinciplesSection } from "@/components/sections/principles-section";
 import { CohortSection } from "@/components/sections/cohort-section";
 import { BenefitsSection } from "@/components/sections/benefits-section";
+import { CommunityExperienceSection } from "@/components/sections/community-experience-section";
 import { JourneySection } from "@/components/sections/journey-section";
 import { FinalCtaSection } from "@/components/sections/final-cta-section";
 
@@ -31,9 +32,14 @@ export default function HomePage() {
       <MissionSection />
       <PrinciplesSection />
       <CohortSection />
+      <CommunityExperienceSection />
       <BenefitsSection />
       <JourneySection />
-      <FinalCtaSection />
+      <FinalCtaSection
+        title="Your journey starts here."
+        body="Help shape the next chapter of Code Yaar. Apply to become part of the founding generation."
+        ctaLabel="Apply Now"
+      />
     </>
   );
 }
