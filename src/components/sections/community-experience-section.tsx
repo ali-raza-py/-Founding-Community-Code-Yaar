@@ -1,56 +1,147 @@
-/**
- * Community Experience section.
- * Shows how the community works through visual steps.
- */
-import { Section } from "@/components/ui/section";
-import { SectionHeading } from "@/components/ui/section-heading";
+"use client";
 
-const steps = [
-  { title: "Apply", detail: "Complete the five-step application. It takes about ten minutes." },
-  { title: "Review", detail: "A team member reads your application against the cohort criteria." },
-  { title: "Welcome", detail: "Selected applicants receive onboarding information by email." },
-  { title: "Connect", detail: "Meet the other founding members and introduce yourself." },
-  { title: "Learn", detail: "Take part in optional learning activities at your own pace." },
-  { title: "Build", detail: "Work on practical challenges and projects as they become available." },
-  { title: "Contribute", detail: "Share feedback and ideas that shape the community and the platform." },
-  { title: "Showcase", detail: "Highlight projects and progress — including the messy parts." },
+import { motion, type Variants } from "framer-motion";
+import { Container } from "@/components/ui/container";
+
+const STEPS = [
+  {
+    number: "01",
+    title: "Discover",
+    description:
+      "Explore the Code Yaar ecosystem and see how the community already learns and builds together.",
+  },
+  {
+    number: "02",
+    title: "Connect",
+    description:
+      "Meet other learners and developers who are just as eager to grow and build in public.",
+  },
+  {
+    number: "03",
+    title: "Contribute",
+    description:
+      "Share ideas, ask questions, and participate in community initiatives from day one.",
+  },
+  {
+    number: "04",
+    title: "Build",
+    description:
+      "Collaborate on meaningful projects and ship things that matter to the community.",
+  },
+  {
+    number: "05",
+    title: "Grow",
+    description:
+      "Develop your skills and help the community evolve into something bigger.",
+  },
 ];
+
+const stepVariants: Variants = {
+  hidden: { opacity: 0, x: -20 },
+  visible: {
+    opacity: 1,
+    x: 0,
+    transition: { type: "spring", damping: 18, stiffness: 120 },
+  },
+};
+
+const staggerChildren = {
+  hidden: {},
+  visible: {
+    transition: { staggerChildren: 0.15 },
+  },
+};
 
 export function CommunityExperienceSection() {
   return (
-    <Section id="community-experience" tone="surface">
-      <SectionHeading
-        number="06"
-        eyebrow="Community experience"
-        title="How the community works"
-        intro="An eight-step journey from application to ongoing contribution."
-      />
+    <section id="community" className="bg-canvas text-canvas py-20 border-b border-border">
+      <Container className="mx-auto px-6">
+        <motion.div
+          initial="hidden"
+          animate="visible"
+          variants={{ hidden: { opacity: 0 }, visible: { opacity: 1 } }}
+          className="text-center"
+        >
+          <h2 className="type-h2 mb-4">How the Community Works.</h2>
+          <p className="type-lead max-w-[48rem] mx-auto">
+            The Founding Cohort follows a simple journey — discover, connect,
+            contribute, build, and grow — together.
+          </p>
+        </motion.div>
 
-      <ol className="mt-12 grid gap-y-0 border-t border-line sm:grid-cols-2 sm:gap-x-10 lg:grid-cols-4">
-        {steps.map((step, index) => (
-          <li
-            key={step.title}
-            className="relative border-b border-line py-6 sm:pl-0"
+        <motion.div
+          initial="hidden"
+          animate="visible"
+          variants={staggerChildren}
+          className="mt-16 relative grid gap-12 sm:grid-cols-3"
+        >
+          {STEPS.map((step) => (
+            <motion.div
+              key={step.number}
+              whileHover={{ y: -4 }}
+              variants={stepVariants}
+              className="flex flex-col gap-4"
+            >
+              <div className="flex items-center gap-3">
+                <span className="w-10 h-10 rounded-full bg-emerald-500/10 flex items-center justify-center text-emerald-500 font-mono font-bold text-sm">
+                  {step.number}
+                </span>
+                <span className="text-sm font-semibold text-foreground/60">
+                  Step
+                </span>
+              </div>
+              <h3 className="type-h3 text-foreground">{step.title}</h3>
+              <p className="text-[0.875rem] leading-relaxed text-foreground/70">
+                {step.description}
+              </p>
+            </motion.div>
+          ))}
+        </motion.div>
+      </Container>
+    </section>
+  );
+}
+
+export function FoundingIdentitySection() {
+  return (
+    <section id="benefits" className="bg-surface text-canvas py-20">
+      <Container className="mx-auto px-6">
+        <motion.div
+          initial="hidden"
+          animate="visible"
+          variants={{ hidden: { opacity: 0 }, visible: { opacity: 1 } }}
+          className="text-center"
+        >
+          <h2 className="type-h2 mb-4">The Beginning of Something Bigger.</h2>
+          <p className="type-lead max-w-[48rem] mx-auto">
+            The founding generation doesn’t just join a community — they help
+            create it. There are no fabricated member counts or partner logos
+            here. Just real people, real conversations, and a shared ambition
+            to build something better.
+          </p>
+        </motion.div>
+
+        <motion.div
+          initial="hidden"
+          animate="visible"
+          variants={staggerChildren}
+          className="mt-16 flex flex-col items-center justify-center gap-8 sm:flex-row"
+        >
+          <div
+            className="relative w-full max-w-[600px] aspect-square rounded-[16px] border border-border bg-surface overflow-hidden"
           >
-            <div className="flex items-baseline gap-3">
-              <span className="type-label tabular-nums text-[var(--color-emerald-600)]">
-                {String(index + 1).padStart(2, "0")}
-              </span>
-              <span aria-hidden className="h-px flex-1 bg-line" />
-            </div>
-            <h3 className="type-h3 mt-3 text-[var(--color-ink)]">{step.title}</h3>
-            <p className="mt-2 max-w-[15rem] text-[0.875rem] leading-relaxed text-[var(--color-ink-muted)]">
-              {step.detail}
+            <div className="absolute inset-0 bg-emerald-500/5 opacity-50" />
+            <div className="absolute inset-4 border border-emerald-500/20 rounded-[12px]" />
+            <div className="absolute inset-8 border border-emerald-500/10 rounded-[8px]" />
+            <div className="absolute inset-12 border border-emerald-500/5 rounded-[4px]" />
+          </div>
+          <div className="text-center max-w-[32rem]">
+            <p className="text-[0.9375rem] leading-relaxed text-foreground/70 italic">
+              &ldquo;The best communities aren&rsquo;t joined &mdash; they&rsquo;re built. This is your chance to lay the first stone.&rdquo;
             </p>
-          </li>
-        ))}
-      </ol>
-
-      <p className="mt-6 text-[0.8125rem] leading-relaxed text-ink/60">
-        This is the intended flow — some later stages depend on activities that
-        are still being planned, and we will not pretend otherwise. Participation
-        is asynchronous-first so that members can contribute from any time zone.
-      </p>
-    </Section>
+          </div>
+        </motion.div>
+      </Container>
+    </section>
   );
 }

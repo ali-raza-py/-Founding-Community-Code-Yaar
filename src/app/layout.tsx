@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { Inter_Tight, Newsreader } from "next/font/google";
 
+import { ThemeProvider } from "@/lib/theme";
 import { SiteFooter } from "@/components/layout/site-footer";
 import { SiteHeader } from "@/components/layout/site-header";
 import { SITE_URL } from "@/lib/constants";
@@ -65,24 +66,25 @@ export default function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <html
-      lang="en"
-      className={`${interTight.variable} ${newsreader.variable}`}
-      
-    >
-      <body className="flex min-h-screen flex-col antialiased">
-        <a
-          href="#main"
-          className="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-4 focus:z-[100] focus:rounded-[6px] focus:bg-[var(--color-emerald-950)] focus:px-4 focus:py-2 focus:text-[0.875rem] focus:text-ink"
-        >
-          Skip to content
-        </a>
-        <SiteHeader />
-        <main id="main" className="flex-1">
-          {children}
-        </main>
-        <SiteFooter />
-      </body>
-    </html>
+    <ThemeProvider>
+      <html
+        lang="en"
+        className={`${interTight.variable} ${newsreader.variable}`}
+      >
+        <body className="flex min-h-screen flex-col antialiased">
+          <a
+            href="#main"
+            className="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-4 focus:z-[100] focus:rounded-[6px] focus:bg-[var(--color-emerald-950)] focus:px-4 focus:py-2 focus:text-[0.875rem] focus:text-ink"
+          >
+            Skip to content
+          </a>
+          <SiteHeader />
+          <main id="main" className="flex-1">
+            {children}
+          </main>
+          <SiteFooter />
+        </body>
+      </html>
+    </ThemeProvider>
   );
 }
