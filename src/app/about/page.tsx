@@ -3,6 +3,7 @@ import Image from "next/image";
 
 import { Section, SectionInner } from "@/components/ui/section";
 import { SectionHeading } from "@/components/ui/section-heading";
+import { Badge } from "@/components/ui/badge";
 import { SITE_URL } from "@/lib/constants";
 
 const founders = [
@@ -66,11 +67,13 @@ export default function AboutPage() {
         </SectionInner>
       </Section>
 
-      <Section padded className="bg-[#f2f5f3]">
+      <Section padded className="bg-surface-raised">
         <SectionInner>
           <div className="grid gap-12 lg:grid-cols-2">
             <div>
-              <h2 className="mb-4">Why we are building it</h2>
+              <h2 className="mb-4 text-2xl font-semibold text-ink">
+                Why we are building it
+              </h2>
               <p className="type-body mb-4">
                 Learning to program often happens in fragments — a video here,
                 a documentation page there, a practice problem, a half-finished
@@ -90,23 +93,25 @@ export default function AboutPage() {
                   "Build — turn understanding into something real, even if it is small and imperfect.",
                   "Evolve — use feedback to improve the work and the way you work.",
                 ].map((item, index) => (
-                  <p key={index} className="type-body pl-4 border-l-2 border-[#087a52]">
+                  <p key={index} className="type-body pl-4 border-l-2 border-emerald">
                     {item}
                   </p>
                 ))}
               </div>
             </div>
             <div className="hidden lg:block">
-              <div className="card-hairline p-8 lg:p-10">
+              <div className="rounded-xl border border-line bg-surface p-8 sm:p-10">
                 <p className="type-label mb-3">Our community vision</p>
-                <h3 className="mb-4">A global community built around practice</h3>
+                <h3 className="mb-4 text-xl font-semibold text-ink">
+                  A global community built around practice
+                </h3>
                 <p className="type-body mb-6">
                   The founding community supports the wider Code Yaar mission
                   by existing before the platform is complete. Its members test
                   ideas, tell us what is useful and what is not, and establish
                   the norms that later members will inherit.
                 </p>
-                <p className="type-small text-[#6b7a70]">
+                <p className="type-small text-ink-subtle">
                   This website is not the platform — it is a separate
                   community initiative, with its own codebase, deployment, and
                   purpose. Nothing here connects to Code Yaar&rsquo;s internal
@@ -139,9 +144,9 @@ export default function AboutPage() {
                   />
                 </div>
                 <div className="text-center">
-                  <h3 className="text-base font-semibold">{founder.name}</h3>
-                  <p className="text-sm text-[#087a52] font-medium">{founder.role}</p>
-                  <p className="text-xs text-[#46534a]">{founder.focus}</p>
+                  <h3 className="text-base font-semibold text-ink">{founder.name}</h3>
+                  <p className="text-sm font-medium text-emerald">{founder.role}</p>
+                  <p className="text-xs text-ink-muted">{founder.focus}</p>
                 </div>
               </div>
             ))}

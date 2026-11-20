@@ -3,16 +3,16 @@ import { cva, type VariantProps } from "class-variance-authority";
 import { cn } from "@/lib/utils";
 
 export const buttonVariants = cva(
-  "inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50",
+  "inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50",
   {
     variants: {
       variant: {
         primary:
-          "bg-[#087a52] text-white hover:bg-[#176b47] focus-visible:ring-[#087a52] shadow-sm",
+          "bg-emerald text-white hover:bg-emerald-hover focus-visible:ring-emerald shadow-sm",
         outline:
-          "border border-[#e8ece8] bg-transparent text-[#19231d] hover:bg-[#f2f5f3] focus-visible:ring-[#087a52]",
+          "border border-line bg-transparent text-ink hover:bg-surface-raised focus-visible:ring-emerald",
         ghost:
-          "bg-transparent text-[#46534a] hover:bg-[#f2f5f3] focus-visible:ring-[#087a52]",
+          "bg-transparent text-ink-muted hover:bg-surface-raised focus-visible:ring-emerald",
       },
       size: {
         sm: "h-8 px-3 text-xs",

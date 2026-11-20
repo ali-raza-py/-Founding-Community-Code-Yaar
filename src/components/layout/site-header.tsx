@@ -161,7 +161,6 @@ export function SiteHeader() {
         </div>
       </div>
 
-      {/* Mobile sheet */}
       {open && (
         <div
           id="mobile-navigation"

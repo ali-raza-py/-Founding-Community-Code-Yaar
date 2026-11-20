@@ -6,7 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { SITE_URL } from "@/lib/constants";
 
 const description =
-  "The First 100 — Code Yaar Global Founding Cohort 2026–27. What the founding cohort is, who should apply, how selection works, and what is available today.";
+  "The First 100 — Code Yaar Global Founding Cohort 2026&ndash;27. What the founding cohort is, who should apply, how selection works, and what is available today.";
 
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
@@ -45,11 +45,13 @@ export default function CohortPage() {
         </SectionInner>
       </Section>
 
-      <Section padded className="bg-[#f2f5f3]">
+      <Section padded className="bg-surface-raised">
         <SectionInner>
           <div className="grid gap-10 lg:grid-cols-2">
             <div>
-              <h2 className="mb-4">Who should apply?</h2>
+              <h2 className="mb-4 text-2xl font-semibold text-ink">
+                Who should apply?
+              </h2>
               <p className="type-body mb-4">
                 The cohort welcomes students, beginners, self-taught learners,
                 and aspiring developers. Advanced technical experience is not
@@ -71,7 +73,7 @@ export default function CohortPage() {
               </ul>
             </div>
             <div className="hidden lg:block">
-              <div className="card-hairline p-8 lg:p-10">
+              <div className="rounded-xl border border-line bg-surface p-8 sm:p-10">
                 <p className="type-label mb-3">Who this is for</p>
                 <ul className="space-y-3 prose-body">
                   <li className="flex items-start gap-3">
@@ -139,24 +141,24 @@ export default function CohortPage() {
                 detail: "Give the time you can actually keep — two honest hours beat twenty planned.",
               },
             ].map((item, index) => (
-              <div key={item.title} className="card-hairline p-6">
+              <div key={item.title} className="rounded-xl border border-line bg-surface p-6">
                 <span className="type-label block mb-2">{index + 1}</span>
-                <h4 className="mb-2">{item.title}</h4>
-                <p className="type-body">{item.detail}</p>
+                <h4 className="mb-2 font-semibold text-ink">{item.title}</h4>
+                <p className="type-body text-ink-muted">{item.detail}</p>
               </div>
             ))}
           </div>
         </SectionInner>
       </Section>
 
-      <Section padded className="bg-[#f2f5f3]">
+      <Section padded className="bg-surface-raised">
         <SectionInner>
           <SectionHeading
             eyebrow="Selection"
             title="How selection works"
             description="Applications are read by a real person. Places are limited to one hundred founding members."
           />
-          <ol className="mt-8 prose-body list-disc list-inside space-y-3">
+          <ol className="mt-8 prose-body list-decimal list-inside space-y-3">
             <li>
               <strong>Application submission.</strong> Complete the five-step
               form about your background, motivation, and what you could
@@ -179,7 +181,7 @@ export default function CohortPage() {
               yourself, and the first optional activity.
             </li>
           </ol>
-          <p className="mt-6 type-small text-[#6b7a70]">
+          <p className="mt-6 type-small text-ink-subtle">
             Submitting an application does not guarantee acceptance.
           </p>
         </SectionInner>
@@ -202,14 +204,14 @@ export default function CohortPage() {
               "One hundred founding members, assembled from scratch.",
             ].map((item) => (
               <div key={item} className="flex items-start gap-3">
-                <span className="mt-0.5 shrink-0 text-[#087a52] font-medium">
+                <span className="mt-0.5 shrink-0 text-emerald font-medium">
                   &mdash;
                 </span>
                 <p className="type-body m-0">{item}</p>
               </div>
             ))}
           </div>
-          <p className="mt-6 type-small text-[#6b7a70]">
+          <p className="mt-6 type-small text-ink-subtle">
             Because the community is new, some activities and processes are
             still being designed. We say so rather than describing a programme
             that does not exist yet.

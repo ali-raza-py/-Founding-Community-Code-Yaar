@@ -31,31 +31,31 @@ export default function PrivacyPage() {
           title="How your application is handled"
           description={privacyStatus}
         />
-        <div className="mt-10 prose-body max-w-none">
+        <div className="mt-10 prose-body max-w-none text-ink-muted">
           {privacySections.map((section) => (
             <section key={section.id} className="mb-10">
-              <h3 className="mb-3">{section.title}</h3>
+              <h3 className="mb-3 font-semibold text-ink">{section.title}</h3>
               {section.paragraphs.map((paragraph, index) => (
                 <p key={index}>{paragraph}</p>
               ))}
             </section>
           ))}
         </div>
-        <div className="mt-12 card-hairline p-8">
+        <div className="mt-12 rounded-xl border border-line bg-surface p-8">
           <p className="type-label mb-3">What we collect</p>
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {dataCategories.map((category) => (
               <div key={category.category} className="flex flex-col gap-1.5">
-                <span className="type-small text-[#087a52] font-medium">
+                <span className="type-small text-emerald font-medium">
                   {category.category}
                 </span>
-                <p className="type-body text-sm">{category.fields}</p>
-                <p className="type-caption text-sm">{category.purpose}</p>
+                <p className="type-body text-sm text-ink-muted">{category.fields}</p>
+                <p className="type-caption text-sm text-ink-subtle">{category.purpose}</p>
               </div>
             ))}
           </div>
         </div>
-        <p className="mt-10 type-caption">
+        <p className="mt-10 type-caption text-ink-subtle">
           Fields marked required in the form are needed to review an
           application. Optional fields can be left empty without affecting your
           application.

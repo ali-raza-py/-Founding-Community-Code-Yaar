@@ -1,6 +1,15 @@
 import { z } from "zod";
 
-import { AGE_RANGES, EDUCATION_LEVELS, EXPERIENCE_LEVELS, WEEKLY_TIME_OPTIONS } from "@/lib/constants";
+import {
+  AGE_RANGES,
+  EDUCATION_LEVELS,
+  EXPERIENCE_LEVELS,
+  WEEKLY_TIME_OPTIONS,
+  AMBASSADOR_AGE_RANGES,
+  AMBASSADOR_CATEGORIES,
+  AMBASSADOR_CURRENT_STATUS,
+  AMBASSADOR_WEEKLY_TIME_OPTIONS,
+} from "@/lib/constants";
 
 const ageValues = AGE_RANGES.map((option) => option.value) as [string, ...string[]];
 const educationValues = EDUCATION_LEVELS.map(
@@ -135,3 +144,152 @@ export const applicationSchema = personalInformationSchema
   .merge(educationSchema)
   .merge(programmingBackgroundSchema)
   .merge(motivationSchema);
+
+/* ========================================================================
+   Ambassador application validation schemas
+   ======================================================================== */
+
+const ambassadorAgeValues = AMBASSADOR_AGE_RANGES.map(
+  (option) => option.value,
+) as [string, ...string[]];
+const ambassadorCategoryValues = AMBASSADOR_CATEGORIES.map(
+  (option) => option.value,
+) as [string, ...string[]];
+const ambassadorStatusValues = AMBASSADOR_CURRENT_STATUS.map(
+  (option) => option.value,
+) as [string, ...string[]];
+const ambassadorWeeklyTimeValues = AMBASSADOR_WEEKLY_TIME_OPTIONS.map(
+  (option) => option.value,
+) as [string, ...string[]];
+
+export const ambassadorPersonalSchema = z.object({
+  fullName: z
+    .string()
+    .trim()
+    .min(2, "Enter your full name.")
+    .max(100, "Please keep your name under 100 characters."),
+  email: z
+    .string()
+    .trim()
+    .min(1, "Enter your email address.")
+    .max(254, "This email address is too long.")
+    .email("Enter an email address such as you@example.com"),
+  country: z
+    .string()
+    .trim()
+    .min(1, "Select your country.")
+    .max(80, "Select your country from the list."),
+  city: z
+    .string()
+    .trim()
+    .min(1, "Enter your city.")
+    .max(80, "Please keep this under 80 characters."),
+  ageRange: z
+    .string()
+    .min(1, "Select your age range.")
+    .refine((value) => ambassadorAgeValues.includes(value), "Select your age range."),
+  currentStatus: z
+    .string()
+    .min(1, "Select your current status.")
+    .refine(
+      (value) => ambassadorStatusValues.includes(value),
+      "Select your current status.",
+    ),
+});
+
+export const ambassadorPreferenceSchema = z.object({
+  ambassadorCategory: z
+    .string()
+    .min(1, "Select your preferred ambassador category.")
+    .refine(
+      (value) => ambassadorCategoryValues.includes(value),
+      "Select your preferred ambassador category.",
+    ),
+  categoryInterest: z
+    .string()
+    .trim()
+    .min(20, "Please tell us more about your interest (at least 20 characters).")
+    .max(1000, "Please keep this under 1000 characters."),
+});
+
+export const ambassadorEducationSchema = z.object({
+  institution: optionalText(120).optional(),
+  fieldOfStudy: optionalText(100).optional(),
+  belongsToCommunity: z
+    .enum(["yes", "no"])
+    .refine(() => true, "Please answer whether you belong to a community or group."),
+  communityName: optionalText(120).optional(),
+  communityDescription: z
+    .string()
+    .trim()
+    .min(20, "Please describe the community you can reach or hope to build (at least 20 characters).")
+    .max(1000, "Please keep this under 1000 characters."),
+  hasLeadershipExperience: z
+    .enum(["yes", "no"])
+    .refine(() => true, "Please answer whether you have participated in volunteering or leadership initiatives."),
+});
+
+export const ambassadorOnlinePresenceSchema = z.object({
+  linkedin: optionalUrl(),
+  github: optionalUrl(),
+  instagram: optionalUrl(),
+  twitter: optionalUrl(),
+  website: optionalUrl(),
+});
+
+export const ambassadorMotivationSchema = z.object({
+  whyAmbassador: z
+    .string()
+    .trim()
+    .min(80, "Please write at least a few sentences (80 characters).")
+    .max(1500, "Please keep this under 1500 characters."),
+  howIntroduce: z
+    .string()
+    .trim()
+    .min(80, "Please write at least a few sentences (80 characters).")
+    .max(1500, "Please keep this under 1500 characters."),
+  whySuitable: z
+    .string()
+    .trim()
+    .min(80, "Please write at least a few sentences (80 characters).")
+    .max(1500, "Please keep this under 1500 characters."),
+  initiativeIdea: z
+    .string()
+    .trim()
+    .min(80, "Please describe your idea (at least 80 characters).")
+    .max(1500, "Please keep this under 1500 characters."),
+  first30Days: z
+    .string()
+    .trim()
+    .min(80, "Please describe your first 30 days (at least 80 characters).")
+    .max(1500, "Please keep this under 1500 characters."),
+});
+
+export const ambassadorAvailabilitySchema = z.object({
+  weeklyTime: z
+    .string()
+    .min(1, "Select your weekly availability.")
+    .refine(
+      (value) => ambassadorWeeklyTimeValues.includes(value),
+      "Select your weekly availability.",
+    ),
+  canAttendMeetings: z.enum(["yes", "no"], {
+    required_error: "Please answer whether you can participate in occasional online meetings.",
+  }),
+});
+
+export const ambassadorAgreementSchema = z.object({
+  informationAccurate: z.boolean().refine((v) => v === true, "You must confirm this."),
+  noSelectionGuarantee: z.boolean().refine((v) => v === true, "You must confirm this."),
+  agreeToGuidelines: z.boolean().refine((v) => v === true, "You must confirm this."),
+  consentDataProcessing: z.boolean().refine((v) => v === true, "You must confirm this."),
+  guardianConsent: z.boolean().optional(),
+});
+
+export const ambassadorSchema = ambassadorPersonalSchema
+  .merge(ambassadorPreferenceSchema)
+  .merge(ambassadorEducationSchema)
+  .merge(ambassadorOnlinePresenceSchema)
+  .merge(ambassadorMotivationSchema)
+  .merge(ambassadorAvailabilitySchema)
+  .merge(ambassadorAgreementSchema);

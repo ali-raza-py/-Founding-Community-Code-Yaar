@@ -56,6 +56,33 @@
   --space-section: 6rem;
 }
 
+/* ============ DARK THEME TOKENS ============ */
+.dark {
+  --color-canvas: #090e0c;
+  --color-surface: #0f1a15;
+  --color-surface-raised: #14221b;
+  --color-surface-selected: #1b2e25;
+  --color-line: #1f2d26;
+  --color-line-strong: #2a3a32;
+
+  --color-ink: #e8ece8;
+  --color-ink-muted: #a8b8ae;
+  --color-ink-subtle: #7a8a7f;
+
+  --color-emerald: #3fd48f;
+  --color-emerald-hover: #5fe0a6;
+  --color-emerald-soft: #0b2a1d;
+  --color-forest: #0e1c16;
+  --color-supporting-green: #5fe0a6;
+
+  --color-danger: #ef4444;
+  --color-danger-soft: #2d1717;
+  --color-success: #3fd48f;
+  --color-success-soft: #0b2a1d;
+
+  --color-focus-ring: #3fd48f;
+}
+
 /* ============ BASE STYLES ============ */
 
 @layer base {

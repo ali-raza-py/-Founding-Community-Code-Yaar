@@ -8,10 +8,12 @@ export default function sitemap(): MetadataRoute.Sitemap {
   const lastModified = new Date();
   const routes: { path: string; priority: number }[] = [
     { path: "", priority: 1 },
+    { path: "/about", priority: 0.8 },
     { path: "/cohort", priority: 0.9 },
     { path: "/apply", priority: 0.9 },
-    { path: "/about", priority: 0.7 },
-    { path: "/benefits", priority: 0.7 },
+    { path: "/opportunities", priority: 0.8 },
+    { path: "/ambassadors", priority: 0.8 },
+    { path: "/ambassadors/apply", priority: 0.8 },
     { path: "/faq", priority: 0.7 },
     { path: "/privacy", priority: 0.3 },
   ];

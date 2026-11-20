@@ -134,3 +134,58 @@ export const COUNTRIES = [
 
 export const PRIVACY_CONSENT_TEXT =
   "I have read the privacy information and agree that my application may be reviewed by the Code Yaar team.";
+
+/* ========================================================================
+   Ambassador Programme constants
+   ======================================================================== */
+
+export const AMBASSADOR_TOTAL_STEPS = 7;
+
+export const AMBASSADOR_STEP_LABELS = [
+  "Personal",
+  "Ambassador Preference",
+  "Education &amp; Community",
+  "Online Presence",
+  "Motivation &amp; Contribution",
+  "Availability",
+  "Agreement",
+] as const;
+
+export const AMBASSADOR_CATEGORIES = [
+  { value: "campus", label: "Campus Ambassador" },
+  { value: "community", label: "Community Ambassador" },
+  { value: "regional", label: "Regional Ambassador" },
+] as const;
+
+export const AMBASSADOR_AGE_RANGES = [
+  { value: "under-16", label: "Under 16" },
+  { value: "16-17", label: "16&ndash;17" },
+  { value: "18-24", label: "18&ndash;24" },
+  { value: "25-34", label: "25&ndash;34" },
+  { value: "35-44", label: "35&ndash;44" },
+  { value: "45-plus", label: "45 and above" },
+] as const;
+
+export const AMBASSADOR_CURRENT_STATUS = [
+  { value: "high-school", label: "High School Student" },
+  { value: "college", label: "College Student" },
+  { value: "university", label: "University Student" },
+  { value: "independent-learner", label: "Independent Learner" },
+  { value: "working-professional", label: "Working Professional" },
+  { value: "other", label: "Other" },
+] as const;
+
+export const AMBASSADOR_WEEKLY_TIME_OPTIONS = [
+  { value: "1-2", label: "1&ndash;2 hours" },
+  { value: "3-5", label: "3&ndash;5 hours" },
+  { value: "6-8", label: "6&ndash;8 hours" },
+  { value: "8-plus", label: "More than 8 hours" },
+] as const;
+
+export const AMBASSADOR_SOCIAL_PLATFORMS = [
+  { key: "linkedin", label: "LinkedIn profile", placeholder: "https://linkedin.com/in/username" },
+  { key: "github", label: "GitHub profile", placeholder: "https://github.com/username" },
+  { key: "instagram", label: "Instagram profile", placeholder: "https://instagram.com/username" },
+  { key: "twitter", label: "X/Twitter profile", placeholder: "https://x.com/username" },
+  { key: "website", label: "Personal website or portfolio", placeholder: "https://example.com" },
+] as const;

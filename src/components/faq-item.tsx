@@ -23,21 +23,21 @@ function ChevronDown({ className = "" }: { className?: string }) {
 export function FaqItem({ item, index }: { item: { id: string; question: string; answer: string }; index: number }) {
   const [open, setOpen] = useState(false);
   return (
-    <div className="border border-[#e8ece8] rounded-lg overflow-hidden">
+    <div className="border border-line rounded-lg overflow-hidden">
       <button
         onClick={() => setOpen((o) => !o)}
-        className="flex w-full items-center justify-between px-4 py-3.5 text-left bg-[#ffffff] hover:bg-[#f2f5f3] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#087a52]"
+        className="flex w-full items-center justify-between px-4 py-3.5 text-left bg-surface hover:bg-surface-raised transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald"
         aria-expanded={open}
         aria-controls={`faq-${index}`}
       >
-        <span className="text-base font-semibold">{item.question}</span>
+        <span className="text-base font-semibold text-ink">{item.question}</span>
         <ChevronDown className={open ? "rotate-180" : ""} aria-hidden />
       </button>
       <div
         id={`faq-${index}`}
-        className={`border-t border-[#e8ece8] bg-[#f2f5f3] px-4 pb-4 ${open ? "" : "hidden"}`}
+        className={`border-t border-line bg-surface-raised px-4 pb-4 ${open ? "" : "hidden"}`}
       >
-        <p className="type-body">{item.answer}</p>
+        <p className="type-body text-ink-muted">{item.answer}</p>
       </div>
     </div>
   );

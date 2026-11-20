@@ -38,21 +38,17 @@ export default function ApplyPage() {
   const restoredRef = useRef(false);
   const saveTimerRef = useRef<NodeJS.Timeout | null>(null);
 
-  // --- Draft persistence (external store, no logging of applicant data) ---
   const draft = useSyncExternalStore(
     subscribeToDraft,
     getDraftSnapshot,
     getServerDraftSnapshot,
   );
-  // Restore the saved draft exactly once after hydration so it never
-  // overwrites values while the applicant is actively typing.
   useEffect(() => {
     if (!restoredRef.current && draft) {
       restoredRef.current = true;
       setValues(draft);
     }
   }, [draft]);
-  // Persist to localStorage only when the applicant pauses typing.
   useEffect(() => {
     if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
     saveTimerRef.current = setTimeout(() => saveDraft(values), 600);
@@ -61,12 +57,10 @@ export default function ApplyPage() {
     };
   }, [values]);
 
-  // --- Field helpers ---
   const setField = useCallback((key: keyof ApplicationData, value: string) => {
     setValues((current) => ({ ...current, [key]: value }));
   }, []);
 
-  // --- Step validation ---
   const validateStep = useCallback((stepNumber: number): boolean => {
     const schema = STEP_SCHEMAS[stepNumber as keyof typeof STEP_SCHEMAS];
     if (!schema) return true;
@@ -91,7 +85,6 @@ export default function ApplyPage() {
     setStep(nextStep);
   }, [step, canAdvance]);
 
-  // --- Review data ---
   const reviewValues = useMemo(() => {
     const groups: { step: number; title: string; items: { label: string; value: string }[] }[] = [];
     for (const group of REVIEW_GROUPS) {
@@ -104,7 +97,6 @@ export default function ApplyPage() {
     return groups;
   }, [values]);
 
-  // --- Submission ---
   const handleSubmit = useCallback(
     async (event: React.FormEvent) => {
       event.preventDefault();
@@ -191,7 +183,7 @@ export default function ApplyPage() {
             <Link
               href="/apply"
               onClick={resetForm}
-              className="inline-flex items-center justify-center gap-2 rounded-md border border-[#e8ece8] bg-[#ffffff] px-6 py-3 text-sm font-medium text-[#19231d] transition-colors hover:bg-[#f2f5f3] hover:text-[#087a52] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#087a52]"
+              className="inline-flex items-center justify-center gap-2 rounded-md border border-line bg-surface px-6 py-3 text-sm font-medium text-ink transition-colors hover:bg-surface-raised hover:text-emerald focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald"
             >
               Submit another application
             </Link>
@@ -216,20 +208,19 @@ export default function ApplyPage() {
         </div>
 
         <form noValidate onSubmit={handleSubmit} className="space-y-8">
-          {/* Step progress */}
           <div className="mb-6">
             <div className="flex items-center justify-between mb-2">
               <span className="type-small">Step {step} of {TOTAL_STEPS}</span>
               <span className="type-small font-semibold">{stepLabel}</span>
             </div>
-            <div className="w-full bg-[#e8ece8] rounded-full h-1.5">
+            <div className="w-full bg-line rounded-full h-1.5">
               <div
-                className="bg-[#087a52] h-1.5 rounded-full transition-all duration-300"
-                style={{ width: `${(step / TOTAL_STEPS) * 100}%` }}
+                className="bg-emerald h-1.5 rounded-full transition-all duration-300"
                 role="progressbar"
                 aria-valuenow={step}
                 aria-valuemin={1}
                 aria-valuemax={TOTAL_STEPS}
+                style={{ width: `${(step / TOTAL_STEPS) * 100}%` }}
               />
             </div>
             <div className="flex justify-between mt-2">
@@ -239,10 +230,10 @@ export default function ApplyPage() {
                   className={cn(
                     "text-[0.75rem] font-medium transition-colors duration-200",
                     index + 1 < step
-                      ? "text-[#087a52]"
+                      ? "text-emerald"
                       : index + 1 === step
-                        ? "text-[#19231d] font-semibold"
-                        : "text-[#6b7a70]",
+                        ? "text-ink font-semibold"
+                        : "text-ink-subtle",
                   )}
                 >
                   {label}
@@ -251,14 +242,9 @@ export default function ApplyPage() {
             </div>
           </div>
 
-          {/* -------- Step 1: Personal information -------- */}
           {step === 1 && (
             <>
-              <Field
-                label="Full name"
-                required
-                error={errors.fullName?.[0]}
-              >
+              <Field label="Full name" required error={errors.fullName?.[0]}>
                 <Input
                   placeholder="Jane Smith"
                   value={values.fullName}
@@ -321,14 +307,9 @@ export default function ApplyPage() {
             </>
           )}
 
-          {/* -------- Step 2: Education -------- */}
           {step === 2 && (
             <>
-              <Field
-                label="Education level"
-                required
-                error={errors.educationLevel?.[0]}
-              >
+              <Field label="Education level" required error={errors.educationLevel?.[0]}>
                 <Select
                   value={values.educationLevel}
                   onChange={(e) => setField("educationLevel", e.currentTarget.value)}
@@ -356,11 +337,7 @@ export default function ApplyPage() {
                   onChange={(e) => setField("fieldOfStudy", e.currentTarget.value)}
                 />
               </Field>
-              <Field
-                label="Current year or stage"
-                required
-                error={errors.yearOrGrade?.[0]}
-              >
+              <Field label="Current year or stage" required error={errors.yearOrGrade?.[0]}>
                 <Input
                   placeholder="e.g. 2nd year, self-taught year 1"
                   value={values.yearOrGrade}
@@ -371,14 +348,9 @@ export default function ApplyPage() {
             </>
           )}
 
-          {/* -------- Step 3: Programming background -------- */}
           {step === 3 && (
             <>
-              <Field
-                label="Experience level"
-                required
-                error={errors.experienceLevel?.[0]}
-              >
+              <Field label="Experience level" required error={errors.experienceLevel?.[0]}>
                 <Select
                   value={values.experienceLevel}
                   onChange={(e) => setField("experienceLevel", e.currentTarget.value)}
@@ -392,102 +364,40 @@ export default function ApplyPage() {
                   ))}
                 </Select>
               </Field>
-              <Field
-                label="Languages and technologies"
-                required
-                error={errors.languages?.[0]}
-                hint="HTML, CSS, Python, JavaScript… or write “None yet”."
-              >
-                <Textarea
-                  rows={3}
-                  value={values.languages}
-                  onChange={(e) => setField("languages", e.currentTarget.value)}
-                  required
-                />
+              <Field label="Languages and technologies" required error={errors.languages?.[0]} hint="HTML, CSS, Python, JavaScript… or write “None yet”.">
+                <Textarea rows={3} value={values.languages} onChange={(e) => setField("languages", e.currentTarget.value)} required />
               </Field>
               <Field label="Previous projects" error={errors.previousProjects?.[0]}>
-                <Textarea
-                  rows={3}
-                  placeholder="Optional — links or descriptions of anything you have built."
-                  value={values.previousProjects}
-                  onChange={(e) => setField("previousProjects", e.currentTarget.value)}
-                />
+                <Textarea rows={3} placeholder="Optional — links or descriptions of anything you have built." value={values.previousProjects} onChange={(e) => setField("previousProjects", e.currentTarget.value)} />
               </Field>
               <Field label="GitHub" error={errors.github?.[0]}>
-                <Input
-                  placeholder="https://github.com/username"
-                  value={values.github}
-                  onChange={(e) => setField("github", e.currentTarget.value)}
-                />
+                <Input placeholder="https://github.com/username" value={values.github} onChange={(e) => setField("github", e.currentTarget.value)} />
                 <p className="type-caption">Optional — not used to filter applicants.</p>
               </Field>
               <Field label="LinkedIn" error={errors.linkedin?.[0]}>
-                <Input
-                  placeholder="https://linkedin.com/in/username"
-                  value={values.linkedin}
-                  onChange={(e) => setField("linkedin", e.currentTarget.value)}
-                />
+                <Input placeholder="https://linkedin.com/in/username" value={values.linkedin} onChange={(e) => setField("linkedin", e.currentTarget.value)} />
                 <p className="type-caption">Optional — not used to filter applicants.</p>
               </Field>
               <Field label="Portfolio" error={errors.portfolio?.[0]}>
-                <Input
-                  placeholder="https://example.com"
-                  value={values.portfolio}
-                  onChange={(e) => setField("portfolio", e.currentTarget.value)}
-                />
+                <Input placeholder="https://example.com" value={values.portfolio} onChange={(e) => setField("portfolio", e.currentTarget.value)} />
                 <p className="type-caption">Optional — not used to filter applicants.</p>
               </Field>
             </>
           )}
 
-          {/* -------- Step 4: Motivation -------- */}
           {step === 4 && (
             <>
-              <Field
-                label="Why do you want to join The First 100?"
-                required
-                error={errors.motivation?.[0]}
-                hint="At least 80 characters. Tell us what draws you to this community."
-              >
-                <Textarea
-                  rows={5}
-                  value={values.motivation}
-                  onChange={(e) => setField("motivation", e.currentTarget.value)}
-                  required
-                />
+              <Field label="Why do you want to join The First 100?" required error={errors.motivation?.[0]} hint="At least 80 characters. Tell us what draws you to this community.">
+                <Textarea rows={5} value={values.motivation} onChange={(e) => setField("motivation", e.currentTarget.value)} required />
               </Field>
-              <Field
-                label="What do you hope to learn?"
-                required
-                error={errors.learningGoals?.[0]}
-                hint="At least 40 characters."
-              >
-                <Textarea
-                  rows={4}
-                  value={values.learningGoals}
-                  onChange={(e) => setField("learningGoals", e.currentTarget.value)}
-                  required
-                />
+              <Field label="What do you hope to learn?" required error={errors.learningGoals?.[0]} hint="At least 40 characters.">
+                <Textarea rows={4} value={values.learningGoals} onChange={(e) => setField("learningGoals", e.currentTarget.value)} required />
               </Field>
-              <Field
-                label="What could you contribute?"
-                required
-                error={errors.contribution?.[0]}
-                hint="At least 40 characters."
-              >
-                <Textarea
-                  rows={4}
-                  value={values.contribution}
-                  onChange={(e) => setField("contribution", e.currentTarget.value)}
-                  required
-                />
+              <Field label="What could you contribute?" required error={errors.contribution?.[0]} hint="At least 40 characters.">
+                <Textarea rows={4} value={values.contribution} onChange={(e) => setField("contribution", e.currentTarget.value)} required />
               </Field>
               <Field label="Weekly availability" required error={errors.weeklyTime?.[0]}>
-                <Select
-                  value={values.weeklyTime}
-                  onChange={(e) => setField("weeklyTime", e.currentTarget.value)}
-                  required
-                >
+                <Select value={values.weeklyTime} onChange={(e) => setField("weeklyTime", e.currentTarget.value)} required>
                   <option value="">Select your availability</option>
                   {WEEKLY_TIME_OPTIONS.map((option) => (
                     <option key={option.value} value={option.value}>
@@ -497,45 +407,30 @@ export default function ApplyPage() {
                 </Select>
               </Field>
               <Field label="Preferred communication language" required error={errors.preferredLanguage?.[0]}>
-                <Input
-                  placeholder="e.g. English"
-                  value={values.preferredLanguage}
-                  onChange={(e) => setField("preferredLanguage", e.currentTarget.value)}
-                  required
-                />
-                <p className="type-caption">
-                  Collected to plan support — never used to filter applicants.
-                </p>
+                <Input placeholder="e.g. English" value={values.preferredLanguage} onChange={(e) => setField("preferredLanguage", e.currentTarget.value)} required />
+                <p className="type-caption">Collected to plan support — never used to filter applicants.</p>
               </Field>
               <Field label="Time zone" required error={errors.timezone?.[0]}>
-                <Input
-                  placeholder="e.g. Asia/Karachi (UTC+5)"
-                  value={values.timezone}
-                  onChange={(e) => setField("timezone", e.currentTarget.value)}
-                  required
-                />
+                <Input placeholder="e.g. Asia/Karachi (UTC+5)" value={values.timezone} onChange={(e) => setField("timezone", e.currentTarget.value)} required />
               </Field>
             </>
           )}
 
-          {/* -------- Step 5: Review and submit -------- */}
           {step === 5 && (
             <>
               <div className="space-y-6">
                 {reviewValues.map((group) => (
-                  <section key={group.step} className="border border-[#e8ece8] rounded-lg p-5">
+                  <section key={group.step} className="border border-line rounded-lg p-5">
                     <p className="type-label mb-3">{group.title}</p>
                     <div className="space-y-3">
                       {group.items.map((item) => (
                         <div key={item.label} className="flex justify-between items-baseline gap-3">
-                          <span className="text-sm text-[#46534a]">{item.label}</span>
-                          <span className="type-mono text-[#19231d] truncate max-w-[22rem]">
-                            {item.value || "—"}
-                          </span>
+                          <span className="text-sm text-ink-muted">{item.label}</span>
+                          <span className="font-mono text-ink truncate max-w-[22rem]">{item.value || "—"}</span>
                           <button
                             type="button"
                             onClick={() => setStep(group.step)}
-                            className="text-[0.8125rem] text-[#087a52] hover:underline font-medium p-1"
+                            className="text-[0.8125rem] text-emerald hover:underline font-medium p-1"
                           >
                             Edit
                           </button>
@@ -548,34 +443,33 @@ export default function ApplyPage() {
                   <input
                     id="consent"
                     type="checkbox"
-                    className="rounded border-[#e8ece8] text-[#087a52] focus-visible:ring-[#087a52] mt-[3px]"
+                    className="rounded border-line text-emerald focus-visible:ring-emerald mt-[3px] shrink-0"
                     checked={consent}
                     onChange={(e) => setConsent(e.currentTarget.checked)}
                     required
                   />
-                  <label htmlFor="consent" className="text-sm leading-relaxed cursor-pointer">
-                    {PRIVACY_CONSENT_TEXT} <Link href="/privacy" className="text-[#087a52] underline underline-offset-2 hover:text-[#176b47]">Read the privacy information</Link>.
+                  <label htmlFor="consent" className="text-sm leading-relaxed cursor-pointer text-ink">
+                    {PRIVACY_CONSENT_TEXT} <Link href="/privacy" className="text-emerald underline underline-offset-2 hover:text-emerald-hover">Read the privacy information</Link>.
                   </label>
                 </Field>
               </div>
             </>
           )}
 
-          {/* Submission status */}
           {status.state === "submitting" && (
             <div className="flex items-center gap-3 py-4">
-              <span className="type-mono flex h-5 w-5 shrink-0">⟳</span>
+              <span className="font-mono flex h-5 w-5 shrink-0">⟳</span>
               <span className="type-body">Submitting your application…</span>
             </div>
           )}
           {status.state === "success" && (
-            <div className="rounded-lg border border-[#e8ece8] bg-[#ecfdf5] p-6 text-center">
-              <p className="text-sm font-semibold text-[#065f46]">
+            <div className="rounded-lg border border-line bg-success-soft p-6 text-center">
+              <p className="text-sm font-semibold text-success">
                 Application received
               </p>
               {status.reference && (
-                <p className="mt-1 type-small text-[#46534a]">
-                  Reference: <span className="type-mono">{status.reference}</span>
+                <p className="mt-1 type-small text-ink-muted">
+                  Reference: <span className="font-mono">{status.reference}</span>
                 </p>
               )}
               <p className="mt-4 type-body">
@@ -586,30 +480,26 @@ export default function ApplyPage() {
             </div>
           )}
           {status.state === "error" && (
-            <div className="rounded-lg border border-[#fecaca] bg-[#fef2f2] p-6">
-              <p className="text-sm font-semibold text-[#991b1b]">
+            <div className="rounded-lg border border-danger-soft bg-danger-soft p-6">
+              <p className="text-sm font-semibold text-danger">
                 Submission failed
               </p>
               <p className="mt-1 type-body">{submitError}</p>
-              <Button
-                type="button"
-                onClick={() => {
-                  setSubmitError(null);
-                  setStatus({ state: "submitting" });
-                  void handleSubmit({ preventDefault: () => {} } as unknown as React.FormEvent);
-                }}
-              >
+              <Button type="button" onClick={() => {
+                setSubmitError(null);
+                setStatus({ state: "submitting" });
+                void handleSubmit({ preventDefault: () => {} } as unknown as React.FormEvent);
+              }}>
                 Retry
               </Button>
             </div>
           )}
           {submitError && status.state === "idle" && (
-            <div className="rounded-lg border border-[#fecaca] bg-[#fef2f2] p-6">
-              <p className="text-sm font-semibold text-[#991b1b]">{submitError}</p>
+            <div className="rounded-lg border border-danger-soft bg-danger-soft p-6">
+              <p className="text-sm font-semibold text-danger">{submitError}</p>
             </div>
           )}
 
-          {/* Actions */}
           <div className="flex flex-col sm:flex-row gap-3 justify-between items-end mt-6 sm:mt-10">
             {step > 1 && (
               <Link
@@ -618,7 +508,7 @@ export default function ApplyPage() {
                   e.preventDefault();
                   goTo(step - 1);
                 }}
-                className="inline-flex items-center justify-center gap-2 rounded-md border border-[#e8ece8] bg-[#ffffff] px-6 py-3 text-sm font-medium text-[#19231d] transition-colors hover:bg-[#f2f5f3] hover:text-[#087a52] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#087a52]"
+                className="inline-flex items-center justify-center gap-2 rounded-md border border-line bg-surface px-6 py-3 text-sm font-medium text-ink transition-colors hover:bg-surface-raised hover:text-emerald focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald"
               >
                 Back
               </Link>
@@ -630,7 +520,7 @@ export default function ApplyPage() {
                   e.preventDefault();
                   goTo(step + 1);
                 }}
-                className="inline-flex items-center justify-center gap-2 rounded-md bg-[#087a52] px-6 py-3 text-sm font-medium text-white transition-colors hover:bg-[#176b47] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#087a52]"
+                className="inline-flex items-center justify-center gap-2 rounded-md bg-emerald px-6 py-3 text-sm font-medium text-white transition-colors hover:bg-emerald-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald"
               >
                 Continue
               </Link>
@@ -638,11 +528,9 @@ export default function ApplyPage() {
               <button
                 type="submit"
                 disabled={status.state === "submitting"}
-                className="inline-flex items-center justify-center gap-2 rounded-md bg-[#087a52] px-8 py-3 text-sm font-medium text-white transition-colors disabled:opacity-50 hover:bg-[#176b47]:not(:disabled) focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#087a52]"
+                className="inline-flex items-center justify-center gap-2 rounded-md bg-emerald px-8 py-3 text-sm font-medium text-white transition-colors disabled:opacity-50 hover:bg-emerald-hover:not(:disabled) focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald"
               >
-                {status.state === "submitting"
-                  ? "Submitting…"
-                  : "Submit application"}
+                {status.state === "submitting" ? "Submitting…" : "Submit application"}
               </button>
             )}
           </div>
