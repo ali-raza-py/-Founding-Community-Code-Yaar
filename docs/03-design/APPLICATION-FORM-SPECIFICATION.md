@@ -35,7 +35,7 @@
 
 - Envelope: `{ submissionId, formVersion, submittedAt, application }`
 - submissionId: UUID, reused across retries for de-duplication
-- adapter: Web3Forms first (if access key), else configurable endpoint
+- adapter: POST to configured endpoint; when no endpoint is set, the envelope is saved to browser localStorage and a local reference is returned — nothing is sent over the network
 - endpoint validated: https:// or localhost http://
 - timeout: configurable (5s–60s), default 20s
 - Never logs applicant data; only diagnostic metadata

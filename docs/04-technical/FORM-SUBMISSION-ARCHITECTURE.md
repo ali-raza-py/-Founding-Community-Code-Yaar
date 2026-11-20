@@ -2,9 +2,8 @@
 
 ## Adapter selection
 
-1. If `NEXT_PUBLIC_WEB3FORMS_ACCESS_KEY` is set → submit via Web3Forms `https://api.web3forms.com/submit`
-2. Else if `NEXT_PUBLIC_APPLICATION_ENDPOINT` is set → POST JSON envelope to endpoint
-3. Else → `not-configured`: form shows honest "submission not configured" message; answers saved locally only
+1. If `NEXT_PUBLIC_APPLICATION_ENDPOINT` is set → POST JSON envelope to the endpoint over HTTPS.
+2. Else → save the envelope to browser localStorage and return a local reference — nothing is sent over the network.
 
 ## Envelope
 
@@ -13,7 +12,8 @@
   submissionId: string (UUID, stable across retries),
   formVersion: string ("1.0.0"),
   submittedAt: string (ISO),
-  application: ApplicationData
+  application: ApplicationData,
+  referralCode: string | null
 }
 ```
 
@@ -21,7 +21,7 @@
 
 - Must parse as URL
 - Protocol https://, or http:// only on localhost/127.0.0.1
-- Invalid → `null` (treated as not-configured)
+- Invalid → treated as not configured (local save)
 
 ## Timeout
 
@@ -31,11 +31,11 @@
 ## Result handling
 
 - `ok: true` → success state, optional reference, draft cleared, session guard set
-- `ok: false` → error state with reason: network / timeout / rejected / server / not-configured; retry offered
+- `ok: false` → error state with reason: network / timeout / rejected / server; retry offered
 - Never throws; never logs applicant data; only diagnostic metadata
 
 ## Honesty rules
 
-- No fake submission success without a successful endpoint response
-- `not-configured` shown plainly when no endpoint/key is set
-- Duplicate-prevention: same `submissionId` retries; sessionStorage guard after success
+- No fake submission success without a successful endpoint response.
+- When no endpoint is configured, applications are saved to browser localStorage (not submitted anywhere) and a local reference is returned — this is honest about where the data lives.
+- Duplicate-prevention: same `submissionId` retries; sessionStorage guard after success.

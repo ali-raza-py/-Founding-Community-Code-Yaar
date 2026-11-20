@@ -49,7 +49,7 @@ Inspected at `github.com/ali-raza-py/Code-Yaar` → `frontend/` (Next.js 16.3.5,
 - `src/lib/validation.ts` — Zod schemas for all five application steps. **Keep.**
 - `src/lib/application.ts` — `EMPTY_APPLICATION` and `REVIEW_GROUPS` for the review step. **Keep.**
 - `src/lib/draft.ts` — localStorage draft persistence, session-submission guard. **Keep.**
-- `src/lib/submission.ts` — configurable endpoint/Web3Forms submission adapter, timeout, dedup `submissionId`, no logging of applicant data. **Keep.** Endpoint driven by `NEXT_PUBLIC_APPLICATION_ENDPOINT`.
+- `src/lib/submission.ts` — configurable endpoint submission adapter with localStorage fallback, timeout, dedup `submissionId`, no logging of applicant data. **Keep.** Endpoint driven by `NEXT_PUBLIC_APPLICATION_ENDPOINT`.
 - `src/lib/utils.ts` — `cn` helper. **Keep.**
 - `src/types/application.ts` — `ApplicationData`, `ApplicationEnvelope`, `SubmissionResult`, `SubmissionStatus`. **Keep.**
 - `src/lib/content/*` — all copy (home, about, cohort, faq, privacy). **Keep** — honest, TBD-marked copy that matches the rebuild constraints (no job/internship/certificate promises).

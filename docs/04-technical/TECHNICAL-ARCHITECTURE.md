@@ -24,11 +24,10 @@
 
 Configurable via environment variables:
 - `NEXT_PUBLIC_APPLICATION_ENDPOINT` — primary endpoint (https:// or localhost http://)
-- `NEXT_PUBLIC_WEB3FORMS_ACCESS_KEY` — optional Web3Forms key (tried first)
 - `NEXT_PUBLIC_APPLICATION_PUBLIC_KEY` — optional `X-Application-Key` header
 - `NEXT_PUBLIC_APPLICATION_TIMEOUT_MS` — 5s–60s, default 20s
 
-Adapter: Web3Forms first if key present, else legacy endpoint. Same `submissionId` reused across retries for de-duplication. Never logs applicant data.
+Adapter: POST the envelope to the configured endpoint. When no endpoint is set, the envelope is saved to browser localStorage and a local reference is returned. Never logs applicant data.
 
 ## Rendering
 

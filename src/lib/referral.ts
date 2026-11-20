@@ -3,7 +3,7 @@
  *
  * This is a frontend-only site with no backend. Referral codes are manually
  * assigned by the Code Yaar team and configured in this file. The referral
- * URL flow (?ref= capture, Web3Forms integration) is preserved here.
+ * URL flow (?ref= capture) is preserved here.
  */
 
 /** Required number of qualified referrals for the ambassador referral stage. */

@@ -8,7 +8,7 @@
 | Next.js static export (`output: "export"`) | Frontend-only marketing site; all public pages prerendered |
 | No shadcn/ui `@radix-ui/react-slot` | Not installed; custom button avoids unnecessary dependency |
 | Application form client-side only | Frontend-only constraint; no server actions/API routes |
-| Web3Forms first, then configurable endpoint | Preserves existing submission adapter logic; honest "not configured" state |
+| Local save fallback | When no endpoint is configured, envelopes save to browser localStorage and a local reference is returned — nothing sent over the network |
 | Removed `/benefits` route | Duplicated homepage content; not a required route |
 | Removed framer-motion | Presentational animation only; unnecessary dependency; slows load |
 | Actual founder photographs from official repo | Prompt requires actual photographs; official repo provides them |
