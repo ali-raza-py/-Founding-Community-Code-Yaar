@@ -213,7 +213,7 @@ export default function AmbassadorApplyPage() {
         setStatus({ state: "error", reason: result.reason, status: result.status });
       }
     },
-    [values],
+    [values, validateStep, errors],
   );
 
   const isUnder18 = values.ageRange === "under-16" || values.ageRange === "16-17";
