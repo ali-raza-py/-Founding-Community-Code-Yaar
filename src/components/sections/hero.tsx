@@ -55,13 +55,13 @@ export function FoundingHero() {
         </p>
         <div className="flex flex-col sm:flex-row gap-3 justify-center items-center">
           <Link
-            href="/opportunities"
+            href="/apply"
             className={`
               inline-flex items-center justify-center gap-2 rounded-md bg-emerald px-8 py-3.5 text-base font-medium text-white
               transition-colors hover:bg-emerald-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald
             `}
           >
-            Explore Opportunities
+            Apply to The First 100
           </Link>
           <Link
             href="/cohort"

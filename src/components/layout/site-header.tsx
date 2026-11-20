@@ -11,7 +11,7 @@ const APPLY_LABEL = "Apply for the Founding Cohort";
 
 const NAV_LINKS = [
   { href: "/about", label: "About" },
-  { href: "/opportunities", label: "Opportunities" },
+  { href: "/apply", label: "Apply" },
   { href: "/ambassadors", label: "Global Ambassadors" },
   { href: "/cohort", label: "The First 100" },
   { href: "/faq", label: "FAQ" },

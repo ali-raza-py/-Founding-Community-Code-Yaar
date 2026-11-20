@@ -6,6 +6,12 @@ export const faqs = [
       "It is the first 100 members of the Code Yaar community: a founding cohort of learners and aspiring developers who take part in practical activities, give feedback, and help set the tone for everyone who joins later. The cohort is being assembled now, so this is the beginning of the community rather than an established network.",
   },
   {
+    id: "how-to-apply",
+    question: "How do I apply?",
+    answer:
+      "Open the application form and complete the five steps: personal information, education, programming background, motivation, and review. You can save your draft and return to it before submitting. Applications are reviewed by the Code Yaar team.",
+  },
+  {
     id: "free",
     question: "Is the cohort free?",
     answer:
