@@ -95,32 +95,6 @@ export default function AmbassadorDashboardPage() {
     ? window.sessionStorage.getItem("codeyaar.ambassador-email")
     : null;
 
-  // Create a profile if one doesn't exist yet (side effect in useEffect).
-  useEffect(() => {
-    if (!ambassadorEmail) return;
-    const existing = storage.ambassadorProfiles[ambassadorEmail];
-    if (existing) return;
-    const newCode = generateReferralCode();
-    const newProfile: AmbassadorReferralProfile = {
-      ambassadorEmail,
-      referralCode: newCode,
-      shortlistedAt: null,
-      requiredReferrals: REQUIRED_REFERRALS,
-      totalVisits: 0,
-      completedApplications: 0,
-      pendingReview: 0,
-      verifiedReferrals: 0,
-      rejectedReferrals: 0,
-      lastUpdated: new Date().toISOString(),
-    };
-    const updatedStorage = {
-      ...storage,
-      ambassadorProfiles: { ...storage.ambassadorProfiles, [ambassadorEmail]: newProfile },
-    };
-    setStorage(updatedStorage);
-    writeReferralStorage(updatedStorage);
-  }, [storage, ambassadorEmail]);
-
   // Derive the profile from storage during render (read-only).
   const profile = useMemo(() => {
     if (!ambassadorEmail) return null;
@@ -181,7 +155,7 @@ export default function AmbassadorDashboardPage() {
 
   const remaining = useMemo(
     () => remainingReferrals(profile?.verifiedReferrals ?? 0),
-    [profile?.verifiedReferrals],
+    [profile],
   );
 
   const progressPercent = useMemo(
@@ -189,7 +163,7 @@ export default function AmbassadorDashboardPage() {
       profile
         ? Math.min(100, Math.round((profile.verifiedReferrals / REQUIRED_REFERRALS) * 100))
         : 0,
-    [profile?.verifiedReferrals],
+    [profile],
   );
 
   return (

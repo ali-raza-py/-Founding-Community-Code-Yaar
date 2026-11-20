@@ -1,13 +1,13 @@
 "use client";
 
-import { useEffect, useMemo, useRef } from "react";
+import { Suspense, useEffect, useMemo, useRef } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 
 import { extractReferralCode, COHORT_REFERRAL_KEY } from "@/lib/referral";
 import { Section, SectionInner } from "@/components/ui/section";
 
-export default function CohortApplyPage() {
+function CohortApplyContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const hasRedirected = useRef(false);
@@ -71,5 +71,13 @@ export default function CohortApplyPage() {
         </div>
       </SectionInner>
     </Section>
+  );
+}
+
+export default function CohortApplyPage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen flex items-center justify-center"><p className="type-body text-ink-muted">Loading…</p></div>}>
+      <CohortApplyContent />
+    </Suspense>
   );
 }
