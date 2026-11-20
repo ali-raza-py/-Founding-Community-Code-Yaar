@@ -14,7 +14,6 @@ export default function sitemap(): MetadataRoute.Sitemap {
     { path: "/opportunities", priority: 0.8 },
     { path: "/ambassadors", priority: 0.8 },
     { path: "/ambassadors/apply", priority: 0.8 },
-    { path: "/ambassadors/dashboard", priority: 0.7 },
     { path: "/cohort/apply", priority: 0.9 },
     { path: "/faq", priority: 0.7 },
     { path: "/privacy", priority: 0.3 },
