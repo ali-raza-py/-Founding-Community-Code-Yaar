@@ -294,7 +294,7 @@ export function ApplicationForm() {
             aria-labelledby="application-step-heading"
           >
             {draftRestored && (
-              <div className="mb-6 flex flex-col gap-2 rounded-[6px] border border-line-strong bg-surface-muted px-4 py-3 text-[0.8125rem] leading-relaxed text-ink-muted sm:flex-row sm:items-center sm:justify-between">
+              <div className="mb-6 flex flex-col gap-2 rounded-[6px] border border-line-strong bg-surface px-4 py-3 text-[0.8125rem] leading-relaxed text-ink-muted sm:flex-row sm:items-center sm:justify-between">
                 <p>
                   We restored a draft saved in this browser. It never left your
                   device.
@@ -318,7 +318,7 @@ export function ApplicationForm() {
               id="application-step-heading"
               ref={headingRef}
               tabIndex={-1}
-              className="mt-2 font-serif text-[2rem] leading-tight text-forest-950 focus:outline-none sm:text-[2.25rem]"
+              className="mt-2 type-h3 text-ink focus:outline-none sm:text-[2.25rem] sm:leading-none"
             >
               {meta.title}
             </h2>
@@ -428,3 +428,4 @@ export function ApplicationForm() {
     </div>
   );
 }
+

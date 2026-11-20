@@ -1,5 +1,8 @@
+"use client";
+
 import type { ReactNode } from "react";
 
+import { SplitReveal } from "@/components/motion/text";
 import { Container } from "@/components/ui/container";
 import { cn } from "@/lib/utils";
 
@@ -19,13 +22,15 @@ export function PageHero({
   return (
     <section className={cn("border-b border-line", className)}>
       <Container>
-        <div className="grid gap-10 py-12 md:py-16 lg:grid-cols-[1.2fr_0.8fr] lg:items-end lg:gap-16 lg:py-20">
-          <div>
+        <div className="grid gap-10 py-16 md:py-24 lg:grid-cols-[1.2fr_0.8fr] lg:items-end lg:gap-24 lg:py-28">
+          <div className="min-w-0">
             <p className="type-label flex items-center gap-3 text-emerald-600">
-              <span aria-hidden className="h-px w-8 bg-emerald-600/50" />
+              <span aria-hidden className="h-px w-8 bg-emerald-600/40" />
               {eyebrow}
             </p>
-            <h1 className="type-display mt-5 max-w-[22ch] text-ink">{title}</h1>
+            <h1 className="mt-5 max-w-none">
+              <SplitReveal className="type-display block">{title}</SplitReveal>
+            </h1>
             <p className="type-lead mt-6 max-w-[42rem]">{lead}</p>
           </div>
           {aside && <div className="lg:pb-2">{aside}</div>}

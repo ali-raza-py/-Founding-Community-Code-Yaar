@@ -1,12 +1,11 @@
 import type { Metadata } from "next";
 
-import { HeroSection } from "@/components/sections/hero-section";
-import { WhatIsSection } from "@/components/sections/what-is-section";
-import { WhyJoinSection } from "@/components/sections/what-is-section";
-import { CommunityExperienceSection } from "@/components/sections/community-experience-section";
-import { FoundingIdentitySection } from "@/components/sections/community-experience-section";
-import { ApplicationSection } from "@/components/sections/application-section";
-import { FAQSection } from "@/components/sections/faq-section";
+import { FoundingHero } from "@/components/hero/FoundingHero";
+import { MissionSection } from "@/components/sections/mission-section";
+import { LoopSection } from "@/components/sections/loop-section";
+import { PrinciplesSection } from "@/components/sections/principles-section";
+import { BenefitsSection } from "@/components/sections/benefits-section";
+import { FinalCtaSection } from "@/components/sections/final-cta-section";
 import { SITE_URL } from "@/lib/constants";
 
 const description =
@@ -29,14 +28,13 @@ export const metadata: Metadata = {
 
 export default function HomePage() {
   return (
-    <main id="main" className="flex-1">
-      <HeroSection />
-      <WhatIsSection />
-      <WhyJoinSection />
-      <CommunityExperienceSection />
-      <FoundingIdentitySection />
-      <ApplicationSection />
-      <FAQSection />
-    </main>
+    <>
+      <FoundingHero />
+      <MissionSection />
+      <LoopSection />
+      <PrinciplesSection />
+      <BenefitsSection />
+      <FinalCtaSection />
+    </>
   );
 }

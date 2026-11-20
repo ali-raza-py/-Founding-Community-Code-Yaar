@@ -2,50 +2,15 @@
 
 import { createContext, useContext, useEffect, useState } from "react";
 
-const DEFAULT_THEME = "dark";
+export type Theme = "light" | "dark";
 
-// Apply theme tokens from CSS vars on html element
-function applyThemeTokens(theme: "light" | "dark", docs: Document) {
-  if (theme === "light") {
-    docs.documentElement.style.setProperty("--color-canvas", "var(--color-canvas-light)");
-    docs.documentElement.style.setProperty("--color-surface", "var(--color-surface-light)");
-    docs.documentElement.style.setProperty("--color-surface-muted", "var(--color-elevated-light)");
-    docs.documentElement.style.setProperty("--color-emerald-600", "var(--color-emerald-600)");
-    docs.documentElement.style.setProperty("--color-emerald-500", "var(--color-emerald-500)");
-    docs.documentElement.style.setProperty("--color-emerald-300", "var(--color-emerald-300)");
-    docs.documentElement.style.setProperty("--color-emerald-100", "var(--color-emerald-100)");
-    docs.documentElement.style.setProperty("--color-ink", "var(--color-primary-text-light)");
-    docs.documentElement.style.setProperty("--color-ink-muted", "var(--color-secondary-text-light)");
-    docs.documentElement.style.setProperty("--color-ink-subtle", "var(--color-muted-text-light)");
-  } else {
-    docs.documentElement.style.setProperty("--color-canvas", "var(--color-canvas-dark)");
-    docs.documentElement.style.setProperty("--color-surface", "var(--color-surface-dark)");
-    docs.documentElement.style.setProperty("--color-surface-muted", "var(--color-elevated-dark)");
-    docs.documentElement.style.setProperty("--color-emerald-600", "var(--color-emerald-600)");
-    docs.documentElement.style.setProperty("--color-emerald-500", "var(--color-emerald-500)");
-    docs.documentElement.style.setProperty("--color-emerald-300", "var(--color-emerald-300)");
-    docs.documentElement.style.setProperty("--color-emerald-100", "var(--color-emerald-100)");
-    docs.documentElement.style.setProperty("--color-ink", "var(--color-primary-text-dark)");
-    docs.documentElement.style.setProperty("--color-ink-muted", "var(--color-secondary-text-dark)");
-    docs.documentElement.style.setProperty("--color-ink-subtle", "var(--color-muted-text-dark)");
-  }
-}
-
-// Read the persisted theme from localStorage, or fall back to OS preference
-function getInitialTheme(): "light" | "dark" {
-  if (typeof window === "undefined") return "dark";
-
-  const stored = localStorage.getItem("codeyaar-theme");
-  if (stored === "light" || stored === "dark") return stored;
-
-  // Respect OS preference on first visit
-  const mql = window.matchMedia("(prefers-color-scheme: dark)");
-  return mql.matches ? "dark" : "light";
-}
+const DEFAULT_THEME: Theme = "dark";
+const STORAGE_KEY = "codeyaar-theme";
 
 // --- Context ---
+
 type ThemeContextValue = {
-  theme: "light" | "dark";
+  theme: Theme;
   toggleTheme: () => void;
   prefersDark: boolean;
 };
@@ -60,23 +25,42 @@ export function useTheme(): ThemeContextValue {
   return context;
 }
 
-export function ThemeProvider({ children }: { children: React.ReactNode }) {
-  const [theme, setTheme] = useState<"light" | "dark">(getInitialTheme);
+export function ThemeProvider({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
+  const [theme, setTheme] = useState<Theme>(DEFAULT_THEME);
 
-  // Apply theme on mount and when it changes
+  // Sync React state with the data-theme already applied to <html> by the
+  // inline <head> script (persisted choice or OS preference) before first
+  // paint. Defer the update so it is not applied synchronously inside this
+  // effect.
   useEffect(() => {
-    const docs = document as Document;
-    applyThemeTokens(theme, docs);
+    const sync = () => {
+      const attribute = document.documentElement.getAttribute("data-theme");
+      const next =
+        attribute === "light" || attribute === "dark" ? attribute : DEFAULT_THEME;
+      setTimeout(() => setTheme(next), 0);
+    };
 
-    // Also set the data attribute for any JS-based theme detection
-    docs.documentElement.setAttribute("data-theme", theme);
+    sync();
 
-    // Persist to localStorage
+    const mql = window.matchMedia("(prefers-color-scheme: dark)");
+    mql.addEventListener("change", sync);
+
+    return () => {
+      mql.removeEventListener("change", sync);
+    };
+  }, []);
+
+  useEffect(() => {
     try {
-      localStorage.setItem("codeyaar-theme", theme);
+      localStorage.setItem(STORAGE_KEY, theme);
     } catch {
       // Ignore storage errors (private mode, etc.)
     }
+    document.documentElement.setAttribute("data-theme", theme);
   }, [theme]);
 
   const toggleTheme = () => {
@@ -90,6 +74,3 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
     </Provider>
   );
 }
-
-// Export the context for use outside of React components if needed
-export { ThemeContext };

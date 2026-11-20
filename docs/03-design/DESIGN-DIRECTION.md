@@ -1,76 +1,62 @@
 # Design Direction
 
-**Status:** Implemented. Subject to brand-asset replacement.
+**Status:** Implemented. Dark-first design system with a kinetic typography-led hero; light theme as a fully designed secondary theme.
 
 ## Intent
 
-A serious early-stage international technology organization. Editorial rather than promotional: the site should read like a considered publication, not a SaaS landing page.
+A serious early-stage international developer community. Composed, warm, precise. The site reads like a platform, not a publication: tight typography, hairline surfaces, emerald used sparingly, and purposeful motion.
 
 Three adjectives: **composed, warm, precise.**
 
-## Visual concept — "the founding ledger"
+## Visual concept
 
-The design borrows from print: a paper-toned canvas, a hairline rule system, generous margins, and a numbered index. The cohort's 100 places are treated as an editorial fact, not a marketing device.
-
-Applied concretely:
-
-- **Hairlines** (`1px`, low-contrast green-tinted) separate sections instead of cards and shadows.
-- **Section eyebrows**: small uppercase label with a rule, numbered (`01 — MISSION`) where a sequence exists.
+- **Near-black canvas** (`#07110F`) as the default theme; light theme (`#F8FAFC`) is designed independently, not inverted.
+- **Kinetic wordmark hero:** an enormous flat-green ("The First 100", `hero-ink = #3DAE76`, weight 800, tracking -0.045em, line-height 0.82) over the dark canvas, with outline-only ghost rows of the same word cropped by the top and bottom viewport edges and drifting at different rates. A solid wordmark sits in front. Five cursor-arrow mascots with gaze-tracking eyes overlap the letter edges; one carries a thin orbiting ribbon ring. A bright sub-headline sits under the wordmark.
+- **Hairlines** (`1px`, low contrast) separate sections instead of cards and shadows.
+- **Section eyebrows**: small uppercase label with a rule, numbered where a sequence exists.
 - **Numbered lists**: principles and journey steps use large muted numerals.
-- **One accent**: emerald used for emphasis, links, and focus only.
-- **Kinetic hero**: a dark, typography-led first screen — a massive solid headline over an outlined duplicate, a few floating brand-derived marks, and cohort metadata along the bottom. Every other section stays neutral, textual and light.
+- **One accent:** emerald used for emphasis, links, focus, and the signature gradient (`emerald-500 → teal-500`). The gradient is restricted to the "100" numeral accent, primary CTA hover sheen, diagram connectors and progress lines.
+- **Signature visuals:** the kinetic wordmark, the 10×10 dot-grid (never used to show filled application slots), and the interactive learning-loop diagram.
 
 ## Anti-patterns avoided
 
-No gradient meshes, no glassmorphism, no floating card stacks, no 3D blobs, no generic globe, no stock photography of laptops, no purple, no loud glow. The homepage hero's low-contrast code-character texture is the one deliberate exception, and it stays behind the headline.
+No gradient meshes, no glassmorphism, no floating card stacks as the default layout, no 3D blobs, no generic globe, no stock photography, no purple, no loud glows, no emoji as icons, no lorem ipsum, no off-token colours, no static brochure layouts, and no infinite background drift. The only ambient loops are the hero ghost-row drift and mascot idle, both paused off-screen and under `prefers-reduced-motion`.
 
 ## Colour rationale
 
-Deep forest green carries seriousness and distinguishes the site from the default blue/gray startup palette. Off-white (rather than pure white) reduces glare and supports the editorial feel. Emerald is used sparingly so it retains emphasis.
-
-All pairings were chosen to clear WCAG AA for body text. Contrast values are recorded in [`DESIGN-TOKENS.md`](DESIGN-TOKENS.md).
+Emerald is a real scale (#10B981 at 500, #059669 at 600, #064E3B at 900); teal (#14B8A6 at 500) is the secondary accent. Lime/forest placeholder values were removed. Semantic tokens (`canvas`, `surface`, `ink`, `line`, …) are declared in a Tailwind v4 `@theme` block in `src/app/globals.css` and switched by `[data-theme="dark"]` / `[data-theme="light"]`.
 
 ## Typography rationale
 
-Two faces:
+Three faces, loaded via `next/font/google` (Latin, `display: "swap"`):
 
-- **Display/UI:** a humanist-geometric sans with tight tracking for large headings and neutral rhythm for body text.
-- **Editorial accent:** a serif reserved for a single pull-quote style moment and the cohort numeral, adding publication character without noise.
+- **Manrope** — display, headings and UI (500/600/700/800).
+- **Inter** — body text (400/500/600).
+- **JetBrains Mono** — technical labels, counters, step numbers (400/500).
 
-If the brand later specifies a typeface, swap the font variables in `src/app/layout.tsx`; the type scale and tokens remain valid.
+Fluid sizes via `clamp()`. Max prose width 65ch. Spacing on a 4px base; section padding 128/96/72px. Radii 8 (inputs), 12 (cards), 20 (panels), 999 (pills).
 
 ## Layout system
 
-- Max content width `1200px`, prose width `68ch`.
-- Page gutters: `20px` → `32px` → `48px`.
-- Section rhythm: `64px` mobile → `96px` tablet → `128px` desktop.
-- 12-column grid on desktop used only where a two-column composition genuinely helps; otherwise stacked.
+- Max content width 1200px; prose width 65ch.
+- Section padding block: 72px mobile → 96px tablet → 128px desktop.
+- One idea per viewport; sticky headings on desktop sections.
 
 ## Motion
 
-- Transitions `150–200ms`, ease-out.
-- Only opacity, transform and colour animate.
-- The homepage hero owns the only scroll-linked motion on the site: as it leaves the viewport the content lifts, the outlined headline layer grows more visible, and the marks drift at different rates. It writes one CSS custom property per frame — no React state, transforms and opacity only.
-- The hero also keeps a slow ambient background drift, confined to the first screen.
-- No scroll-triggered animation, no pointer parallax, no counters.
-- All motion disabled under `prefers-reduced-motion: reduce`.
-
-## Imagery and iconography
-
-- **Icons:** Lucide, `1.5px` stroke, `20px` default, used functionally (arrows, chevrons, check, alert). Not decorative per-heading.
-- **Imagery:** none by default. The hero is typographic; the only raster asset is the brand mark, used as a floating symbol at low opacity. Founder portraits are initials until real photographs are supplied.
-- **Social preview:** typographic card, no stock imagery.
+- Transforms, opacity and SVG stroke offsets only; no layout-property animation except accordion height (safe framer-motion method).
+- Reveals: fade + 16px translate, `whileInView`, once, margin -80px, stagger 60–80ms.
+- Scroll-linked motion: hero lift and ghost parallax, loop-diagram arc draw, timeline progress, outline-to-fill headings.
+- Ambient loops: ghost-row drift and mascot idle (paused off-screen, paused when the tab is hidden).
+- Reduced motion: reveals instant, marquees paused, mascots static, scramble/word-cycle show final text.
 
 ## Dark mode
 
-**Not implemented.** The brief makes it optional and conditions it on consistent support across all pages and form states. Given the tight launch scope, one well-executed light theme is better than a second theme with weak form states. If added later, it must repaint every token, not invert.
+Implemented as the default theme, persisted in `localStorage` under `codeyaar-theme`, with an inline `<head>` script that sets `data-theme` before first paint to avoid a flash or hydration mismatch. Both themes are fully designed: ghost stroke, mascot shadows, diagram lines, form fields, focus rings and error states have light-theme values.
 
-## Quality bar for new sections
+## Mascots
 
-- Does it survive without icons? If not, the hierarchy is weak.
-- Is there exactly one focal point?
-- Would it look at home beside a printed report?
-- Does it work at 360px with no horizontal scroll?
+Cursor-arrow characters ported from OpenMausBot (Apache-2.0; see `NOTICE` and `THIRD_PARTY.md`). Permitted only in the hero (at most five) and optionally once on the form success state. Decorative (`aria-hidden`), eyes follow the pointer, not scattered on other sections.
 
 ## Related documents
 

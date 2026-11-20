@@ -1,10 +1,9 @@
 import type { Metadata } from "next";
-import Link from "next/link";
 
 import { PageHero } from "@/components/sections/page-hero";
 import { Accordion } from "@/components/ui/accordion";
 import { Section } from "@/components/ui/section";
-import { faqNote, faqs } from "@/lib/content/faq";
+import { faqs, faqNote } from "@/lib/content/faq";
 
 export const metadata: Metadata = {
   title: "FAQ",
@@ -29,27 +28,21 @@ export default function FaqPage() {
       />
 
       <Section bordered={false}>
-        <div className="grid gap-10 lg:grid-cols-[0.55fr_1.45fr] lg:gap-16">
+        <div className="grid gap-12 lg:grid-cols-[0.55fr_1.45fr] lg:gap-24">
           <div className="lg:sticky lg:top-24 lg:self-start">
-            <p className="type-label text-ink-subtle">12 questions</p>
-            <p className="mt-4 max-w-[18rem] font-serif text-[1.375rem] leading-snug text-forest-900">
+            <p className="type-label text-ink-subtle">{faqs.length} questions</p>
+            <h2 className="type-h2 mt-4 max-w-[18rem]">
               Still unsure whether you should apply?
-            </p>
-            <p className="mt-3 max-w-[18rem] text-[0.875rem] leading-relaxed text-ink-muted">
+            </h2>
+            <p className="mt-5 max-w-[18rem] text-[0.875rem] leading-relaxed text-ink-muted">
               Read the cohort page first. If the answer is not there, the honest
               answer is probably that we have not confirmed it yet.
             </p>
-            <Link
-              href="/cohort"
-              className="mt-4 inline-block border-b border-emerald-600/40 pb-0.5 text-[0.875rem] font-medium text-emerald-600 hover:border-emerald-600"
-            >
-              The Cohort
-            </Link>
           </div>
 
           <div>
             <Accordion items={faqs} defaultOpenId="what-is" />
-            <p className="mt-6 max-w-[56ch] text-[0.8125rem] leading-relaxed text-ink-subtle">
+            <p className="mt-8 max-w-[56ch] text-[0.8125rem] leading-relaxed text-ink-subtle">
               {faqNote}
             </p>
           </div>

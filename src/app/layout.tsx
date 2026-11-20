@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from "next";
-import { Inter_Tight, Newsreader } from "next/font/google";
+import { Inter, Manrope, JetBrains_Mono } from "next/font/google";
 
 import { ThemeProvider } from "@/lib/theme";
 import { SiteFooter } from "@/components/layout/site-footer";
@@ -8,23 +8,30 @@ import { SITE_URL } from "@/lib/constants";
 
 import "./globals.css";
 
-const interTight = Inter_Tight({
+const inter = Inter({
   subsets: ["latin"],
-  variable: "--font-inter-tight",
+  variable: "--font-inter",
+  weight: ["400", "500", "600"],
   display: "swap",
 });
 
-const newsreader = Newsreader({
+const manrope = Manrope({
   subsets: ["latin"],
-  variable: "--font-newsreader",
+  variable: "--font-manrope",
+  weight: ["500", "600", "700", "800"],
   display: "swap",
+});
+
+const jbMono = JetBrains_Mono({
+  subsets: ["latin"],
+  variable: "--font-jb-mono",
   weight: ["400", "500"],
-  style: ["normal", "italic"],
+  display: "swap",
 });
 
 const title = "Code Yaar | The First 100 — Global Founding Cohort";
 const description =
-  "Join Code Yaar's Global Founding Cohort 2026–27. Connect with aspiring developers worldwide, participate in practical learning activities, and help shape a growing programming community.";
+  "Join Code Yaar's Global Founding Community — The First 100. A founding cohort of learners and aspiring developers worldwide, building practical skills together from day one.";
 
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
@@ -41,7 +48,6 @@ export const metadata: Metadata = {
     title,
     description,
     url: "/",
-    locale: "en",
     images: [{ url: "/og-image.png" }],
   },
   twitter: {
@@ -59,22 +65,42 @@ export const metadata: Metadata = {
 export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
-  themeColor: "#0b1f17",
+  themeColor: "#07110f",
 };
+
+const themeScript = `
+  (function () {
+    try {
+      var stored = localStorage.getItem("codeyaar-theme");
+      var osDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+      var theme = (stored === "light" || stored === "dark") ? stored : (osDark ? "dark" : "light");
+      document.documentElement.setAttribute("data-theme", theme);
+    } catch (e) {
+      // Storage unavailable; leave attribute to CSS/default.
+    }
+  })();
+`;
 
 export default function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <ThemeProvider>
-      <html
-        lang="en"
-        className={`${interTight.variable} ${newsreader.variable}`}
-      >
-        <body className="flex min-h-screen flex-col antialiased">
+    <html
+      lang="en"
+      className={`${inter.variable} ${manrope.variable} ${jbMono.variable}`}
+      suppressHydrationWarning
+    >
+      <head>
+        <script
+          id="theme-init"
+          dangerouslySetInnerHTML={{ __html: themeScript }}
+        />
+      </head>
+      <body className="flex min-h-screen flex-col antialiased">
+        <ThemeProvider>
           <a
             href="#main"
-            className="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-4 focus:z-[100] focus:rounded-[6px] focus:bg-[var(--color-emerald-950)] focus:px-4 focus:py-2 focus:text-[0.875rem] focus:text-ink"
+            className="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-4 focus:z-[100] focus:rounded-[6px] focus:bg-[var(--color-emerald-900)] focus:px-4 focus:py-2 focus:text-[0.875rem] focus:text-ink"
           >
             Skip to content
           </a>
@@ -83,8 +109,8 @@ export default function RootLayout({
             {children}
           </main>
           <SiteFooter />
-        </body>
-      </html>
-    </ThemeProvider>
+        </ThemeProvider>
+      </body>
+    </html>
   );
 }

@@ -34,8 +34,9 @@ When `NEXT_PUBLIC_APPLICATION_ENDPOINT` is empty the form still works and drafts
 
 | Route | Description |
 | --- | --- |
-| `/` | Mission, principles, cohort introduction, benefits, journey, CTA |
+| `/` | Kinetic wordmark hero, mission, learning loop, principles, benefits, CTA |
 | `/about` | What Code Yaar is, why it exists, philosophy, team |
+| `/benefits` | Realistic benefits of the founding cohort, stated plainly |
 | `/cohort` | Cohort definition, eligibility, commitment, process, global participation |
 | `/apply` | Five-step application form |
 | `/faq` | Twelve answered questions, including what is not confirmed |
@@ -92,7 +93,7 @@ npm run typecheck  # tsc --noEmit
 
 ## Accessibility and motion
 
-Semantic landmarks, a skip link, labelled fields with inline errors, visible focus styles, keyboard-operable accordion and navigation, and `prefers-reduced-motion` support. Light theme only.
+Semantic landmarks, a skip link, labelled fields with inline errors, visible focus styles, keyboard-operable accordion and navigation, dark-first theming with a fully designed light theme, and `prefers-reduced-motion` support.
 
 ## Status
 

@@ -63,6 +63,7 @@ export interface MascotCharacterProps {
   trackPointer?: boolean;
   animated?: boolean;
   className?: string;
+  style?: React.CSSProperties;
 }
 
 const COLOR_FILLS: Record<MascotColor, string> = {
@@ -135,6 +136,7 @@ export function MascotCharacter({
   trackPointer = true,
   animated = true,
   className,
+  style,
 }: MascotCharacterProps) {
   const [pointer, setPointer] = useState({ x: 0, y: 0 });
   const [blinkScale, setBlinkScale] = useState(1);
@@ -278,7 +280,12 @@ export function MascotCharacter({
       className={cn("inline-flex shrink-0", className)}
       onPointerMove={trackPointer && animated && !reduced ? onPointerMove : undefined}
       onPointerLeave={trackPointer && animated && !reduced ? onPointerLeave : undefined}
-      style={{ width: dimension, height: dimension, display: "inline-flex" }}
+      style={{
+        width: dimension,
+        height: dimension,
+        display: "inline-flex",
+        ...style,
+      }}
     >
       <svg
         ref={svgRef}

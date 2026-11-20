@@ -11,6 +11,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
     { path: "/cohort", priority: 0.9 },
     { path: "/apply", priority: 0.9 },
     { path: "/about", priority: 0.7 },
+    { path: "/benefits", priority: 0.7 },
     { path: "/faq", priority: 0.7 },
     { path: "/privacy", priority: 0.3 },
   ];

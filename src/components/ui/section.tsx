@@ -15,18 +15,19 @@ export function Section({
   children: ReactNode;
   className?: string;
   containerClassName?: string;
-  tone?: "canvas" | "surface" | "muted";
+  tone?: "canvas" | "surface" | "raised" | "muted";
   bordered?: boolean;
 }) {
   return (
     <section
       id={id}
       className={cn(
-        "py-16 md:py-[5.5rem] lg:py-[7.5rem]",
+        "py-16 md:py-24 lg:py-32",
         bordered && "border-t border-line",
-        tone === "canvas" && "bg-[var(--color-canvas)] dark:bg-gray-900",
-        tone === "surface" && "bg-[var(--color-surface)] dark:bg-gray-800",
-        tone === "muted" && "bg-[var(--color-surface-muted)] dark:bg-gray-700",
+        tone === "canvas" && "bg-canvas",
+        tone === "surface" && "bg-surface",
+        tone === "raised" && "bg-surface-raised",
+        tone === "muted" && "bg-surface",
         className,
       )}>
       <Container className={containerClassName}>{children}</Container>

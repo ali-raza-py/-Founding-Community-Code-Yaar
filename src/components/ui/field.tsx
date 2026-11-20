@@ -37,7 +37,7 @@ export function FieldFrame({
     <div className={cn("flex flex-col gap-2", className)}>
       <label
         htmlFor={id}
-        className="flex items-baseline gap-1.5 text-[0.875rem] font-medium text-ink"
+        className="flex items-baseline gap-1.5 type-label text-ink"
       >
         {label}
         {required && (
@@ -73,12 +73,12 @@ export function FieldFrame({
 
 export function inputClasses(invalid?: boolean) {
   return cn(
-    "w-full rounded-[6px] border bg-surface px-3.5 text-[0.9375rem] text-ink shadow-xs transition-colors duration-150",
+    "w-full rounded-[6px] border bg-surface px-3 py-3 text-[0.9375rem] text-ink shadow-xs transition-colors duration-150",
     "placeholder:text-ink-subtle",
     "hover:border-line-strong",
     invalid
       ? "border-danger focus:border-danger"
-      : "border-line-strong focus:border-line-strong",
+      : "border-line-strong focus:border-emerald-600",
   );
 }
 
@@ -276,7 +276,7 @@ export function RadioGroupField({
 }) {
   return (
     <fieldset className="flex flex-col gap-3">
-      <legend className="mb-3 flex items-baseline gap-1.5 text-[0.875rem] font-medium text-ink">
+      <legend className="mb-3 flex items-baseline gap-1.5 type-label text-ink">
         {legend}
         {required && (
           <span aria-hidden className="text-emerald-600">
@@ -298,7 +298,7 @@ export function RadioGroupField({
                 "flex cursor-pointer gap-3 rounded-[6px] border p-4 transition-colors duration-150",
                 selected
                   ? "border-emerald-600 bg-emerald-100/60"
-                  : "border-line-strong bg-surface hover:border-forest-700/50",
+                  : "border-line-strong bg-surface hover:border-emerald-800/50",
               )}
             >
               <input

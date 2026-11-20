@@ -1,44 +1,70 @@
+"use client";
+
 import { ArrowRight } from "lucide-react";
 
 import { ButtonLink } from "@/components/ui/button";
 import { Container } from "@/components/ui/container";
+import { CAMPAIGN } from "@/lib/constants";
+import { DotGrid } from "@/components/motion/dot-grid";
+import { GhostMarquee } from "@/components/motion/text";
+import { MascotCharacter } from "@/components/hero/MascotCharacter";
 
 export function FinalCtaSection({
-  title = "Be part of the beginning.",
-  body = "We're looking for curious learners, problem-solvers, and aspiring builders who want to contribute to something meaningful.",
-  ctaLabel = "Apply to The First 100",
+  title = "The beginning is a hundred people.",
+  body = CAMPAIGN.tagline,
+  ctaLabel = "Apply for the Founding Cohort",
   ctaHref = "/apply",
 }: {
   title?: string;
   body?: string;
   ctaLabel?: string;
   ctaHref?: string;
-}) {
+} = {}) {
   return (
-    <section className="bg-[var(--color-canvas)] dark:bg-gray-900 text-[var(--color-ink)]">
+    <section
+      className="relative overflow-hidden border-t border-line bg-surface-raised text-ink py-24"
+    >
+      <DotGrid className="absolute inset-0 opacity-20 pointer-events-none" />
       <Container>
-        <div className="grid gap-8 py-16 md:py-20 lg:grid-cols-[1.15fr_0.85fr] lg:items-end lg:py-24">
-          <div>
-            <p className="type-label flex items-center gap-3 text-[var(--color-emerald-500)]">
-              <span aria-hidden className="h-px w-8 bg-emerald-500/50" />
-              The First 100
-            </p>
-            <h2 className="type-h2 mt-5 max-w-[18ch] text-[var(--color-ink)]">{title}</h2>
-            <p className="mt-5 max-w-[36rem] text-[0.9375rem] leading-relaxed text-[var(--color-ink]/65)">
-              {body}
-            </p>
-          </div>
-          <div className="lg:justify-self-end">
-            <ButtonLink href={ctaHref} variant="inverse" size="lg">
+        <div className="text-center">
+          <GhostMarquee
+            text="The First 100"
+            repeats={4}
+            direction="ltr"
+            speed={100}
+            className="mx-auto mb-8"
+            style={{
+              fontSize: "clamp(2rem, 8vw, 3.5rem)",
+            }}
+          />
+          <h2 className="type-display mb-6 max-w-[44rem] mx-auto">{title}</h2>
+          <p className="type-lead mt-0 max-w-[42rem] mx-auto">{body}</p>
+          <div className="mt-12 flex w-full flex-col items-center gap-4 sm:w-auto sm:flex-row sm:justify-center">
+            <ButtonLink
+              href={ctaHref}
+              variant="primary"
+              size="lg"
+              className="w-full sm:w-auto"
+            >
               {ctaLabel}
               <ArrowRight aria-hidden className="size-4" />
             </ButtonLink>
-            <p className="mt-4 max-w-[20rem] text-[0.75rem] leading-relaxed text-[var(--color-ink]/45) lg:text-right">
-              Applications are open worldwide. Submitting an application does not
-              guarantee acceptance.
-            </p>
           </div>
+          <p className="mt-8 max-w-[42rem] text-small text-ink-subtle mx-auto">
+            Applications are open worldwide. Submitting an application does not
+            guarantee acceptance.
+          </p>
         </div>
+
+        <MascotCharacter
+          color="emerald"
+          size={44}
+          state="idle"
+          trackPointer
+          lookAround={0.4}
+          className="absolute bottom-4 right-4 z-10"
+          style={{ transform: "rotate(-10deg)" }}
+        />
       </Container>
     </section>
   );

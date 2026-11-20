@@ -44,7 +44,7 @@ Dates are only recorded where the decision was actually taken during this build.
 **Chosen:** (b).
 **Reason:** A second theme would need a full token repaint and testing of every form state; scope is better spent on the application experience.
 **Consequences:** Adding dark mode later means auditing all tokens and both surface tones.
-**Status:** Implemented.
+**Status:** Superseded — the shipped site is dark-first with a fully designed light theme (D-009).
 
 ## D-005 — Submittable JSON envelope with an idempotency key
 
@@ -84,6 +84,41 @@ Dates are only recorded where the decision was actually taken during this build.
 **Chosen:** (c).
 **Reason:** The brief requires the twelve questions and forbids fabrication.
 **Consequences:** Some answers are negative or provisional; they must be updated when policies are decided.
+**Status:** Implemented.
+
+## D-009 — Dark-first theme with `@theme` token layer
+
+**Date:** 2026-11-20
+**Context:** The design-token layer was broken (plain `:root` variables, no `@theme`, lime-contaminated palette) and the theme provider caused hydration mismatches.
+**Options:** (a) keep plain CSS variables, (b) Tailwind v4 `@theme` with semantic tokens and `[data-theme]` switching.
+**Chosen:** (b).
+**Reason:** Utilities (`bg-canvas`, `text-ink`, `border-line`) only generate from `@theme`; `[data-theme]` switching avoids the flash/hydration bugs of `localStorage` in render.
+**Consequences:** All components use semantic tokens only; theme is persisted in `localStorage` under `codeyaar-theme` and bootstrapped by an inline `<head>` script; dark is the default.
+
+## D-010 — Mascot scope and attribution
+
+**Date:** 2026-11-20
+**Context:** Cursor mascots are ported from OpenMausBot (Apache-2.0).
+**Options:** (a) scatter mascots across sections, (b) restrict to hero (+ optional success state) with attribution.
+**Chosen:** (b).
+**Reason:** Keeps mascots decorative and on-brand per the reference composition, and satisfies the Apache-2.0 notice obligation (`NOTICE`, `THIRD_PARTY.md`).
+
+## D-011 — Animated text library in place of motion backgrounds
+
+**Date:** 2026-11-20
+**Context:** Scroll-linked and entrance motion was needed without adding libraries.
+**Options:** (a) GSAP/Three.js particles, (b) framer-motion + CSS custom properties.
+**Chosen:** (b).
+**Reason:** No new dependencies; motion limited to transform/opacity/stroke-offset; everything pauses under `prefers-reduced-motion`.
+**Status:** Implemented.
+
+## D-012 — Primary button text colour
+
+**Date:** 2026-11-20
+**Context:** The design specified white text on `emerald-600` primary buttons; WCAG AA requires 4.5:1 for normal text.
+**Options:** (a) white text on `emerald-600` (3.8:1, non-compliant), (b) canvas text on `emerald-600` (5.3:1 dark / 19:1 light).
+**Chosen:** (b).
+**Reason:** WCAG 2.2 AA takes precedence over the fill/text colour detail.
 **Status:** Implemented.
 
 ---

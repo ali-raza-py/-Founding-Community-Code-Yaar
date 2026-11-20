@@ -45,7 +45,7 @@ export function ReviewStep({
       </p>
 
       {!IS_SUBMISSION_CONFIGURED && (
-        <div className="rounded-[6px] border border-line-strong bg-surface-muted p-5">
+        <div className="rounded-[6px] border border-line-strong bg-surface p-5">
           <p className="text-[0.875rem] font-medium text-ink">
             Live submission is not configured in this build.
           </p>
@@ -113,3 +113,4 @@ export function ReviewStep({
     </div>
   );
 }
+

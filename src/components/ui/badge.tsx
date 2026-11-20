@@ -16,8 +16,8 @@ export function Badge({
       className={cn(
         "type-label inline-flex items-center rounded-[4px] px-2 py-1",
         tone === "accent"
-          ? "bg-emerald-100 text-forest-700"
-          : "bg-surface-muted text-ink-muted",
+          ? "bg-emerald-100 text-emerald-900"
+          : "bg-surface text-ink-muted",
         className,
       )}
     >

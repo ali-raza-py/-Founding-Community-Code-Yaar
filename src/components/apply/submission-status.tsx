@@ -9,10 +9,12 @@ import {
   Timer,
 } from "lucide-react";
 import Link from "next/link";
+import { useReducedMotion } from "framer-motion";
 import { useEffect, useRef } from "react";
 
 import { Button } from "@/components/ui/button";
 import { CAMPAIGN } from "@/lib/constants";
+import { MascotCharacter } from "@/components/hero/MascotCharacter";
 import type { SubmissionStatus as Status } from "@/types/application";
 
 function useFocusHeading<T extends HTMLElement>() {
@@ -29,18 +31,31 @@ export function SubmissionSuccess({
   reference: string | null;
 }) {
   const headingRef = useFocusHeading<HTMLHeadingElement>();
+  const reduced = useReducedMotion();
 
   return (
     <div
       role="status"
       aria-live="polite"
-      className="rounded-[8px] border border-emerald-600/30 bg-emerald-100/50 p-6 sm:p-8"
+      className="rounded-[8px] border border-emerald-600/30 bg-emerald-100/50 p-6 sm:p-8 relative overflow-hidden"
     >
+      {!reduced && (
+        <MascotCharacter
+          color="emerald"
+          size={44}
+          state="celebrate"
+          motion="arrive"
+          trackPointer={false}
+          lookAround={0.2}
+          className="absolute -top-4 -right-4 z-10"
+          style={{ transform: "rotate(-6deg)" }}
+        />
+      )}
       <CheckCircle2 aria-hidden className="size-6 text-emerald-700" />
       <h2
         ref={headingRef}
         tabIndex={-1}
-        className="mt-4 font-serif text-[2rem] leading-tight text-forest-950 focus:outline-none"
+        className="mt-4 type-h3 text-ink focus:outline-none sm:text-[2.25rem] sm:leading-none"
       >
         Your application has been sent.
       </h2>
@@ -82,13 +97,13 @@ export function SubmissionSuccess({
       <div className="mt-6 flex flex-col gap-3 sm:flex-row">
         <Link
           href="/cohort"
-          className="inline-flex h-10 items-center justify-center rounded-[6px] border border-line-strong bg-canvas px-4 text-[0.875rem] font-medium text-ink transition-colors hover:border-forest-700"
+          className="inline-flex h-10 items-center justify-center rounded-[6px] border border-line-strong bg-canvas px-4 text-[0.875rem] font-medium text-ink transition-colors hover:border-emerald-700"
         >
           Read about the cohort
         </Link>
         <Link
           href="/"
-          className="inline-flex h-10 items-center justify-center rounded-[6px] px-4 text-[0.875rem] font-medium text-forest-800 underline decoration-line-strong underline-offset-4 hover:decoration-emerald-600"
+          className="inline-flex h-10 items-center justify-center rounded-[6px] px-4 text-[0.875rem] font-medium text-emerald-400 underline decoration-line-strong underline-offset-4 hover:decoration-emerald-600"
         >
           Back to home
         </Link>
@@ -149,7 +164,7 @@ export function SubmissionError({
       role="alert"
       className={`rounded-[8px] border p-5 ${
         status.reason === "not-configured"
-          ? "border-line-strong bg-surface-muted"
+          ? "border-line-strong bg-surface"
           : "border-danger/30 bg-danger-soft/60"
       }`}
     >
@@ -206,3 +221,4 @@ export function SubmissionPending() {
     </p>
   );
 }
+

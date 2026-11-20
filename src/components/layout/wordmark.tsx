@@ -1,16 +1,20 @@
 import Link from "next/link";
+import { useTheme } from "@/lib/theme";
 import { cn } from "@/lib/utils";
 
 /**
- * Code Yaar mark. Dark mode only.
+ * Code Yaar wordmark. Adapts logo and text colour to the active theme.
  */
 export function Wordmark({
   className,
 }: {
   className?: string;
 }) {
-  const logoSrc = "/code-yaar-logo-light.png";
-  const textColor = "text-white";
+  const { theme } = useTheme();
+  const logoSrc =
+    theme === "light" ? "/code-yaar-logo.png" : "/code-yaar-logo-light.png";
+  const textColor = theme === "light" ? "text-ink" : "text-canvas";
+
   return (
     <Link
       href="/"
