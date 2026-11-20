@@ -11,7 +11,6 @@ import {
   writeReferralStorage,
   remainingReferrals,
   type AmbassadorReferralProfile,
-  type ReferralRecord,
 } from "@/lib/referral";
 import { Section, SectionInner } from "@/components/ui/section";
 import { SectionHeading } from "@/components/ui/section-heading";
@@ -91,16 +90,16 @@ function StatusBadge({ status }: { status: string }) {
 export default function AmbassadorDashboardPage() {
   const [storage, setStorage] = useState(() => readReferralStorage());
 
-  // Derive the ambassador profile from storage during render.
+  // Derive the ambassador email from session storage.
   const ambassadorEmail = typeof window !== "undefined"
     ? window.sessionStorage.getItem("codeyaar.ambassador-email")
     : null;
 
-  const profile = useMemo(() => {
-    if (!ambassadorEmail) return null;
+  // Create a profile if one doesn't exist yet (side effect in useEffect).
+  useEffect(() => {
+    if (!ambassadorEmail) return;
     const existing = storage.ambassadorProfiles[ambassadorEmail];
-    if (existing) return existing;
-
+    if (existing) return;
     const newCode = generateReferralCode();
     const newProfile: AmbassadorReferralProfile = {
       ambassadorEmail,
@@ -114,14 +113,18 @@ export default function AmbassadorDashboardPage() {
       rejectedReferrals: 0,
       lastUpdated: new Date().toISOString(),
     };
-    // Persist the new profile to localStorage.
     const updatedStorage = {
       ...storage,
       ambassadorProfiles: { ...storage.ambassadorProfiles, [ambassadorEmail]: newProfile },
     };
     setStorage(updatedStorage);
     writeReferralStorage(updatedStorage);
-    return newProfile;
+  }, [storage, ambassadorEmail]);
+
+  // Derive the profile from storage during render (read-only).
+  const profile = useMemo(() => {
+    if (!ambassadorEmail) return null;
+    return storage.ambassadorProfiles[ambassadorEmail] ?? null;
   }, [storage, ambassadorEmail]);
 
   const referralCode = profile?.referralCode ?? null;
