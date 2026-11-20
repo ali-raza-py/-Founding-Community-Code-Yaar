@@ -544,7 +544,7 @@ export default function ApplyPage() {
         <p className="mt-10 type-caption text-center">
           Applications are reviewed by people, not algorithms. Places are
           limited to one hundred founding members. Submission endpoint:
-          {configured ? "configured" : "not configured — submissions are accepted locally only"}.
+          {configured ? "configured — submitted over HTTPS" : "not set — applications saved to your browser locally"}.
         </p>
       </SectionInner>
     </Section>
