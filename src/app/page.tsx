@@ -1,6 +1,12 @@
 import type { Metadata } from "next";
 
 import { FoundingHero } from "@/components/sections/hero";
+import { MissionSection } from "@/components/sections/mission";
+import { PrinciplesSection } from "@/components/sections/principles";
+import { BenefitsSection } from "@/components/sections/benefits";
+import { CohortIntroSection } from "@/components/sections/cohort-intro";
+import { JourneySection } from "@/components/sections/journey";
+import { FinalCtaSection } from "@/components/sections/final-cta";
 import { Section, SectionInner } from "@/components/ui/section";
 import { SITE_URL } from "@/lib/constants";
 
@@ -26,9 +32,12 @@ export default function HomePage() {
   return (
     <>
       <FoundingHero />
-      <Section padded>
-        <SectionInner />
-      </Section>
+      <MissionSection />
+      <PrinciplesSection />
+      <BenefitsSection />
+      <CohortIntroSection />
+      <JourneySection />
+      <FinalCtaSection />
     </>
   );
 }
