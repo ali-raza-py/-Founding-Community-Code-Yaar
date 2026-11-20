@@ -87,13 +87,13 @@ export function SiteHeader() {
   return (
     <header
       className={cn(
-        "sticky top-0 z-50 w-full border-b",
+        "sticky top-[1rem] z-50 mx-4 sm:mx-6 lg:mx-8 max-w-[1152px] rounded-2xl border border-[#e8ece8]/70",
         scrolled
-          ? "shadow-sm border-[#e8ece8] bg-[#ffffff]/90 backdrop-blur-md"
-          : "border-[#e8ece8]/60 bg-[#ffffff]/80 backdrop-blur supports-[backdrop-filter]:bg-[#ffffff]/70",
+          ? "shadow-xl border-[#e8ece8] bg-[#ffffff]/95 backdrop-blur-md"
+          : "shadow-lg border-[#e8ece8]/50 bg-[#ffffff]/90 backdrop-blur supports-[backdrop-filter]:bg-[#ffffff]/80 transition-all duration-300",
       )}
     >
-      <div className="mx-auto flex h-16 max-w-[1152px] items-center justify-between px-4 sm:px-6 lg:px-8">
+      <div className="flex h-16 max-w-none items-center justify-between px-4">
         <Link
           href="/"
           className="flex items-center gap-2.5 rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#087a52] focus-visible:ring-offset-2 focus-visible:ring-offset-white transition-colors"
