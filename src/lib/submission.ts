@@ -76,6 +76,7 @@ function mapToWeb3Forms(envelope: ApplicationEnvelope): Record<string, unknown> 
     fullName: app.fullName ?? "",
     email: app.email ?? "",
     phone: "",  // intentionally blank
+    referral_code: envelope.referralCode ?? "",
     message: 
       `Full name: ${app.fullName ?? ""}\n` +
       `Email: ${app.email ?? ""}\n` +
@@ -98,6 +99,7 @@ function mapToWeb3Forms(envelope: ApplicationEnvelope): Record<string, unknown> 
       `Weekly time: ${app.weeklyTime ?? ""}\n` +
       `Preferred language: ${app.preferredLanguage ?? ""}\n` +
       `Time zone: ${app.timezone ?? ""}\n` +
+      `Referral code: ${envelope.referralCode ?? "none"}\n` +
       `Consent: true`,
   };
 }

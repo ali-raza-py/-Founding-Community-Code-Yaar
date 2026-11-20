@@ -186,6 +186,7 @@ export default function AmbassadorApplyPage() {
         formVersion: "1.0.0",
         submittedAt: new Date().toISOString(),
         application: values as unknown as ApplicationData,
+        referralCode: null,
       };
 
       setStatus({ state: "submitting" });

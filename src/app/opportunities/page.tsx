@@ -123,7 +123,7 @@ export default function OpportunitiesPage() {
                     Who should apply
                   </h3>
                   <ul className="space-y-3 prose-body">
-                    {programme.who.map((item, index) => (
+                    {programme.who.map((item) => (
                       <li key={item} className="flex items-start gap-2.5">
                         <span className="mt-0.5 shrink-0 text-emerald font-medium text-sm">
                           &mdash;
@@ -141,7 +141,7 @@ export default function OpportunitiesPage() {
                     Key expectations
                   </h3>
                   <ul className="space-y-3 prose-body">
-                    {programme.expectations.map((item, index) => (
+                    {programme.expectations.map((item) => (
                       <li key={item} className="flex items-start gap-2.5">
                         <span className="mt-0.5 shrink-0 text-emerald font-medium text-sm">
                           &mdash;

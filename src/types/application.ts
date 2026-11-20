@@ -25,6 +25,7 @@ export type ApplicationEnvelope = {
   formVersion: string;
   submittedAt: string;
   application: ApplicationData;
+  referralCode: string | null;
 };
 
 export type SubmissionFailureReason =

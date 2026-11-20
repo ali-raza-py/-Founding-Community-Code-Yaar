@@ -1,14 +1,15 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
+import { useCallback, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 
 import { EMPTY_APPLICATION, REVIEW_GROUPS } from "@/lib/application";
-import { clearDraft, getDraftSnapshot, getServerDraftSnapshot, saveDraft, subscribeToDraft, markSubmittedThisSession } from "@/lib/draft";
+import { clearDraft, markSubmittedThisSession } from "@/lib/draft";
 import { IS_SUBMISSION_CONFIGURED } from "@/lib/submission";
 import { COUNTRIES, AGE_RANGES, EDUCATION_LEVELS, EXPERIENCE_LEVELS, WEEKLY_TIME_OPTIONS, PRIVACY_CONSENT_TEXT, FORM_VERSION, TOTAL_STEPS, STEP_LABELS } from "@/lib/constants";
 import { personalInformationSchema, educationSchema, programmingBackgroundSchema, motivationSchema } from "@/lib/validation";
 import { submitApplication } from "@/lib/submission";
+import { extractReferralCode, COHORT_REFERRAL_KEY } from "@/lib/referral";
 import { type ApplicationData, type SubmissionStatus } from "@/types/application";
 import { Button } from "@/components/ui/button";
 import { Field, Input, Select, Textarea } from "@/components/ui/field";
@@ -35,27 +36,24 @@ export default function ApplyPage() {
   const [consent, setConsent] = useState(false);
 
   const submissionIdRef = useRef<string>(crypto.randomUUID());
-  const restoredRef = useRef(false);
-  const saveTimerRef = useRef<NodeJS.Timeout | null>(null);
 
-  const draft = useSyncExternalStore(
-    subscribeToDraft,
-    getDraftSnapshot,
-    getServerDraftSnapshot,
-  );
-  useEffect(() => {
-    if (!restoredRef.current && draft) {
-      restoredRef.current = true;
-      setValues(draft);
+  // Read referral code from URL during render (no effect needed).
+  const refFromUrl = typeof window !== "undefined"
+    ? new URLSearchParams(window.location.search).get("ref")
+    : null;
+  const storedRef = typeof window !== "undefined"
+    ? (() => { try { return window.sessionStorage.getItem(COHORT_REFERRAL_KEY); } catch { return null; } })()
+    : null;
+  const referralCode = useMemo(() => {
+    if (refFromUrl) {
+      const code = extractReferralCode(refFromUrl);
+      if (code) {
+        try { window.sessionStorage.setItem(COHORT_REFERRAL_KEY, code); } catch {}
+        return code;
+      }
     }
-  }, [draft]);
-  useEffect(() => {
-    if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
-    saveTimerRef.current = setTimeout(() => saveDraft(values), 600);
-    return () => {
-      if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
-    };
-  }, [values]);
+    return storedRef;
+  }, [refFromUrl, storedRef]);
 
   const setField = useCallback((key: keyof ApplicationData, value: string) => {
     setValues((current) => ({ ...current, [key]: value }));
@@ -120,6 +118,7 @@ export default function ApplyPage() {
         formVersion: FORM_VERSION,
         submittedAt: new Date().toISOString(),
         application: values,
+        referralCode: referralCode ?? null,
       };
 
       setStatus({ state: "submitting" });
@@ -149,7 +148,7 @@ export default function ApplyPage() {
         setStatus({ state: "error", reason: result.reason, status: result.status });
       }
     },
-    [values, consent, validateStep],
+    [values, consent, validateStep, referralCode],
   );
 
   const resetForm = useCallback(() => {
@@ -472,7 +471,13 @@ export default function ApplyPage() {
                   Reference: <span className="font-mono">{status.reference}</span>
                 </p>
               )}
-              <p className="mt-4 type-body">
+              {referralCode && (
+                <p className="mt-4 type-small text-ink-muted">
+                  Referred by ambassador:{" "}
+                  <span className="font-mono text-emerald">{referralCode}</span>
+                </p>
+              )}
+              <p className="mt-6 type-body">
                 Thank you for applying to The First 100. Your application will
                 be reviewed by the Code Yaar team, and you will be contacted by
                 email with the outcome.
