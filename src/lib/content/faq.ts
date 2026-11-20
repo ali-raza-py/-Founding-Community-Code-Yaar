@@ -55,9 +55,9 @@ export const faqs = [
   },
   {
     id: "certificate",
-    question: "Will I receive a certificate?",
+    question: "Will I receive founding recognition?",
     answer:
-      "A certificate is not currently part of the founding cohort, and founding membership is not a certification or a credential. If that changes, it will be stated on this site and in the cohort details before anyone is asked to rely on it.",
+      "Yes. Founding members of The First 100 receive founding recognition tied to their participation in the community. It recognizes your role as one of the earliest members and your contribution to shaping Code Yaar.",
   },
   {
     id: "job",

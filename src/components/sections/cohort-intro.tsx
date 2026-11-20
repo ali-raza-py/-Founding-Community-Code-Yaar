@@ -61,8 +61,8 @@ export function CohortIntroSection() {
                 </li>
               </ul>
               <p className="mt-6 type-caption text-[#6b7a70]">
-                We do not promise jobs, internships, scholarships, or
-                certifications. Founding recognition is tied to participation.
+                Founding recognition is tied to your participation in The
+                First 100.
               </p>
             </div>
           </div>

@@ -60,17 +60,18 @@ export function BenefitsSection() {
           ))}
         </div>
         <div className="mt-12 card-hairline p-8 lg:p-10">
-          <p className="type-label mb-3">About certification</p>
+          <p className="type-label mb-3">Founding recognition</p>
           <p className="type-body mb-4">
-            Code Yaar does not currently offer certificates, certifications,
-            jobs, internships, or scholarships through the founding cohort.
-            Founding membership is about participation, practice, and helping
-            build the community — not a credential.
+            Founding members receive founding recognition tied to their
+            participation in The First 100. This recognizes your role as one of
+            the earliest members of the Code Yaar community — your early
+            participation, feedback, and contribution help shape what comes
+            next.
           </p>
           <p className="type-body-muted">
-            If certification is ever added in the future, it will be announced
-            on this site and in the cohort details before anyone is asked to
-            rely on it.
+            Recognition is based on actual participation, not attendance or
+            seniority. It is a mark of being part of the beginning, not a job,
+            internship, or scholarship guarantee.
           </p>
         </div>
         <div className="mt-12 flex flex-col sm:flex-row gap-3 justify-center items-center">
