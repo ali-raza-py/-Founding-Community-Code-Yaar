@@ -215,18 +215,14 @@ export const ambassadorPreferenceSchema = z.object({
 export const ambassadorEducationSchema = z.object({
   institution: optionalText(120).optional(),
   fieldOfStudy: optionalText(100).optional(),
-  belongsToCommunity: z
-    .enum(["yes", "no"])
-    .refine(() => true, "Please answer whether you belong to a community or group."),
+  belongsToCommunity: z.enum(["yes", "no"]),
   communityName: optionalText(120).optional(),
   communityDescription: z
     .string()
     .trim()
     .min(20, "Please describe the community you can reach or hope to build (at least 20 characters).")
     .max(1000, "Please keep this under 1000 characters."),
-  hasLeadershipExperience: z
-    .enum(["yes", "no"])
-    .refine(() => true, "Please answer whether you have participated in volunteering or leadership initiatives."),
+  hasLeadershipExperience: z.enum(["yes", "no"]),
 });
 
 export const ambassadorOnlinePresenceSchema = z.object({
@@ -273,9 +269,7 @@ export const ambassadorAvailabilitySchema = z.object({
       (value) => ambassadorWeeklyTimeValues.includes(value),
       "Select your weekly availability.",
     ),
-  canAttendMeetings: z.enum(["yes", "no"], {
-    required_error: "Please answer whether you can participate in occasional online meetings.",
-  }),
+  canAttendMeetings: z.enum(["yes", "no"]),
 });
 
 export const ambassadorAgreementSchema = z.object({

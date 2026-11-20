@@ -2,11 +2,8 @@
 
 import {
   useCallback,
-  useEffect,
-  useMemo,
   useRef,
   useState,
-  useSyncExternalStore,
 } from "react";
 import Link from "next/link";
 
@@ -28,7 +25,6 @@ import {
   ambassadorMotivationSchema,
   ambassadorAvailabilitySchema,
   ambassadorAgreementSchema,
-  ambassadorSchema,
 } from "@/lib/validation";
 import { submitApplication, IS_SUBMISSION_CONFIGURED } from "@/lib/submission";
 import { type ApplicationData } from "@/types/application";
@@ -129,7 +125,6 @@ export default function AmbassadorApplyPage() {
   const [status, setStatus] = useState<ReturnType<typeof emptyStatus>>(emptyStatus);
 
   const submissionIdRef = useRef<string>(crypto.randomUUID());
-  const saveTimerRef = useRef<NodeJS.Timeout | null>(null);
 
   const setField = useCallback((key: keyof AmbassadorValues, value: string | boolean) => {
     setValues((current) => ({ ...current, [key]: value }));
@@ -269,7 +264,6 @@ export default function AmbassadorApplyPage() {
   }
 
   const stepLabel = AMBASSADOR_STEP_LABELS[step - 1];
-  const isFinalStep = step === AMBASSADOR_TOTAL_STEPS;
 
   return (
     <Section padded>

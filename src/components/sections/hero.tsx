@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 
-import { Section, SectionInner } from "@/components/ui/section";
+import { SectionInner } from "@/components/ui/section";
 
 export function FoundingHero() {
   const [scrollProgress, setScrollProgress] = useState(0);

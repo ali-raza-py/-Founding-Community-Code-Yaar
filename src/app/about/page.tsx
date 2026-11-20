@@ -3,7 +3,6 @@ import Image from "next/image";
 
 import { Section, SectionInner } from "@/components/ui/section";
 import { SectionHeading } from "@/components/ui/section-heading";
-import { Badge } from "@/components/ui/badge";
 import { SITE_URL } from "@/lib/constants";
 
 const founders = [
