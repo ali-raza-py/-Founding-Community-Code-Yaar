@@ -132,7 +132,7 @@ export default function ApplyPage() {
         let message = "Unable to submit your application. Please try again.";
         if (result.reason === "not-configured") {
           message =
-            "Application submission is not configured on this site yet. Your answers have been saved locally — please try again later or contact the Code Yaar team.";
+            "Application submission is not configured on this site yet — please try again later or contact the Code Yaar team.";
         } else if (result.reason === "timeout") {
           message = "The request timed out. Please try again.";
         } else if (result.reason === "network") {
@@ -544,7 +544,9 @@ export default function ApplyPage() {
         <p className="mt-10 type-caption text-center">
           Applications are reviewed by people, not algorithms. Places are
           limited to one hundred founding members. Submission endpoint:
-          {configured ? "configured — submitted over HTTPS" : "not set — applications saved to your browser locally"}.
+          {configured
+            ? "configured — submitted to Web3Forms"
+            : "not configured — submissions disabled"}.
         </p>
       </SectionInner>
     </Section>
