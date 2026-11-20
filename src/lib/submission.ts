@@ -114,7 +114,7 @@ function mapToWeb3Forms(envelope: ApplicationEnvelope): Record<string, unknown> 
       `Country: ${app.country ?? ""}\n` +
       `City: ${app.city ?? ""}\n` +
       `Region: ${app.region ?? ""}\n` +
-      `Age range: ${app.ageRange ?? ""}\n` +
+      `Age: ${app.age ?? ""}\n` +
       `Education: ${app.educationLevel ?? ""}\n` +
       `Field of study: ${app.fieldOfStudy ?? ""}\n` +
       `Year/grade: ${app.yearOrGrade ?? ""}\n` +

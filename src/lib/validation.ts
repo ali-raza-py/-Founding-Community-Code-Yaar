@@ -1,7 +1,6 @@
 import { z } from "zod";
 
 import {
-  AGE_RANGES,
   EDUCATION_LEVELS,
   EXPERIENCE_LEVELS,
   WEEKLY_TIME_OPTIONS,
@@ -11,7 +10,6 @@ import {
   AMBASSADOR_WEEKLY_TIME_OPTIONS,
 } from "@/lib/constants";
 
-const ageValues = AGE_RANGES.map((option) => option.value) as [string, ...string[]];
 const educationValues = EDUCATION_LEVELS.map(
   (option) => option.value,
 ) as [string, ...string[]];
@@ -63,10 +61,11 @@ export const personalInformationSchema = z.object({
     .min(1, "Enter your city.")
     .max(80, "Please keep this under 80 characters."),
   region: optionalText(80),
-  ageRange: z
-    .string()
-    .min(1, "Select your age range.")
-    .refine((value) => ageValues.includes(value), "Select your age range."),
+  age: z
+    .number()
+    .min(13, "You must be at least 13 years old to apply.")
+    .max(120, "Please enter a valid age.")
+    .refine((value) => Number.isInteger(value), "Please enter a whole number."),
 });
 
 export const educationSchema = z.object({

@@ -6,7 +6,7 @@ export const EMPTY_APPLICATION: ApplicationData = {
   country: "",
   city: "",
   region: "",
-  ageRange: "",
+  age: 0,
   educationLevel: "",
   institution: "",
   fieldOfStudy: "",
@@ -36,7 +36,7 @@ export const REVIEW_GROUPS = [
       { key: "country", label: "Country" },
       { key: "city", label: "City" },
       { key: "region", label: "Region / state" },
-      { key: "ageRange", label: "Age range" },
+      { key: "age", label: "Age" },
     ],
   },
   {
