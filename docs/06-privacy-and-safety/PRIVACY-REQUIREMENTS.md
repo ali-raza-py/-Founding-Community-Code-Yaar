@@ -1,63 +1,43 @@
 # Privacy Requirements
 
-**Status:** Requirements confirmed as obligations; implementation partially complete. **Not legal advice.**
+## Status
 
-## Must-haves before collecting a single real application
+This page describes current handling. Not legal advice; not yet reviewed by a lawyer. TBD items require founder confirmation before launch.
 
-1. **A named processor.** The submission provider must be chosen and named on `/privacy`.
-2. **A working contact route.** A privacy contact (email or form) must exist. Currently `TBD` on the site.
-3. **A retention period.** Stated in days/months, not "as long as necessary".
-4. **A deletion procedure.** Who does it, within what time, and how requests are verified.
-5. **An access list.** Who can see applications, on what basis.
-6. **Guardian-consent process** for applicants under 18 (see [`APPLICANT-SAFETY.md`](APPLICANT-SAFETY.md)).
-7. **Legal review** for the jurisdictions where applicants live. The brief forbids claiming compliance; that does not remove the obligation to assess it.
+## What we collect
 
-## Principles applied
+Required: full name, email, country, city, age range, education level, year/grade, experience level, languages, motivation, learning goals, contribution, weekly availability, preferred language, time zone.
+Optional: region, institution, field of study, previous projects, GitHub, LinkedIn, portfolio.
 
-| Principle | Implementation |
-| --- | --- |
-| Data minimisation | Only fields needed for review; optional fields explicitly optional; no DOB, no phone, no docs |
-| Purpose limitation | Fields are collected for review, notification and cohort planning — stated on `/privacy` |
-| Storage limitation | No server storage by this project; retention belongs to the provider and must be defined |
-| Integrity & confidentiality | Transport over HTTPS; access limited to reviewers; no public posting of applications |
-| Transparency | `/privacy` explains categories, purposes, access, retention and rights in plain language |
-| Accountability | Founder owner named in [`../05-operations/TEAM-RESPONSIBILITIES.md`](../05-operations/TEAM-RESPONSIBILITIES.md) |
+Never collected: date of birth, home address, phone number, identity documents, government ID numbers, photographs, sensitive personal circumstances.
 
-## What the site must never claim
+## How it is used
 
-- GDPR/CCPA compliance (or any other regime) without review.
-- "Bank-level encryption" or similar unverified security language.
-- That data is "never shared" if a third-party processor stores it.
-- That data is deleted after a period the team does not actually enforce.
+Review applications, contact selected applicants about outcomes, onboard members, communicate about community activities. Not sold, not used for advertising, no marketing list, no tracking/analytics on the site.
 
-## Public privacy page requirements
+## Access
 
-The page must state, accurately:
+Limited to Code Yaar founding team members who review applications and run the cohort. Not published, not visible to other applicants/members. Transmitted to an external submission service (provider not yet selected — TBD).
 
-- what is collected and why (per category),
-- who can access it,
-- where it is stored (processor, once chosen),
-- how long it is kept,
-- how to request access, correction or deletion,
-- how minors are handled,
-- what to do if something goes wrong.
+## Storage
 
-Anything not yet decided is presented as "not yet confirmed" rather than invented. Bare `TBD` in public copy is acceptable only alongside an honest sentence.
+No database on this site. Draft saved in applicant's browser (localStorage) until submission. Retention period for submitted applications not yet confirmed — TBD.
 
-## Cookies and tracking
+## Rights
 
-None. No analytics, no advertising pixels, no embeds. If this changes, the privacy page must change first, and consent handling must be designed.
+Applicants may ask what information is held, request correction or deletion, or withdraw an application. No dedicated privacy contact address confirmed yet — TBD.
 
-## Breach handling (proposed)
+## Minors
 
-1. Contain: revoke access, disable endpoint if needed.
-2. Assess: what data, how many applicants, what risk.
-3. Notify: affected applicants and, where required by law, authorities. Timelines `TBD` — legal input needed.
-4. Record: what happened and what changed.
+Age range collected (never date of birth). Guardian-consent/safeguarding process still being finalised; must be in place before any applicant under 18 is accepted.
 
-## Related documents
+## Security
 
-- [`DATA-COLLECTION.md`](DATA-COLLECTION.md)
-- [`DATA-RETENTION.md`](DATA-RETENTION.md)
-- [`APPLICANT-SAFETY.md`](APPLICANT-SAFETY.md)
-- [`../08-planning/RISKS-AND-ASSUMPTIONS.md`](../08-planning/RISKS-AND-ASSUMPTIONS.md)
+Submitted over encrypted HTTPS to the configured endpoint. No security certifications claimed; no system perfectly secure.
+
+## TBD before launch
+
+- Submission provider name/location/terms
+- Retention period
+- Privacy contact address
+- Legal review

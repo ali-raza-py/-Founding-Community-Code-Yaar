@@ -1,36 +1,27 @@
-import type { ReactNode } from "react";
-
-import { Container } from "@/components/ui/container";
+import * as React from "react";
 import { cn } from "@/lib/utils";
 
-export function Section({
-  id,
-  children,
-  className,
-  containerClassName,
-  tone = "canvas",
-  bordered = true,
-}: {
-  id?: string;
-  children: ReactNode;
-  className?: string;
-  containerClassName?: string;
-  tone?: "canvas" | "surface" | "raised" | "muted";
-  bordered?: boolean;
-}) {
+export interface SectionProps extends React.HTMLAttributes<HTMLElement> {
+  padded?: boolean;
+}
+
+export function Section({ children, padded, className, ...props }: SectionProps) {
   return (
     <section
-      id={id}
       className={cn(
-        "py-16 md:py-24 lg:py-32",
-        bordered && "border-t border-line",
-        tone === "canvas" && "bg-canvas",
-        tone === "surface" && "bg-surface",
-        tone === "raised" && "bg-surface-raised",
-        tone === "muted" && "bg-surface",
+        "relative isolate",
+        padded && "py-[6rem] sm:py-[8rem] lg:py-[10rem]",
         className,
-      )}>
-      <Container className={containerClassName}>{children}</Container>
+      )}
+      {...props}
+    >
+      {children}
     </section>
+  );
+}
+
+export function SectionInner({ className, ...props }: React.HTMLAttributes<HTMLElement>) {
+  return (
+    <div className={cn("mx-auto max-w-[1152px] px-4 sm:px-6 lg:px-8", className)} {...props} />
   );
 }

@@ -1,27 +1,23 @@
 import type { Metadata } from "next";
 
-import { FinalCtaSection } from "@/components/sections/final-cta-section";
-import { PageHero } from "@/components/sections/page-hero";
-import { Section } from "@/components/ui/section";
+import { Section, SectionInner } from "@/components/ui/section";
 import { SectionHeading } from "@/components/ui/section-heading";
-import {
-  cohortIntro,
-  definition,
-  expectations,
-  globalParticipation,
-  process,
-  whoShouldApply,
-} from "@/lib/content/cohort";
+import { Badge } from "@/components/ui/badge";
+import { SITE_URL } from "@/lib/constants";
+
+const description =
+  "The First 100 — Code Yaar Global Founding Cohort 2026–27. What the founding cohort is, who should apply, how selection works, and what is available today.";
 
 export const metadata: Metadata = {
-  title: "The First 100",
-  description:
-    "What the Code Yaar Global Founding Cohort is, who should apply, what members are expected to contribute, and how the selection process works.",
-  alternates: { canonical: "/cohort" },
+  metadataBase: new URL(SITE_URL),
+  title: {
+    default: "Code Yaar | The First 100 — Founding Cohort",
+    template: "%s — Code Yaar",
+  },
+  description,
   openGraph: {
-    title: "The First 100 — Global Founding Cohort 2026–27",
-    description:
-      "A global founding cohort of learners and aspiring developers helping shape Code Yaar. Applications are open worldwide.",
+    title: "Code Yaar | The First 100 — Founding Cohort",
+    description,
     url: "/cohort",
   },
 };
@@ -29,161 +25,197 @@ export const metadata: Metadata = {
 export default function CohortPage() {
   return (
     <>
-      <PageHero
-        eyebrow="The First 100 · 2026–27"
-        title="A hundred places. A community being built from the beginning."
-        lead={cohortIntro}
-        aside={
-          <div className="rounded-[10px] border border-line-strong bg-surface p-6">
-            <p className="type-label text-ink-subtle">At a glance</p>
-            <dl className="mt-4 divide-y border-y border-line">
-              <div className="flex items-baseline justify-between gap-4 py-2.5 border-t border-line">
-                <dt className="text-[0.8125rem] text-ink-muted">Cohort size</dt>
-                <dd className="text-[0.8125rem] font-medium text-ink">
-                  100 founding members
-                </dd>
-              </div>
-              <div className="flex items-baseline justify-between gap-4 py-2.5 border-t border-line">
-                <dt className="text-[0.8125rem] text-ink-muted">Location</dt>
-                <dd className="text-[0.8125rem] font-medium text-ink">
-                  Remote, worldwide
-                </dd>
-              </div>
-              <div className="flex items-baseline justify-between gap-4 py-2.5 border-t border-line">
-                <dt className="text-[0.8125rem] text-ink-muted">Format</dt>
-                <dd className="text-[0.8125rem] font-medium text-ink">
-                  Async-first
-                </dd>
-              </div>
-              <div className="flex items-baseline justify-between gap-4 py-2.5 border-t border-line">
-                <dt className="text-[0.8125rem] text-ink-muted">Experience needed</dt>
-                <dd className="text-[0.8125rem] font-medium text-ink">
-                  None required
-                </dd>
-              </div>
-              <div className="flex items-baseline justify-between gap-4 py-2.5 border-t border-line">
-                <dt className="text-[0.8125rem] text-ink-muted">Fee</dt>
-                <dd className="text-[0.8125rem] font-medium text-ink">
-                  No fee is being charged
-                </dd>
-              </div>
-            </dl>
-          </div>
-        }
-      />
-
-      <Section bordered={false}>
-        <div className="grid gap-12 lg:grid-cols-[0.85fr_1.15fr] lg:gap-24">
-          <SectionHeading number="01" eyebrow="Definition" title={definition.title} />
-          <div className="space-y-5 lg:pt-1">
-            {definition.paragraphs.map((paragraph) => (
-              <p
-                key={paragraph}
-                className="text-[0.9375rem] leading-relaxed text-ink-muted"
-              >
-                {paragraph}
-              </p>
-            ))}
-          </div>
-        </div>
-      </Section>
-
-      <Section tone="surface">
-        <div className="grid gap-12 lg:grid-cols-2 lg:gap-24">
-          <div>
-            <SectionHeading number="02" eyebrow="Eligibility" title={whoShouldApply.title} />
-            <ul className="mt-7 divide-y border-y border-line">
-              {whoShouldApply.items.map((item) => (
-                <li key={item} className="flex gap-3 py-3 border-t border-line">
-                  <span
-                    aria-hidden
-                    className="mt-[0.55em] block size-1.5 shrink-0 rounded-full bg-emerald-600/20"
-                  />
-                  <span className="text-[0.9375rem] leading-relaxed text-ink-muted">
-                    {item}
-                  </span>
-                </li>
-              ))}
-            </ul>
-            <p className="mt-5 text-[0.875rem] font-medium leading-relaxed text-emerald-400">
-              {whoShouldApply.note}
-            </p>
-          </div>
-
-          <div>
-            <SectionHeading number="03" eyebrow="Commitment" title={expectations.title} />
-            <ul className="mt-7 divide-y border-y border-line">
-              {expectations.items.map((item) => (
-                <li key={item} className="flex gap-3 py-3 border-t border-line">
-                  <span
-                    aria-hidden
-                    className="mt-[0.55em] block size-1.5 shrink-0 rounded-full bg-emerald-600/20"
-                  />
-                  <span className="text-[0.9375rem] leading-relaxed text-ink-muted">
-                    {item}
-                  </span>
-                </li>
-              ))}
-            </ul>
-            <p className="mt-5 text-[0.875rem] font-medium leading-relaxed text-emerald-400">
-              {expectations.note}
-            </p>
-          </div>
-        </div>
-      </Section>
-
-      <Section id="process">
-        <SectionHeading
-          number="04"
-          eyebrow="Process"
-          title={process.title}
-          intro="Four stages, clearly stated. The review timeline is not published yet, because we have not measured our capacity to meet one."
-        />
-
-        <ol className="mt-12 grid gap-px border-y border-line bg-line md:grid-cols-4">
-          {process.steps.map((step, index) => (
-            <li key={step.title} className="bg-canvas p-6">
-              <p className="type-label tabular-nums text-emerald-600/25">
-                {String(index + 1).padStart(2, "0")}
-              </p>
-              <h3 className="type-h3 mt-4 text-ink">{step.title}</h3>
-              <p className="mt-2.5 text-[0.875rem] leading-relaxed text-ink-muted">
-                {step.detail}
-              </p>
-            </li>
-          ))}
-        </ol>
-
-        <p className="mt-6 max-w-[52rem] border-l-2 border-danger/50 pl-4 text-[0.875rem] leading-relaxed text-ink">
-          {process.caveat}
-        </p>
-      </Section>
-
-      <Section tone="surface">
-        <div className="grid gap-12 lg:grid-cols-[0.85fr_1.15fr] lg:gap-24">
+      <Section padded>
+        <SectionInner>
           <SectionHeading
-            number="05"
-            eyebrow="Participation"
-            title={globalParticipation.title}
+            eyebrow="The First 100"
+            title="What is the Founding Cohort?"
+            description={
+              <>
+                The founding cohort is the first group of members in the Code
+                Yaar community. It is deliberately small — one hundred places,
+                filled through open applications rather than invitations.
+                Founding members are early participants: they take part in
+                practical activities as they become available, contribute
+                feedback, and help establish a culture that later members will
+                join.
+              </>
+            }
           />
-          <div className="space-y-5 lg:pt-1">
-            {globalParticipation.paragraphs.map((paragraph) => (
-              <p
-                key={paragraph}
-                className="text-[0.9375rem] leading-relaxed text-ink-muted"
-              >
-                {paragraph}
-              </p>
-            ))}
-          </div>
-        </div>
+        </SectionInner>
       </Section>
 
-      <FinalCtaSection
-        title="If this sounds like the group you have been looking for."
-        body="Applications take about ten minutes. You do not need a portfolio, a GitHub account, or an impressive résumé — just a clear reason to join."
-        ctaLabel="Start your application"
-      />
+      <Section padded className="bg-[#f2f5f3]">
+        <SectionInner>
+          <div className="grid gap-10 lg:grid-cols-2">
+            <div>
+              <h2 className="mb-4">Who should apply?</h2>
+              <p className="type-body mb-4">
+                The cohort welcomes students, beginners, self-taught learners,
+                and aspiring developers. Advanced technical experience is not
+                required — curiosity, consistency, and a willingness to learn
+                matter more than a long list of technologies.
+              </p>
+              <ul className="space-y-3 prose-body">
+                <li>Students interested in programming and computer science.</li>
+                <li>
+                  Beginners who want to develop practical skills rather than
+                  collect courses.
+                </li>
+                <li>Self-taught learners who have been working alone.</li>
+                <li>
+                  Aspiring developers preparing for a first role or a first
+                  serious project.
+                </li>
+                <li>People who enjoy building projects and showing unfinished work.</li>
+              </ul>
+            </div>
+            <div className="hidden lg:block">
+              <div className="card-hairline p-8 lg:p-10">
+                <p className="type-label mb-3">Who this is for</p>
+                <ul className="space-y-3 prose-body">
+                  <li className="flex items-start gap-3">
+                    <Badge variant="outline" className="shrink-0 mt-0.5">
+                      Open to all
+                    </Badge>
+                    No mandatory programming experience.
+                  </li>
+                  <li className="flex items-start gap-3">
+                    <Badge variant="outline" className="shrink-0 mt-0.5">
+                      Global
+                    </Badge>
+                    Applications welcome from anywhere.
+                  </li>
+                  <li className="flex items-start gap-3">
+                    <Badge variant="outline" className="shrink-0 mt-0.5">
+                      Asynchronous first
+                    </Badge>
+                    Time zones do not decide who can take part.
+                  </li>
+                  <li className="flex items-start gap-3">
+                    <Badge variant="outline" className="shrink-0 mt-0.5">
+                      Limited to 100
+                    </Badge>
+                    Founding cohort places only.
+                  </li>
+                </ul>
+              </div>
+            </div>
+          </div>
+        </SectionInner>
+      </Section>
+
+      <Section padded>
+        <SectionInner>
+          <SectionHeading
+            eyebrow="What to expect"
+            title="What members contribute"
+            description="Founding members are participants, not an audience. Honest participation matters more than seniority."
+          />
+          <div className="mt-10 grid gap-6 sm:grid-cols-3">
+            {[
+              {
+                title: "Participate constructively",
+                detail: "Respect other members and contribute to discussions in good faith.",
+              },
+              {
+                title: "Share what does not work",
+                detail: "Talk about the parts that failed — that is often the most useful part.",
+              },
+              {
+                title: "Give useful feedback",
+                detail: "Specific, honest input when asked — not just encouragement.",
+              },
+              {
+                title: "Attempt practical activities",
+                detail: "Take part when activities are available, at your own pace.",
+              },
+              {
+                title: "Communicate honestly",
+                detail: "Say when you cannot take part, rather than disappearing quietly.",
+              },
+              {
+                title: "Contribute realistically",
+                detail: "Give the time you can actually keep — two honest hours beat twenty planned.",
+              },
+            ].map((item, index) => (
+              <div key={item.title} className="card-hairline p-6">
+                <span className="type-label block mb-2">{index + 1}</span>
+                <h4 className="mb-2">{item.title}</h4>
+                <p className="type-body">{item.detail}</p>
+              </div>
+            ))}
+          </div>
+        </SectionInner>
+      </Section>
+
+      <Section padded className="bg-[#f2f5f3]">
+        <SectionInner>
+          <SectionHeading
+            eyebrow="Selection"
+            title="How selection works"
+            description="Applications are read by a real person. Places are limited to one hundred founding members."
+          />
+          <ol className="mt-8 prose-body list-disc list-inside space-y-3">
+            <li>
+              <strong>Application submission.</strong> Complete the five-step
+              form about your background, motivation, and what you could
+              contribute.
+            </li>
+            <li>
+              <strong>Application review.</strong> A person on the team reads
+              your application. Selection considers motivation, willingness to
+              learn, interest in practical work, collaboration, and realistic
+              availability — not existing skill level.
+            </li>
+            <li>
+              <strong>Selection notification.</strong> You are contacted by
+              email with the outcome. A review timeline has not been published
+              yet; we will not promise a date we cannot meet.
+            </li>
+            <li>
+              <strong>Onboarding.</strong> Selected applicants receive
+              onboarding information: community guidelines, how to introduce
+              yourself, and the first optional activity.
+            </li>
+          </ol>
+          <p className="mt-6 type-small text-[#6b7a70]">
+            Submitting an application does not guarantee acceptance.
+          </p>
+        </SectionInner>
+      </Section>
+
+      <Section padded>
+        <SectionInner>
+          <SectionHeading
+            eyebrow="Global participation"
+            title="One community, different countries"
+            description="Applications are open worldwide, and activities are designed for every time zone."
+          />
+          <div className="mt-8 grid gap-6 sm:grid-cols-3">
+            {[
+              "Applications are welcome from anywhere in the world.",
+              "Activities are designed to be asynchronous-first.",
+              "Live sessions, where they happen, are optional.",
+              "English is the working language of the site.",
+              "Preferred language is collected to plan support — never to filter applicants.",
+              "One hundred founding members, assembled from scratch.",
+            ].map((item) => (
+              <div key={item} className="flex items-start gap-3">
+                <span className="mt-0.5 shrink-0 text-[#087a52] font-medium">
+                  &mdash;
+                </span>
+                <p className="type-body m-0">{item}</p>
+              </div>
+            ))}
+          </div>
+          <p className="mt-6 type-small text-[#6b7a70]">
+            Because the community is new, some activities and processes are
+            still being designed. We say so rather than describing a programme
+            that does not exist yet.
+          </p>
+        </SectionInner>
+      </Section>
     </>
   );
 }

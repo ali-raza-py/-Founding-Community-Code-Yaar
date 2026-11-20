@@ -1,71 +1,49 @@
 # Project Overview
 
-**Status:** Implemented (site + docs in this repository)
+**Project:** Code Yaar Global Founding Community website rebuild
+**Repository:** `C:\Users\HP\-Founding-Community-Code-Yaar`
+**Stack:** Next.js 16 (App Router), React 19, TypeScript, Tailwind CSS v4
+**Deployment:** Static export (`next.config.ts` `output: "export"`)
 
-## What this repository is
+## Purpose
 
-A standalone marketing and application website for the **Code Yaar Global Founding Community**, a community initiative built around the launch campaign **The First 100** and the **Global Founding Cohort 2026–27**.
+The founding community website is a separate, frontend-only community initiative for Code Yaar's "The First 100" — the initial global founding cohort. It is not the Code Yaar learning platform and does not connect to its internal systems.
 
-It introduces the community, explains the cohort, answers questions, publishes privacy information, and accepts applications through a custom multi-step form.
+## Required routes
 
-## What this repository is not
+| Route | Purpose |
+|---|---|
+| `/` | Homepage — campaign hero, mission, principles, cohort intro, journey, CTA |
+| `/about` | About Code Yaar and the founding team (Ali Raza, Abdullah, Shabbar) |
+| `/cohort` | The First 100 — what it is, who applies, selection, global participation |
+| `/apply` | Five-step custom application form with draft persistence and submission |
+| `/faq` | Frequently asked questions (accordion) |
+| `/privacy` | Privacy information — data categories, handling, rights, minors |
 
-- It is **not** the Code Yaar learning platform.
-- It is **not** a second Code Yaar product.
-- It has **no backend**, database, authentication or API routes.
-- It does **not** read from or write to the main Code Yaar systems.
+## What was removed (failed UI)
 
-The separation is deliberate: the community site can ship, change and be deployed independently of the platform, and it cannot become an accidental source of truth for learner data.
+- Dark-first theme (`canvas: #07110F`) and decorative theme toggle
+- Kinetic hero (outline ghost rows, drifting marquees, mascot cursor arrows, orbiting ribbon)
+- 10×10 decorative dot grid
+- framer-motion presentational animations (char reveal, scramble, word-cycle, gradient sweep)
+- Glassmorphism/backdrop-blur cards and giant active indicators
+- `/benefits` route (duplicated homepage content)
+- Mascot/bot illustrations and floating decorative elements
+- Unused UI dependencies
 
-## Scope at a glance
+## What was preserved
 
-| Area | Summary |
-| --- | --- |
-| Public pages | `/`, `/about`, `/cohort`, `/apply`, `/faq`, `/privacy` |
-| Application | Five-step native form, client-validated, submitted to one external endpoint |
-| Rendering | Static for all informational pages; client components only for nav, FAQ accordion and the form |
-| Stack | Next.js (App Router), TypeScript, Tailwind CSS v4, Lucide icons |
-| Persistence | None on the server. Optional in-browser draft only, user-clearable |
-| Analytics | None |
-| Authentication | None |
+- `src/lib/constants.ts`, `validation.ts`, `application.ts`, `draft.ts`, `submission.ts`, `utils.ts`
+- `src/types/application.ts`
+- `src/lib/content/*` (home, about, cohort, faq, privacy — honest copy, TBD-marked where unresolved)
+- `public/og-image.png`, `robots.ts`, `sitemap.ts`
 
-## Identity
+## Configuration requiring founder approval
 
-| Item | Value |
-| --- | --- |
-| Organization | Code Yaar |
-| Initiative | Code Yaar Global Founding Community |
-| Campaign | The First 100 |
-| Program | Global Founding Cohort 2026–27 |
-| Tagline | Think. Build. Evolve. |
-| Core message | One community. Different countries. One shared ambition. |
+- `NEXT_PUBLIC_APPLICATION_ENDPOINT` — the submission endpoint (applications are NOT submitted until configured)
+- `NEXT_PUBLIC_WEB3FORMS_ACCESS_KEY` — optional Web3Forms access key
+- `NEXT_PUBLIC_APPLICATION_PUBLIC_KEY` — optional public key header
+- `NEXT_PUBLIC_APPLICATION_TIMEOUT_MS` — request timeout
+- `NEXT_PUBLIC_SITE_URL` — site URL for metadata/sitemap
 
-## Relationship to the Code Yaar platform
-
-Code Yaar is a practical programming education platform in development. Its direction is a fuller learning loop: understand concepts, practise problem-solving, apply knowledge in projects, develop real skills, learn collaboratively, get guidance, and demonstrate progress through work.
-
-The founding community supports that loop from the community side. It brings motivated learners together early, so that the culture of practical learning exists before the platform is complete.
-
-The community site therefore describes the platform **only as a direction**, never as a finished product, and never with feature-level promises.
-
-## Repository contents
-
-```text
-docs/                 Product, design, technical and operational documentation
-public/               Static assets (favicon, social preview)
-src/app/              Routes (App Router)
-src/components/       Layout, sections, forms, UI primitives
-src/lib/              Constants, validation, submission adapter, content data
-src/types/            Shared TypeScript types
-```
-
-## Ownership
-
-Founding team roles are listed in [`05-operations/TEAM-RESPONSIBILITIES.md`](../05-operations/TEAM-RESPONSIBILITIES.md). No additional responsibilities are assigned in this repository without founder confirmation.
-
-## Related documents
-
-- [PRODUCT-VISION.md](PRODUCT-VISION.md)
-- [BRAND-AND-POSITIONING.md](BRAND-AND-POSITIONING.md)
-- [../02-product/PRODUCT-REQUIREMENTS.md](../02-product/PRODUCT-REQUIREMENTS.md)
-- [../04-technical/TECHNICAL-ARCHITECTURE.md](../04-technical/TECHNICAL-ARCHITECTURE.md)
+No credentials, secrets, or personal data are committed to the repository.

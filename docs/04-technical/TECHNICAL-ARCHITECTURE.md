@@ -1,116 +1,54 @@
 # Technical Architecture
 
-**Status:** Implemented.
-
-## Shape
-
-A single Next.js App Router application, statically rendered, with no server-side logic owned by this project.
-
-```text
-Browser
-  │
-  ├── Static HTML/CSS (all informational pages)
-  ├── Small client bundles (nav, FAQ accordion, application form)
-  │
-  └── fetch POST ──► Configurable external submission endpoint
-                     (owned by the team; provider TBD)
-```
-
-There is no `app/api` directory, no server actions, no middleware, no database client, no auth.
-
 ## Stack
 
-| Layer | Choice | Version |
-| --- | --- | --- |
-| Framework | Next.js App Router | 16.4.6 |
-| UI | React | 19.3.1 |
-| Language | TypeScript (strict) | 5.9.3 |
-| Styling | Tailwind CSS v4 (`@theme` tokens) | 4.3.5 |
-| Icons | lucide-react | 0.545.x |
-| Validation | zod | 4.x |
-| Class utilities | clsx + tailwind-merge | — |
+- Next.js 16.4.6 (App Router, Turbopack, static export `output: "export"`)
+- React 19
+- TypeScript (strict)
+- Tailwind CSS v4 (`@theme` tokens)
+- Lucide icons replaced with inline SVGs (lighter, no dependency)
+- `next/font/google` (Montserrat, Figtree, JetBrains Mono)
+- Zod (form validation)
+- clsx/tailwind-merge (`cn` helper)
 
-Deliberately absent: shadcn/ui CLI (no Radix dependency tree was needed for the primitives used), animation libraries, form libraries, state managers, analytics.
+## Frontend-only constraints (enforced)
 
-### Why not a form library
+- No Django / Python backend
+- No PostgreSQL / Supabase / custom database
+- No custom authentication
+- No custom API routes
+- No server actions
+- No main Code Yaar backend integration
 
-The form is five steps with ~27 fields and simple synchronous validation. A hand-written reducer plus zod keeps the bundle small and the behaviour explicit, including the submission state machine and draft persistence, which would otherwise require custom adapters.
+## Submission adapter
 
-### Why zod
+Configurable via environment variables:
+- `NEXT_PUBLIC_APPLICATION_ENDPOINT` — primary endpoint (https:// or localhost http://)
+- `NEXT_PUBLIC_WEB3FORMS_ACCESS_KEY` — optional Web3Forms key (tried first)
+- `NEXT_PUBLIC_APPLICATION_PUBLIC_KEY` — optional `X-Application-Key` header
+- `NEXT_PUBLIC_APPLICATION_TIMEOUT_MS` — 5s–60s, default 20s
 
-Standalone schema validation with inferred TypeScript types means the same shape defines the payload type, the review summary and the validators. It works client-side only, so it does not violate the no-backend rule.
+Adapter: Web3Forms first if key present, else legacy endpoint. Same `submissionId` reused across retries for de-duplication. Never logs applicant data.
 
-## Rendering strategy
+## Rendering
 
-| Route | Type | Client JS |
-| --- | --- | --- |
-| `/` | Static | Header nav (mobile), link tracking only |
-| `/about` | Static | Header nav |
-| `/cohort` | Static | Header nav |
-| `/faq` | Static shell + client accordion | Accordion |
-| `/privacy` | Static | Header nav |
-| `/apply` | Static shell + client form | Form (~zod + component code) |
+All public pages static prerendered (`next build` generates `out/` HTML). Application page is client-side (form state, draft, submission).
 
-No `dynamic = "force-dynamic"`, no `cookies()`, no `headers()` in pages. The build should emit prerendered HTML for all six routes.
+## File layout (key)
 
-## Form submission adapter
-
-`src/lib/submission.ts` is the only module that talks to the network.
-
-- Reads `NEXT_PUBLIC_APPLICATION_ENDPOINT` and optional `NEXT_PUBLIC_APPLICATION_PUBLIC_KEY` at build time.
-- Returns a discriminated union result: `{ ok: true, reference }` or `{ ok: false, reason: "not-configured" | "network" | "timeout" | "rejected" | "server" }`.
-- Applies an `AbortController` timeout.
-- Sends a JSON envelope with an idempotency key.
-- Never logs the payload.
-
-See [`FORM-SUBMISSION-ARCHITECTURE.md`](FORM-SUBMISSION-ARCHITECTURE.md).
-
-## Data flow
-
-```text
-ApplicationForm (client)
-  values ──► zod step schema ──► errors (field-level)
-        ──► full schema ──► ApplicationData
-        ──► buildEnvelope(submissionId, data)
-        ──► submitApplication(envelope)  [submission.ts]
-                 │
-                 └── result ──► SubmissionStatus UI
+```
+src/app/{layout,page,not-found}.tsx
+src/app/{about,cohort,apply,faq,privacy}/page.tsx
+src/app/globals.css
+src/components/layout/{site-header,site-footer,wordmark}.tsx
+src/components/sections/{hero,mission,principles,cohort-intro,journey,final-cta}.tsx
+src/components/faq-item.tsx
+src/components/ui/{button,container,section,section-heading,badge,field}.tsx
+src/lib/{constants,validation,application,draft,submission,utils}.ts
+src/types/application.ts
 ```
 
-No global state. No context provider. The form owns its data for the lifetime of the page.
+## Prohibited dependencies removed
 
-## Environment handling
-
-Only `NEXT_PUBLIC_*` variables are read, because the app has no server runtime. This is a hard constraint of the frontend-only requirement: anything given to the browser is public. The endpoint must therefore be a public ingest URL (form endpoint with a public form id, or a hosted function with its own origin restrictions).
-
-Secrets must never be placed in `NEXT_PUBLIC_*`. See [`ENVIRONMENT-CONFIGURATION.md`](ENVIRONMENT-CONFIGURATION.md).
-
-## Failure modes
-
-| Mode | Detection | User experience |
-| --- | --- | --- |
-| No endpoint configured | Build-time constant missing | Submit disabled, honest demo notice, draft retained |
-| Network offline | `fetch` rejects | Error + Retry |
-| Slow endpoint | Abort at timeout | Timeout message + Retry (same idempotency key) |
-| 4xx | `!response.ok` | "We could not accept this application" + retry + fallback contact note |
-| 5xx | `!response.ok` | "Something went wrong on our side" + retry |
-| Duplicate click | `status === "submitting"` | Button disabled; key reused |
-
-## Security posture
-
-- No secrets in the bundle (verified by convention and audit of `process.env` usage).
-- No applicant data in URLs, console output, or third-party requests.
-- Draft in `localStorage` limited to data fields, no consent flag, user-clearable.
-- `poweredByHeader: false`.
-- External links (none currently) would use `rel="noopener noreferrer"`.
-
-## Scalability and maintenance
-
-The site is static; traffic scaling is the host's problem. Content changes are code changes — acceptable at this stage and appropriate for a site with a fixed, audited message. If the team later needs non-technical editing, a headless CMS can be added without changing routes, but that is out of scope now.
-
-## Related documents
-
-- [`PROJECT-STRUCTURE.md`](PROJECT-STRUCTURE.md)
-- [`FORM-SUBMISSION-ARCHITECTURE.md`](FORM-SUBMISSION-ARCHITECTURE.md)
-- [`DEPLOYMENT-GUIDE.md`](DEPLOYMENT-GUIDE.md)
-- [`../08-planning/DECISION-LOG.md`](../08-planning/DECISION-LOG.md)
+- framer-motion (presentational animation only)
+- shadcn/ui `@radix-ui/react-slot` (unused)

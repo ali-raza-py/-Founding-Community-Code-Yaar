@@ -1,42 +1,17 @@
+import Image from "next/image";
 import Link from "next/link";
-import { useTheme } from "@/lib/theme";
-import { cn } from "@/lib/utils";
 
-/**
- * Code Yaar wordmark. Adapts logo and text colour to the active theme.
- */
-export function Wordmark({
-  className,
-}: {
-  className?: string;
-}) {
-  const { theme } = useTheme();
-  const logoSrc =
-    theme === "light" ? "/code-yaar-logo.png" : "/code-yaar-logo-light.png";
-  const textColor = theme === "light" ? "text-ink" : "text-canvas";
-
+export function Wordmark({ className }: { className?: string }) {
   return (
     <Link
       href="/"
-      aria-label="Code Yaar — home"
-      className={cn("group inline-flex items-center gap-2.5", className)}
+      className="flex items-center gap-2.5 rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#087a52] focus-visible:ring-offset-2 focus-visible:ring-offset-white"
+      aria-label="Code Yaar Home"
     >
-      <img
-        src={logoSrc}
-        alt=""
-        aria-hidden
-        width={24}
-        height={30}
-        className={cn("h-[26px] w-auto shrink-0", "decoding-async")}
-      />
-      <span
-        className={cn(
-          "text-[0.9375rem] font-semibold tracking-[-0.01em]",
-          textColor,
-        )}
-      >
-        Code Yaar
-      </span>
+      <div className="relative h-6 w-6 shrink-0">
+        <Image src="/brand/logo-mark.png" alt="" fill sizes="24px" className="object-contain" />
+      </div>
+      <span className={className}>Code Yaar</span>
     </Link>
   );
 }

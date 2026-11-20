@@ -1,15 +1,15 @@
 import type { Metadata } from "next";
 
-import { FoundingHero } from "@/components/hero/FoundingHero";
-import { MissionSection } from "@/components/sections/mission-section";
-import { LoopSection } from "@/components/sections/loop-section";
-import { PrinciplesSection } from "@/components/sections/principles-section";
-import { BenefitsSection } from "@/components/sections/benefits-section";
-import { FinalCtaSection } from "@/components/sections/final-cta-section";
+import { FoundingHero } from "@/components/sections/hero";
+import { MissionSection } from "@/components/sections/mission";
+import { PrinciplesSection } from "@/components/sections/principles";
+import { CohortIntroSection } from "@/components/sections/cohort-intro";
+import { JourneySection } from "@/components/sections/journey";
+import { FinalCtaSection } from "@/components/sections/final-cta";
 import { SITE_URL } from "@/lib/constants";
 
 const description =
-  "Join Code Yaar's Global Founding Cohort 2026–27. Connect with aspiring developers worldwide, participate in practical learning activities, and help shape a growing programming community.";
+  "Join Code Yaar's Global Founding Cohort 2026–27. Connect with aspiring developers worldwide, take part in practical learning activities, and help shape a growing programming community.";
 
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
@@ -31,9 +31,9 @@ export default function HomePage() {
     <>
       <FoundingHero />
       <MissionSection />
-      <LoopSection />
       <PrinciplesSection />
-      <BenefitsSection />
+      <CohortIntroSection />
+      <JourneySection />
       <FinalCtaSection />
     </>
   );

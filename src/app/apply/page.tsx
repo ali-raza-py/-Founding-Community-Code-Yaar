@@ -1,73 +1,624 @@
-import type { Metadata } from "next";
+"use client";
+
+import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import Link from "next/link";
 
-import { ApplicationForm } from "@/components/apply/application-form";
-import { PageHero } from "@/components/sections/page-hero";
-import { Section } from "@/components/ui/section";
+import { EMPTY_APPLICATION, REVIEW_GROUPS } from "@/lib/application";
+import { clearDraft, getDraftSnapshot, getServerDraftSnapshot, saveDraft, subscribeToDraft, markSubmittedThisSession } from "@/lib/draft";
+import { APPLICATION_ENDPOINT, IS_SUBMISSION_CONFIGURED } from "@/lib/submission";
+import { COUNTRIES, AGE_RANGES, EDUCATION_LEVELS, EXPERIENCE_LEVELS, WEEKLY_TIME_OPTIONS, PRIVACY_CONSENT_TEXT, FORM_VERSION, TOTAL_STEPS, STEP_LABELS } from "@/lib/constants";
+import { personalInformationSchema, educationSchema, programmingBackgroundSchema, motivationSchema } from "@/lib/validation";
+import { submitApplication } from "@/lib/submission";
+import { type ApplicationData, type SubmissionStatus } from "@/types/application";
+import { Button } from "@/components/ui/button";
+import { Field, Input, Select, Textarea } from "@/components/ui/field";
+import { Section, SectionInner } from "@/components/ui/section";
 
-export const metadata: Metadata = {
-  title: "Apply",
-  description:
-    "Apply for The First 100, Code Yaar's global founding cohort. Five short steps, about ten minutes, no account required.",
-  alternates: { canonical: "/apply" },
-  openGraph: {
-    title: "Apply for The First 100",
-    description:
-      "Five steps, about ten minutes. Applications are open worldwide and reviewed by the Code Yaar team.",
-    url: "/apply",
-  },
-};
+const STEP_SCHEMAS = {
+  1: personalInformationSchema,
+  2: educationSchema,
+  3: programmingBackgroundSchema,
+  4: motivationSchema,
+} as const;
+
+function emptyStatus(): SubmissionStatus {
+  return { state: "idle" };
+}
 
 export default function ApplyPage() {
-  return (
-    <>
-      <PageHero
-        eyebrow="Applications open · 2026–27"
-        title="Apply for The First 100."
-        lead="Five short steps and about ten minutes. No account, no payment, and no polished portfolio required — beginners are the point, not an exception."
-      />
+  const [step, setStep] = useState(1);
+  const [values, setValues] = useState<ApplicationData>(EMPTY_APPLICATION);
+  const [errors, setErrors] = useState<Record<string, string[]>>({});
+  const [submitError, setSubmitError] = useState<string | null>(null);
+  const [status, setStatus] = useState<SubmissionStatus>(emptyStatus);
+  const [consent, setConsent] = useState(false);
 
-      <Section bordered={false}>
-        <div className="grid gap-12 lg:grid-cols-[1fr_280px] lg:items-start lg:gap-24">
-          <div className="max-w-[640px] border border-line-strong bg-surface rounded-[12px] p-6 lg:p-8">
-            <ApplicationForm />
+  const submissionIdRef = useRef<string>(crypto.randomUUID());
+
+  // --- Draft persistence (external store, no logging of applicant data) ---
+  const draft = useSyncExternalStore(
+    subscribeToDraft,
+    getDraftSnapshot,
+    getServerDraftSnapshot,
+  );
+  // Restore the saved draft once after hydration.
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    if (draft) setValues(draft);
+  }, [draft]);
+  useEffect(() => {
+    saveDraft(values);
+  }, [values]);
+
+  // --- Field helpers ---
+  const setField = useCallback((key: keyof ApplicationData, value: string) => {
+    setValues((current) => ({ ...current, [key]: value }));
+    setErrors((current) => {
+      const next = { ...current };
+      if (next[key]) delete next[key];
+      return next;
+    });
+  }, []);
+
+  // --- Step validation ---
+  const validateStep = useCallback((stepNumber: number): boolean => {
+    const schema = STEP_SCHEMAS[stepNumber as keyof typeof STEP_SCHEMAS];
+    if (!schema) return true;
+    const result = schema.safeParse(values);
+    if (result.success) {
+      setErrors({});
+      return true;
+    }
+    const next: Record<string, string[]> = {};
+    for (const [key, issue] of Object.entries(result.error.flatten().fieldErrors || {})) {
+      if (issue) next[key] = issue;
+    }
+    setErrors(next);
+    return false;
+  }, [values]);
+
+  const canAdvance = useCallback(() => validateStep(step), [step, validateStep]);
+
+  const goTo = useCallback((nextStep: number) => {
+    setSubmitError(null);
+    if (nextStep > step && !canAdvance()) return;
+    setStep(nextStep);
+  }, [step, canAdvance]);
+
+  // --- Review data ---
+  const reviewValues = useMemo(() => {
+    const groups: { step: number; title: string; items: { label: string; value: string }[] }[] = [];
+    for (const group of REVIEW_GROUPS) {
+      const items = group.fields.map((field: { key: keyof ApplicationData; label: string }) => ({
+        label: field.label,
+        value: values[field.key] ?? "",
+      }));
+      groups.push({ step: group.step, title: group.title, items });
+    }
+    return groups;
+  }, [values]);
+
+  // --- Submission ---
+  const handleSubmit = useCallback(
+    async (event: React.FormEvent) => {
+      event.preventDefault();
+      setSubmitError(null);
+
+      let valid = true;
+      for (const stepNumber of [1, 2, 3, 4]) {
+        if (!validateStep(stepNumber)) valid = false;
+      }
+      if (!valid) {
+        setStep(1);
+        return;
+      }
+      if (!consent) {
+        setSubmitError("Please accept the privacy consent to submit.");
+        return;
+      }
+
+      const envelope = {
+        submissionId: submissionIdRef.current,
+        formVersion: FORM_VERSION,
+        submittedAt: new Date().toISOString(),
+        application: values,
+      };
+
+      setStatus({ state: "submitting" });
+      const result = await submitApplication(envelope);
+
+      if (result.ok) {
+        markSubmittedThisSession();
+        clearDraft();
+        setStatus({ state: "success", reference: result.reference ?? null });
+      } else {
+        let message = "Unable to submit your application. Please try again.";
+        if (result.reason === "not-configured") {
+          message =
+            "Application submission is not configured on this site yet. Your answers have been saved locally — please try again later or contact the Code Yaar team.";
+        } else if (result.reason === "timeout") {
+          message = "The request timed out. Please try again.";
+        } else if (result.reason === "network") {
+          message = "Network error. Please check your connection and try again.";
+        } else if (result.reason === "rejected") {
+          message =
+            `The submission was rejected${result.status != null ? ` (HTTP ${result.status})` : ""}. Please try again later.`;
+        } else if (result.reason === "server") {
+          message =
+            `Server error${result.status != null ? ` (HTTP ${result.status})` : ""}. Please try again later.`;
+        }
+        setSubmitError(message);
+        setStatus({ state: "error", reason: result.reason, status: result.status });
+      }
+    },
+    [values, consent, validateStep],
+  );
+
+  const resetForm = useCallback(() => {
+    setValues(EMPTY_APPLICATION);
+    setErrors({});
+    setSubmitError(null);
+    setStatus(emptyStatus());
+    setStep(1);
+    submissionIdRef.current = crypto.randomUUID();
+    setConsent(false);
+    clearDraft();
+  }, []);
+
+  const alreadySubmitted =
+    typeof window !== "undefined" &&
+    window.sessionStorage.getItem("codeyaar.first100.submitted.v1") === "true";
+
+  const configured = IS_SUBMISSION_CONFIGURED && !!APPLICATION_ENDPOINT;
+
+  if (alreadySubmitted) {
+    return (
+      <Section padded>
+        <SectionInner className="text-center">
+          <div className="mx-auto max-w-[42rem]">
+            <h2 className="mb-4">Application submitted</h2>
+            <p className="type-body mb-8">
+              Thank you — your application to The First 100 has been received
+              in this session. It will be reviewed by the Code Yaar team and
+              you will be contacted by email with the outcome.
+            </p>
+            <Link
+              href="/apply"
+              onClick={resetForm}
+              className="inline-flex items-center justify-center gap-2 rounded-md border border-[#e8ece8] bg-[#ffffff] px-6 py-3 text-sm font-medium text-[#19231d] transition-colors hover:bg-[#f2f5f3] hover:text-[#087a52] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#087a52]"
+            >
+              Submit another application
+            </Link>
+          </div>
+        </SectionInner>
+      </Section>
+    );
+  }
+
+  const stepLabel = STEP_LABELS[step - 1];
+
+  return (
+    <Section padded>
+      <SectionInner className="max-w-[60rem]">
+        <div className="mb-10">
+          <p className="type-label mb-1">Application</p>
+          <h2 className="mb-2">Apply to The First 100</h2>
+          <p className="type-body-muted">
+            Five steps, about ten minutes. You can save and return — your
+            answers stay in your browser until you submit.
+          </p>
+        </div>
+
+        <form noValidate onSubmit={handleSubmit} className="space-y-8">
+          {/* Step indicator */}
+          <div className="flex items-center justify-between mb-2">
+            <span className="type-small">Step {step} of {TOTAL_STEPS}</span>
+            <span className="type-small font-semibold">{stepLabel}</span>
           </div>
 
-          <aside className="lg:sticky lg:top-24 lg:self-start">
-            <p className="type-label text-ink-subtle">How this works</p>
-            <div className="mt-4 space-y-4">
-              <p>
-                Answers are validated as you go, saved as a draft in this
-                browser, and sent only when you press submit.
-              </p>
-              <p>
-                We do not ask for a phone number, home address or identity
-                documents. GitHub and LinkedIn links are optional, and applicants
-                without them are not disadvantaged.
-              </p>
-              <p>
-                <Link
-                  href="/privacy"
-                  className="border-b border-emerald-600/40 pb-0.5 font-medium text-emerald-400 hover:border-emerald-600"
+          {/* -------- Step 1: Personal information -------- */}
+          {step === 1 && (
+            <>
+              <Field
+                label="Full name"
+                required
+                error={errors.fullName?.[0]}
+              >
+                <Input
+                  placeholder="Jane Smith"
+                  value={values.fullName}
+                  onChange={(e) => setField("fullName", e.currentTarget.value)}
+                  required
+                />
+              </Field>
+              <Field label="Email address" required error={errors.email?.[0]}>
+                <Input
+                  type="email"
+                  placeholder="you@example.com"
+                  value={values.email}
+                  onChange={(e) => setField("email", e.currentTarget.value)}
+                  required
+                />
+              </Field>
+              <Field label="Country" required error={errors.country?.[0]}>
+                <Select
+                  value={values.country}
+                  onChange={(e) => setField("country", e.currentTarget.value)}
+                  required
                 >
-                  Read the privacy information
-                </Link>
+                  <option value="">Select your country</option>
+                  {COUNTRIES.map((country) => (
+                    <option key={country} value={country}>
+                      {country}
+                    </option>
+                  ))}
+                </Select>
+              </Field>
+              <Field label="City" required error={errors.city?.[0]}>
+                <Input
+                  placeholder="Karachi"
+                  value={values.city}
+                  onChange={(e) => setField("city", e.currentTarget.value)}
+                  required
+                />
+              </Field>
+              <Field label="Region / state" error={errors.region?.[0]}>
+                <Input
+                  placeholder="Sindh (optional)"
+                  value={values.region}
+                  onChange={(e) => setField("region", e.currentTarget.value)}
+                />
+              </Field>
+              <Field label="Age range" required error={errors.ageRange?.[0]}>
+                <Select
+                  value={values.ageRange}
+                  onChange={(e) => setField("ageRange", e.currentTarget.value)}
+                  required
+                >
+                  <option value="">Select your age range</option>
+                  {AGE_RANGES.map((option) => (
+                    <option key={option.value} value={option.value}>
+                      {option.label}
+                    </option>
+                  ))}
+                </Select>
+              </Field>
+            </>
+          )}
+
+          {/* -------- Step 2: Education -------- */}
+          {step === 2 && (
+            <>
+              <Field
+                label="Education level"
+                required
+                error={errors.educationLevel?.[0]}
+              >
+                <Select
+                  value={values.educationLevel}
+                  onChange={(e) => setField("educationLevel", e.currentTarget.value)}
+                  required
+                >
+                  <option value="">Select your education level</option>
+                  {EDUCATION_LEVELS.map((option) => (
+                    <option key={option.value} value={option.value}>
+                      {option.label}
+                    </option>
+                  ))}
+                </Select>
+              </Field>
+              <Field label="School / college / university" error={errors.institution?.[0]}>
+                <Input
+                  placeholder="Optional"
+                  value={values.institution}
+                  onChange={(e) => setField("institution", e.currentTarget.value)}
+                />
+              </Field>
+              <Field label="Field of study" error={errors.fieldOfStudy?.[0]}>
+                <Input
+                  placeholder="Optional"
+                  value={values.fieldOfStudy}
+                  onChange={(e) => setField("fieldOfStudy", e.currentTarget.value)}
+                />
+              </Field>
+              <Field
+                label="Current year or stage"
+                required
+                error={errors.yearOrGrade?.[0]}
+              >
+                <Input
+                  placeholder="e.g. 2nd year, self-taught year 1"
+                  value={values.yearOrGrade}
+                  onChange={(e) => setField("yearOrGrade", e.currentTarget.value)}
+                  required
+                />
+              </Field>
+            </>
+          )}
+
+          {/* -------- Step 3: Programming background -------- */}
+          {step === 3 && (
+            <>
+              <Field
+                label="Experience level"
+                required
+                error={errors.experienceLevel?.[0]}
+              >
+                <Select
+                  value={values.experienceLevel}
+                  onChange={(e) => setField("experienceLevel", e.currentTarget.value)}
+                  required
+                >
+                  <option value="">Select your experience level</option>
+                  {EXPERIENCE_LEVELS.map((option) => (
+                    <option key={option.value} value={option.value}>
+                      {option.label}
+                    </option>
+                  ))}
+                </Select>
+              </Field>
+              <Field
+                label="Languages and technologies"
+                required
+                error={errors.languages?.[0]}
+                hint="HTML, CSS, Python, JavaScript… or write “None yet”."
+              >
+                <Textarea
+                  rows={3}
+                  value={values.languages}
+                  onChange={(e) => setField("languages", e.currentTarget.value)}
+                  required
+                />
+              </Field>
+              <Field label="Previous projects" error={errors.previousProjects?.[0]}>
+                <Textarea
+                  rows={3}
+                  placeholder="Optional — links or descriptions of anything you have built."
+                  value={values.previousProjects}
+                  onChange={(e) => setField("previousProjects", e.currentTarget.value)}
+                />
+              </Field>
+              <Field label="GitHub" error={errors.github?.[0]}>
+                <Input
+                  placeholder="https://github.com/username"
+                  value={values.github}
+                  onChange={(e) => setField("github", e.currentTarget.value)}
+                />
+                <p className="type-caption">Optional — not used to filter applicants.</p>
+              </Field>
+              <Field label="LinkedIn" error={errors.linkedin?.[0]}>
+                <Input
+                  placeholder="https://linkedin.com/in/username"
+                  value={values.linkedin}
+                  onChange={(e) => setField("linkedin", e.currentTarget.value)}
+                />
+                <p className="type-caption">Optional — not used to filter applicants.</p>
+              </Field>
+              <Field label="Portfolio" error={errors.portfolio?.[0]}>
+                <Input
+                  placeholder="https://example.com"
+                  value={values.portfolio}
+                  onChange={(e) => setField("portfolio", e.currentTarget.value)}
+                />
+                <p className="type-caption">Optional — not used to filter applicants.</p>
+              </Field>
+            </>
+          )}
+
+          {/* -------- Step 4: Motivation -------- */}
+          {step === 4 && (
+            <>
+              <Field
+                label="Why do you want to join The First 100?"
+                required
+                error={errors.motivation?.[0]}
+                hint="At least 80 characters. Tell us what draws you to this community."
+              >
+                <Textarea
+                  rows={5}
+                  value={values.motivation}
+                  onChange={(e) => setField("motivation", e.currentTarget.value)}
+                  required
+                />
+              </Field>
+              <Field
+                label="What do you hope to learn?"
+                required
+                error={errors.learningGoals?.[0]}
+                hint="At least 40 characters."
+              >
+                <Textarea
+                  rows={4}
+                  value={values.learningGoals}
+                  onChange={(e) => setField("learningGoals", e.currentTarget.value)}
+                  required
+                />
+              </Field>
+              <Field
+                label="What could you contribute?"
+                required
+                error={errors.contribution?.[0]}
+                hint="At least 40 characters."
+              >
+                <Textarea
+                  rows={4}
+                  value={values.contribution}
+                  onChange={(e) => setField("contribution", e.currentTarget.value)}
+                  required
+                />
+              </Field>
+              <Field label="Weekly availability" required error={errors.weeklyTime?.[0]}>
+                <Select
+                  value={values.weeklyTime}
+                  onChange={(e) => setField("weeklyTime", e.currentTarget.value)}
+                  required
+                >
+                  <option value="">Select your availability</option>
+                  {WEEKLY_TIME_OPTIONS.map((option) => (
+                    <option key={option.value} value={option.value}>
+                      {option.label}
+                    </option>
+                  ))}
+                </Select>
+              </Field>
+              <Field label="Preferred communication language" required error={errors.preferredLanguage?.[0]}>
+                <Input
+                  placeholder="e.g. English"
+                  value={values.preferredLanguage}
+                  onChange={(e) => setField("preferredLanguage", e.currentTarget.value)}
+                  required
+                />
+                <p className="type-caption">
+                  Collected to plan support — never used to filter applicants.
+                </p>
+              </Field>
+              <Field label="Time zone" required error={errors.timezone?.[0]}>
+                <Input
+                  placeholder="e.g. Asia/Karachi (UTC+5)"
+                  value={values.timezone}
+                  onChange={(e) => setField("timezone", e.currentTarget.value)}
+                  required
+                />
+              </Field>
+            </>
+          )}
+
+          {/* -------- Step 5: Review and submit -------- */}
+          {step === 5 && (
+            <>
+              <div className="space-y-6">
+                {reviewValues.map((group) => (
+                  <section key={group.step} className="border border-[#e8ece8] rounded-lg p-5">
+                    <p className="type-label mb-3">{group.title}</p>
+                    <div className="space-y-3">
+                      {group.items.map((item) => (
+                        <div key={item.label} className="flex justify-between items-baseline gap-3">
+                          <span className="text-sm text-[#46534a]">{item.label}</span>
+                          <span className="type-mono text-[#19231d] truncate max-w-[22rem]">
+                            {item.value || "—"}
+                          </span>
+                          <button
+                            type="button"
+                            onClick={() => setStep(group.step)}
+                            className="text-[0.8125rem] text-[#087a52] hover:underline font-medium p-1"
+                          >
+                            Edit
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  </section>
+                ))}
+                <Field className="flex items-start gap-2">
+                  <input
+                    id="consent"
+                    type="checkbox"
+                    className="rounded border-[#e8ece8] text-[#087a52] focus-visible:ring-[#087a52] mt-[3px]"
+                    checked={consent}
+                    onChange={(e) => setConsent(e.currentTarget.checked)}
+                    required
+                  />
+                  <label htmlFor="consent" className="text-sm leading-relaxed cursor-pointer">
+                    {PRIVACY_CONSENT_TEXT} <Link href="/privacy" className="text-[#087a52] underline underline-offset-2 hover:text-[#176b47]">Read the privacy information</Link>.
+                  </label>
+                </Field>
+              </div>
+            </>
+          )}
+
+          {/* Submission status */}
+          {status.state === "submitting" && (
+            <div className="flex items-center gap-3 py-4">
+              <span className="type-mono flex h-5 w-5 shrink-0">⟳</span>
+              <span className="type-body">Submitting your application…</span>
+            </div>
+          )}
+          {status.state === "success" && (
+            <div className="rounded-lg border border-[#e8ece8] bg-[#ecfdf5] p-6 text-center">
+              <p className="text-sm font-semibold text-[#065f46]">
+                Application received
+              </p>
+              {status.reference && (
+                <p className="mt-1 type-small text-[#46534a]">
+                  Reference: <span className="type-mono">{status.reference}</span>
+                </p>
+              )}
+              <p className="mt-4 type-body">
+                Thank you for applying to The First 100. Your application will
+                be reviewed by the Code Yaar team, and you will be contacted by
+                email with the outcome.
               </p>
             </div>
-            <div className="mt-6 border-t border-line pt-4">
-              <p className="text-ink">
-                Not sure yet?{" "}
-                <Link
-                  href="/faq"
-                  className="font-medium text-emerald-400 underline decoration-line-strong underline-offset-2 hover:decoration-emerald-600"
-                >
-                  Read the FAQ
-                </Link>
+          )}
+          {status.state === "error" && (
+            <div className="rounded-lg border border-[#fecaca] bg-[#fef2f2] p-6">
+              <p className="text-sm font-semibold text-[#991b1b]">
+                Submission failed
               </p>
+              <p className="mt-1 type-body">{submitError}</p>
+              <Button
+                type="button"
+                onClick={() => {
+                  setSubmitError(null);
+                  setStatus({ state: "submitting" });
+                  void handleSubmit({ preventDefault: () => {} } as unknown as React.FormEvent);
+                }}
+              >
+                Retry
+              </Button>
             </div>
-          </aside>
-        </div>
-      </Section>
-    </>
+          )}
+          {submitError && status.state === "idle" && (
+            <div className="rounded-lg border border-[#fecaca] bg-[#fef2f2] p-6">
+              <p className="text-sm font-semibold text-[#991b1b]">{submitError}</p>
+            </div>
+          )}
+
+          {/* Actions */}
+          <div className="flex flex-col sm:flex-row gap-3 justify-between items-end mt-6 sm:mt-10">
+            {step > 1 && (
+              <Link
+                href="#"
+                onClick={(e) => {
+                  e.preventDefault();
+                  goTo(step - 1);
+                }}
+                className="inline-flex items-center justify-center gap-2 rounded-md border border-[#e8ece8] bg-[#ffffff] px-6 py-3 text-sm font-medium text-[#19231d] transition-colors hover:bg-[#f2f5f3] hover:text-[#087a52] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#087a52]"
+              >
+                Back
+              </Link>
+            )}
+            {step < 5 ? (
+              <Link
+                href="#"
+                onClick={(e) => {
+                  e.preventDefault();
+                  goTo(step + 1);
+                }}
+                className="inline-flex items-center justify-center gap-2 rounded-md bg-[#087a52] px-6 py-3 text-sm font-medium text-white transition-colors hover:bg-[#176b47] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#087a52]"
+              >
+                Continue
+              </Link>
+            ) : (
+              <button
+                type="submit"
+                disabled={status.state === "submitting"}
+                className="inline-flex items-center justify-center gap-2 rounded-md bg-[#087a52] px-8 py-3 text-sm font-medium text-white transition-colors disabled:opacity-50 hover:bg-[#176b47]:not(:disabled) focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#087a52]"
+              >
+                {status.state === "submitting"
+                  ? "Submitting…"
+                  : "Submit application"}
+              </button>
+            )}
+          </div>
+        </form>
+
+        <p className="mt-10 type-caption text-center">
+          Applications are reviewed by people, not algorithms. Places are
+          limited to one hundred founding members. Submission endpoint:
+          {configured ? "configured" : "not configured — submissions are accepted locally only"}.
+        </p>
+      </SectionInner>
+    </Section>
   );
 }

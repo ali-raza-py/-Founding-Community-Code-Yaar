@@ -17,15 +17,6 @@ export const SITE_URL = (
   process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000"
 ).replace(/\/$/, "");
 
-export const NAV_LINKS = [
-  { href: "/", label: "Home" },
-  { href: "/about", label: "About" },
-  { href: "/cohort", label: "The Cohort" },
-  { href: "/benefits", label: "Benefits" },
-  { href: "/faq", label: "FAQ" },
-  { href: "/apply", label: "Apply" },
-] as const;
-
 export const FORM_VERSION = "1.0.0";
 
 export const TOTAL_STEPS = 5;

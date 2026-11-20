@@ -8,14 +8,13 @@ const RAW_ENDPOINT = process.env.NEXT_PUBLIC_APPLICATION_ENDPOINT ?? "";
 const RAW_PUBLIC_KEY = process.env.NEXT_PUBLIC_APPLICATION_PUBLIC_KEY ?? "";
 const RAW_TIMEOUT = process.env.NEXT_PUBLIC_APPLICATION_TIMEOUT_MS ?? "";
 
-const DEFAULT_TIMEOUT_MS = 20_000;
-
 // ---------------------------------------------------------------------------
 // Web3Forms helper
 // ---------------------------------------------------------------------------
-/*** Submit via Web3Forms and return a typed result. Never logs applicant data. */
+/** Submit via Web3Forms and return a typed result. Never logs applicant data. */
 async function submitViaWeb3Forms(payload: Record<string, unknown>): Promise<SubmissionResult> {
   const key = RAW_WEB3FORMS_KEY.trim();
+  if (!key) return { ok: false, reason: "not-configured" };
   if (!key) return { ok: false, reason: "not-configured" };
 
   const controller = new AbortController();
@@ -40,8 +39,6 @@ async function submitViaWeb3Forms(payload: Record<string, unknown>): Promise<Sub
     );
 
     if (!response.ok) {
-      const text = await response.text();
-      // Do not log applicant data; only keep diagnostic metadata.
       return { ok: false, reason: response.status >= 500 ? "server" : "rejected", status: response.status };
     }
 

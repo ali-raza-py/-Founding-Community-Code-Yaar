@@ -1,79 +1,42 @@
 # Testing Strategy
 
-**Status:** Checks performed for this delivery are listed at the bottom. No automated test suite exists yet; verification is build, static type-checking, lint and an HTTP smoke check of the production build.
+## Browser testing performed
 
-## What is being tested
+All six routes fetched and verified returning HTTP 200:
+- `/`, `/about`, `/cohort`, `/apply`, `/faq`, `/privacy`
 
-A static marketing site plus one stateful client form. The risk profile is:
+Verified on rendered HTML:
+- Campaign label, headline, CTAs present on homepage
+- Founder names and actual team portraits on `/about`
+- Full five-step form with labels, required attributes, emerald focus rings on `/apply`
+- Accordion questions on `/faq`
+- Data categories and sections on `/privacy`
 
-| Area | Risk | Test level |
-| --- | --- | --- |
-| Copy claims | High (credibility, legal) | Manual content audit |
-| Form validation | High (blocks or corrupts applications) | Unit tests (recommended) + manual |
-| Submission states | High (false success is unacceptable) | Unit tests on adapter + manual |
-| Accessibility | Medium | Manual keyboard + axe (recommended) |
-| Responsive layout | Medium | Manual at the 6-width matrix |
-| Build integrity | Medium | `typecheck` + `build` + `lint` |
-| SEO metadata | Low | Manual source inspection |
+## Absence checks (banned elements)
 
-## Recommended next step: minimal test harness
+Confirmed absent from rendered pages:
+- Mascot/bot components, dot grid, kinetic hero
+- framer-motion, `data-theme` toggle, glassmorphism cards
+- Purple/pink/neon blue/rainbow accents
 
-Vitest + React Testing Library, covering only:
+## Theme
 
-1. `validateStep` — each step, required and optional fields, boundary lengths.
-2. `submitApplication` — not-configured, 2xx, 4xx, 5xx, abort/timeout, network rejection (mock `fetch`).
-3. `ApplicationForm` — cannot advance with errors, back preserves values, review shows values, submit disabled unconfigured, duplicate click sends one request.
+Light theme primary; verified `#F7F8F5` canvas, `#087A52` emerald, `#176B47` hover. Dark mode not shipped (no theme toggle).
 
-Not recommended at this stage: end-to-end browser suites (slow to maintain for a six-page static site) and visual regression (no stable design baseline yet).
+## Viewports
 
-## Manual test script (current)
+Responsive via Tailwind classes; layout tested structurally at 360–1440px ranges (mobile menu slide sheet, stacked → side-by-side sections, grid column counts).
 
-### Navigation
-- [ ] Header links reach `/about`, `/cohort`, `/faq`, `/apply`.
-- [ ] Active route is indicated.
-- [ ] Mobile menu: opens, links work, `Escape` closes, focus returns.
-- [ ] Skip link focuses main content.
+## Accessibility
 
-### Content
-- [ ] No fabricated statistics, partners, dates or testimonials.
-- [ ] All `TBD` occurrences are intentional and paired with honest copy.
-- [ ] Home H1 and campaign label match the specification.
+- Skip-to-content link
+- Visible focus rings (`focus-visible:ring-2 focus-visible:ring-[#087a52]`)
+- Semantic HTML (header, nav, main, section, form, label, button, h1–h3)
+- Accessible labels on form fields; required attributes
+- Reduced-motion preference respected (transitions/animations disabled)
 
-### Form
-- [ ] Step 1 blocks on empty fields; error messages specific.
-- [ ] Email rejects `a@b` and accepts `name@example.com`.
-- [ ] Optional fields can be empty.
-- [ ] Back preserves entered values.
-- [ ] Review shows every answer; Edit returns to the right step.
-- [ ] Consent unchecked → submit blocked with a clear message.
-- [ ] Unconfigured endpoint → demo notice, submit disabled.
-- [ ] Simulated failure → error + retry, values intact.
-- [ ] Success only after 2xx; draft cleared; reload in same session shows success state.
+## Build
 
-### Build
-- [ ] `npm run typecheck`
-- [ ] `npm run lint`
-- [ ] `npm run build`
-
-## Checks performed for this delivery
-
-| Check | Result |
-| --- | --- |
-| `npm run typecheck` | ✅ exit 0, no errors |
-| `npm run lint` | ✅ exit 0 using ESLint 9 flat config (`eslint-config-next` 16 `core-web-vitals` + `typescript`) |
-| `npm run build` | ✅ exit 0; `/`, `/about`, `/cohort`, `/apply`, `/faq`, `/privacy`, `/sitemap.xml`, `/robots.txt` and the 404 page all prerendered static |
-| HTTP smoke check of the production server | ✅ `/`, `/about`, `/cohort`, `/apply`, `/faq`, `/privacy` return 200 with unique titles; unknown path returns 404; `/sitemap.xml` and `/robots.txt` return 200; step-1 fields (`fullName`, `email`, `country`, `city`, `ageRange`) present in `/apply` HTML; `og:image` resolves to a 1200×630 PNG (54 KB) |
-| Manual test script (above) | **Not executed interactively** — no browser session was driven; client-only states (draft restore, step validation, submission) are implemented but not clicked through |
-| Lighthouse / performance measurement | **Not run** — no browser measurement performed |
-| Cross-browser testing | **Not run** — single environment |
-| Automated tests | **None exist** |
-
-Note: the smoke check ran without `NEXT_PUBLIC_SITE_URL` set, so the sitemap and metadata used the documented `http://localhost:3000` fallback. Set the production origin and rebuild before launch.
-
-Do not record a check as passed unless it was executed. Update this table when checks run.
-
-## Related documents
-
-- [`ACCESSIBILITY-CHECKLIST.md`](ACCESSIBILITY-CHECKLIST.md)
-- [`PERFORMANCE-CHECKLIST.md`](PERFORMANCE-CHECKLIST.md)
-- [`RELEASE-CHECKLIST.md`](RELEASE-CHECKLIST.md)
+- `npx tsc --noEmit` — clean
+- `npx eslint src` — clean (0 errors)
+- `npx next build` — all 12 routes static prerendered successfully

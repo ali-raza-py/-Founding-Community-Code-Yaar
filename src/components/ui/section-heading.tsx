@@ -1,40 +1,30 @@
+import * as React from "react";
 import { cn } from "@/lib/utils";
 
-export function SectionHeading({
-  number,
-  eyebrow,
-  title,
-  intro,
-  as: Heading = "h2",
-  className,
-  titleClassName,
-}: {
-  number?: string;
+export interface SectionHeadingProps extends React.HTMLAttributes<HTMLHeadingElement> {
   eyebrow?: string;
   title: string;
-  intro?: string;
-  as?: "h2" | "h3";
-  className?: string;
-  titleClassName?: string;
-}) {
+  description?: string | React.ReactNode;
+  tag?: "h2" | "h3";
+}
+
+export function SectionHeading({
+  eyebrow,
+  title,
+  description,
+  tag = "h2",
+  className,
+  ...props
+}: SectionHeadingProps) {
+  const Tag = tag;
   return (
-    <div className={cn("max-w-[46rem]", className)}>
-      {(eyebrow || number) && (
-        <p className="type-label flex items-center gap-3 text-[var(--color-emerald-600)]">
-          {number && <span className="tabular-nums">{number}</span>}
-          {number && eyebrow && (
-            <span aria-hidden className="h-px w-8 bg-[var(--color-emerald-600)/40]" />
-          )}
-          {eyebrow && <span>{eyebrow}</span>}
-        </p>
+    <div className={cn("flex flex-col gap-1", className)} {...props}>
+      {eyebrow && (
+        <p className="type-label mb-1">{eyebrow}</p>
       )}
-      <Heading
-        className={cn("type-h2 mt-4 text-[var(--color-ink)]", titleClassName)}
-      >
-        {title}
-      </Heading>
-      {intro && (
-        <p className="type-lead mt-5 max-w-[38rem] text-[var(--color-ink-subtle)]">{intro}</p>
+      <Tag className="mb-3">{title}</Tag>
+      {description && (
+        <p className="type-body-muted">{description}</p>
       )}
     </div>
   );

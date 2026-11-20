@@ -1,29 +1,44 @@
 import type { Metadata } from "next";
+import Image from "next/image";
 
-import { FinalCtaSection } from "@/components/sections/final-cta-section";
-import { PageHero } from "@/components/sections/page-hero";
-import { Section } from "@/components/ui/section";
+import { Section, SectionInner } from "@/components/ui/section";
 import { SectionHeading } from "@/components/ui/section-heading";
-import {
-  aboutIntro,
-  communityVision,
-  founders,
-  philosophy,
-  teamNote,
-  whatIs,
-  why,
-} from "@/lib/content/about";
-import { CAMPAIGN } from "@/lib/constants";
+import { SITE_URL } from "@/lib/constants";
+
+const founders = [
+  {
+    name: "Ali Raza",
+    role: "Founder & CEO",
+    focus: "Product vision, strategy & leadership",
+    image: "/team/ali-raza.png",
+  },
+  {
+    name: "Abdullah",
+    role: "Co-Founder & CTO",
+    focus: "Technology, backend architecture & engineering",
+    image: "/team/abdullah.png",
+  },
+  {
+    name: "Shabbar",
+    role: "Co-Founder & Chief Growth Officer",
+    focus: "Community, content & brand growth",
+    image: "/team/shabbar-raza.png",
+  },
+];
+
+const description =
+  "About Code Yaar Global Founding Community — The First 100. Meet the founding team behind the initiative: Ali Raza, Abdullah, and Shabbar.";
 
 export const metadata: Metadata = {
-  title: "About",
-  description:
-    "Code Yaar is a practical programming education initiative. Read why the founding community exists, how we think about learning, and who is building it.",
-  alternates: { canonical: "/about" },
+  metadataBase: new URL(SITE_URL),
+  title: {
+    default: "Code Yaar | About the Founding Community",
+    template: "%s — Code Yaar",
+  },
+  description,
   openGraph: {
-    title: "About Code Yaar",
-    description:
-      "The purpose behind Code Yaar and its global founding community: practical learning, honest feedback and building together.",
+    title: "Code Yaar | About the Founding Community",
+    description,
     url: "/about",
   },
 };
@@ -31,134 +46,108 @@ export const metadata: Metadata = {
 export default function AboutPage() {
   return (
     <>
-      <PageHero
-        eyebrow="About Code Yaar"
-        title="A practical education initiative, building its community first."
-        lead={aboutIntro}
-        aside={
-          <div className="border-l-2 border-emerald-600/40 bg-emerald-600/10 pl-5">
-            <p className="type-label text-ink-subtle">Our philosophy</p>
-            <p className="mt-3 type-lead italic text-ink">
-              {CAMPAIGN.tagline}
-            </p>
-            <p className="mt-3 text-[0.8125rem] leading-relaxed text-ink-muted">
-              {CAMPAIGN.coreMessage}
-            </p>
-          </div>
-        }
-      />
-
-      <Section bordered={false}>
-        <div className="grid gap-12 lg:grid-cols-[0.85fr_1.15fr] lg:gap-24">
-          <SectionHeading number="01" eyebrow="The organization" title={whatIs.title} />
-          <div className="space-y-5 lg:pt-1">
-            {whatIs.paragraphs.map((paragraph) => (
-              <p
-                key={paragraph}
-                className="text-[0.9375rem] leading-relaxed text-ink-muted"
-              >
-                {paragraph}
-              </p>
-            ))}
-          </div>
-        </div>
-      </Section>
-
-      <Section tone="surface">
-        <div className="grid gap-12 lg:grid-cols-[0.85fr_1.15fr] lg:gap-24">
-          <SectionHeading number="02" eyebrow="Why we are building it" title={why.title} />
-          <div className="space-y-5 lg:pt-1">
-            {why.paragraphs.map((paragraph) => (
-              <p
-                key={paragraph}
-                className="text-[0.9375rem] leading-relaxed text-ink-muted"
-              >
-                {paragraph}
-              </p>
-            ))}
-          </div>
-        </div>
-      </Section>
-
-      <Section>
-        <SectionHeading
-          number="03"
-          eyebrow="Our philosophy"
-          title="Think. Build. Evolve."
-          intro="Three words that decide what we encourage, what we celebrate and what we ask members to do."
-        />
-        <div className="mt-12 grid gap-px border-y border-line bg-line md:grid-cols-3">
-          {philosophy.map((item, index) => (
-            <div key={item.title} className="bg-surface p-6 lg:p-8">
-              <p className="type-label tabular-nums text-emerald-600">
-                {String(index + 1).padStart(2, "0")}
-              </p>
-              <h3 className="mt-3 text-emerald-600">{item.title}</h3>
-              <p className="mt-4 text-[0.875rem] leading-relaxed text-ink-muted">
-                {item.detail}
-              </p>
-            </div>
-          ))}
-        </div>
-      </Section>
-
-      <Section tone="surface">
-        <div className="grid gap-12 lg:grid-cols-[0.85fr_1.15fr] lg:gap-24">
+      <Section padded>
+        <SectionInner>
           <SectionHeading
-            number="04"
-            eyebrow="Founding vision"
-            title="Why Code Yaar is establishing its first founding community."
+            eyebrow="About Code Yaar"
+            title="A practical programming education, built with the community."
+            description={
+              <>
+                Code Yaar is being developed as a practical programming
+                education initiative: understand concepts, practise
+                problem-solving, apply knowledge in projects, and develop
+                skills you can actually use. This site is the home of its
+                founding community — an early, separate initiative that exists
+                to bring motivated learners together while the platform is
+                being built.
+              </>
+            }
           />
-          <div className="space-y-5 lg:pt-1">
-            {communityVision.paragraphs.map((paragraph) => (
-              <p
-                key={paragraph}
-                className="text-[0.9375rem] leading-relaxed text-ink-muted"
-              >
-                {paragraph}
+        </SectionInner>
+      </Section>
+
+      <Section padded className="bg-[#f2f5f3]">
+        <SectionInner>
+          <div className="grid gap-12 lg:grid-cols-2">
+            <div>
+              <h2 className="mb-4">Why we are building it</h2>
+              <p className="type-body mb-4">
+                Learning to program often happens in fragments — a video here,
+                a documentation page there, a practice problem, a half-finished
+                project. Each piece is useful. Together they rarely add up to a
+                habit of building. What is usually missing is not content but
+                continuity: a place to ask a question without embarrassment,
+                show work in progress, receive honest feedback, and see other
+                people at a similar stage doing the same thing.
               </p>
+              <p className="type-body mb-6">
+                That is what the community is for. It is the part of the
+                learning experience that cannot be shipped as a feature.
+              </p>
+              <div className="space-y-4">
+                {[
+                  "Think — understand the problem before reaching for a solution.",
+                  "Build — turn understanding into something real, even if it is small and imperfect.",
+                  "Evolve — use feedback to improve the work and the way you work.",
+                ].map((item, index) => (
+                  <p key={index} className="type-body pl-4 border-l-2 border-[#087a52]">
+                    {item}
+                  </p>
+                ))}
+              </div>
+            </div>
+            <div className="hidden lg:block">
+              <div className="card-hairline p-8 lg:p-10">
+                <p className="type-label mb-3">Our community vision</p>
+                <h3 className="mb-4">A global community built around practice</h3>
+                <p className="type-body mb-6">
+                  The founding community supports the wider Code Yaar mission
+                  by existing before the platform is complete. Its members test
+                  ideas, tell us what is useful and what is not, and establish
+                  the norms that later members will inherit.
+                </p>
+                <p className="type-small text-[#6b7a70]">
+                  This website is not the platform — it is a separate
+                  community initiative, with its own codebase, deployment, and
+                  purpose. Nothing here connects to Code Yaar&rsquo;s internal
+                  systems.
+                </p>
+              </div>
+            </div>
+          </div>
+        </SectionInner>
+      </Section>
+
+      <Section padded>
+        <SectionInner>
+          <SectionHeading
+            eyebrow="Founding team"
+            title="The people behind Code Yaar"
+            description="Actual team members. Portraits are real photographs, not generated or stock images."
+          />
+          <div className="mt-12 grid gap-8 sm:grid-cols-3">
+            {founders.map((founder) => (
+              <div key={founder.name} className="flex flex-col items-center gap-4">
+                <div className="relative shrink-0">
+                  <Image
+                    src={founder.image}
+                    alt={founder.name}
+                    fill
+                    sizes="(max-width: 768px) 240px, 320px"
+                    className="rounded-lg object-cover aspect-square"
+                    priority={founder.name === "Ali Raza"}
+                  />
+                </div>
+                <div className="text-center">
+                  <h3 className="text-base font-semibold">{founder.name}</h3>
+                  <p className="text-sm text-[#087a52] font-medium">{founder.role}</p>
+                  <p className="text-xs text-[#46534a]">{founder.focus}</p>
+                </div>
+              </div>
             ))}
           </div>
-        </div>
+        </SectionInner>
       </Section>
-
-      <Section id="team">
-        <SectionHeading
-          number="05"
-          eyebrow="Founding team"
-          title="The people building Code Yaar."
-          intro="Small team, clearly defined responsibilities. Biographies will be added when the founders supply them."
-        />
-        <ul className="mt-12 grid gap-8 border-t border-line pt-8 md:grid-cols-3">
-          {founders.map((person) => (
-            <li key={person.name} className="flex flex-col">
-              <div
-                aria-hidden
-                className="grid size-14 place-items-center rounded-[6px] border border-line-strong bg-surface font-mono font-bold text-[1.25rem] text-emerald-600"
-              >
-                {person.initials}
-              </div>
-              <h3 className="mt-5 text-[1.0625rem] font-medium text-ink">
-                {person.name}
-              </h3>
-              <p className="mt-1 text-[0.875rem] font-medium text-emerald-600">
-                {person.role}
-              </p>
-              <p className="mt-3 max-w-[16rem] text-[0.875rem] leading-relaxed text-ink-muted">
-                {person.focus}
-              </p>
-            </li>
-          ))}
-        </ul>
-        <p className="mt-8 max-w-[52rem] border-t border-line pt-5 text-[0.75rem] leading-relaxed text-ink-subtle">
-          {teamNote}
-        </p>
-      </Section>
-
-      <FinalCtaSection
-        title="The community starts with a hundred people."
-        body="If you want to learn by building, and to help shape a more practical kind of programming education, apply for the founding cohort."
-      />
     </>
   );
 }

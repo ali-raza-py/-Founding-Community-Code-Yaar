@@ -91,24 +91,8 @@ export const programmingBackgroundSchema = z.object({
     .min(1, "List any languages or technologies, or write “None yet”.")
     .max(300, "Please keep this under 300 characters."),
   previousProjects: optionalText(1000),
-  github: z
-    .string()
-    .trim()
-    .min(1, "Enter your GitHub profile link.")
-    .max(200, "This link is too long.")
-    .refine(
-      (value) => /^https?:\/\/[^\s]+\.[^\s]+$/i.test(value),
-      "Enter a full link starting with https://",
-    ),
-  linkedin: z
-    .string()
-    .trim()
-    .min(1, "Enter your LinkedIn profile link.")
-    .max(200, "This link is too long.")
-    .refine(
-      (value) => /^https?:\/\/[^\s]+\.[^\s]+$/i.test(value),
-      "Enter a full link starting with https://",
-    ),
+  github: optionalUrl(),
+  linkedin: optionalUrl(),
   portfolio: optionalUrl(),
 });
 
