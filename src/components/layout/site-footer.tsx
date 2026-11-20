@@ -1,5 +1,8 @@
 import Link from "next/link";
-import Image from "next/image";
+
+import { SectionInner } from "@/components/ui/section";
+
+import { Wordmark } from "./wordmark";
 
 const footerLinks = [
   { label: "About", href: "/about" },
@@ -13,27 +16,10 @@ const footerLinks = [
 export function SiteFooter() {
   return (
     <footer className="border-t border-line bg-surface">
-      <div className="mx-auto max-w-[1152px] px-4 sm:px-6 lg:px-8 py-12 lg:py-16">
-        <div className="grid gap-8 lg:grid-cols-4">
-          <div className="col-span-2 lg:col-span-1">
-            <Link
-              href="/"
-              className="flex items-center gap-2.5 rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald focus-visible:ring-offset-2 focus-visible:ring-offset-surface"
-              aria-label="Code Yaar Home"
-            >
-              <div className="relative h-6 w-6 shrink-0">
-                <Image
-                  src="/brand/logo-mark.png"
-                  alt=""
-                  fill
-                  sizes="24px"
-                  className="object-contain"
-                />
-              </div>
-              <span className="text-sm font-semibold tracking-tight text-ink">
-                Code Yaar
-              </span>
-            </Link>
+      <SectionInner className="py-10 sm:py-12">
+        <div className="grid gap-8 sm:grid-cols-2">
+          <div>
+            <Wordmark />
             <p className="mt-4 max-w-xs text-sm text-ink-muted leading-relaxed">
               Code Yaar Founding Community 2026&ndash;27. A global community
               for learners, builders, and technology enthusiasts shaping what
@@ -56,31 +42,31 @@ export function SiteFooter() {
               ))}
             </div>
           </div>
-          <div className="lg:col-span-3">
-            <h3 className="text-xs font-semibold uppercase tracking-wider text-ink-muted mb-6">
+          <nav aria-labelledby="footer-community-title">
+            <h2 id="footer-community-title" className="mb-5 text-xs font-semibold uppercase tracking-wider text-ink-muted">
               Community
-            </h3>
-            <ul className="space-y-3">
+            </h2>
+            <ul className="grid gap-x-6 gap-y-2 sm:grid-cols-2">
               {footerLinks.map((link) => (
                 <li key={link.label}>
-                  <a
+                  <Link
                     href={link.href}
                     className="text-sm text-ink-muted transition-colors hover:text-emerald"
                   >
                     {link.label}
-                  </a>
+                  </Link>
                 </li>
               ))}
             </ul>
-          </div>
+          </nav>
         </div>
-        <div className="mt-12 border-t border-line pt-8 flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+        <div className="mt-8 border-t border-line pt-6 flex flex-col lg:flex-row lg:items-center justify-between gap-4">
           <p className="text-xs text-ink-muted">
             &copy; 2026 Code Yaar. All rights reserved.
           </p>
           <p className="text-xs text-ink-muted">Think. Build. Evolve.</p>
         </div>
-      </div>
+      </SectionInner>
     </footer>
   );
 }

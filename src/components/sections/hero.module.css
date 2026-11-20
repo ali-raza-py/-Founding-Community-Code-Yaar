@@ -1,0 +1,73 @@
+.content {
+  --intro-gap: clamp(1.125rem, 2.1vw, 1.75rem);
+  --signoff-gap: clamp(2.75rem, 4.6vw, 4.5rem);
+
+  display: grid;
+  justify-items: center;
+  gap: var(--signoff-gap);
+  padding-block: clamp(3.5rem, 5.6vw, 5.5rem) clamp(2.25rem, 3.5vw, 3.5rem);
+  text-align: center;
+}
+
+.intro {
+  display: grid;
+  justify-items: center;
+  inline-size: 100%;
+  gap: var(--intro-gap);
+}
+
+.heading {
+  max-inline-size: 16ch;
+  font-size: clamp(2.375rem, 1.75rem + 2.25vw, 4rem);
+  line-height: 1.03;
+  letter-spacing: -0.04em;
+}
+
+.description {
+  max-inline-size: 34rem;
+  font-size: clamp(1.0625rem, 0.95rem + 0.25vw, 1.25rem);
+  line-height: 1.6;
+}
+
+.signoff {
+  display: grid;
+  justify-items: center;
+  gap: 0.65rem;
+  max-inline-size: 36rem;
+}
+
+.ruledLabel {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: clamp(0.75rem, 1.4vw, 1.5rem);
+  max-inline-size: min(100%, 53ch);
+  font-size: clamp(0.6875rem, 0.64rem + 0.18vw, 0.8125rem);
+  line-height: 1.5;
+  letter-spacing: clamp(0.075em, 0.4vw, 0.16em);
+}
+
+@media (width >= 40rem) {
+  .ruledLabel {
+    max-inline-size: 100%;
+  }
+
+  .ruledLabel::before,
+  .ruledLabel::after {
+    flex: 0 0 clamp(1.5rem, 2.7vw, 3rem);
+    height: 1px;
+    content: "";
+    background: linear-gradient(to right, transparent, var(--color-emerald));
+  }
+
+  .ruledLabel::after {
+    background: linear-gradient(to left, transparent, var(--color-emerald));
+  }
+}
+
+@media (forced-colors: active) {
+  .action:focus-visible {
+    outline: 2px solid Highlight;
+    outline-offset: 3px;
+  }
+}

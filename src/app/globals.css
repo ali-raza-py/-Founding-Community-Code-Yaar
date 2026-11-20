@@ -54,6 +54,8 @@
 
   /* Spacing */
   --space-section: 6rem;
+  --spacing-home-section: clamp(3.5rem, 5.6vw, 5rem);
+  --container-page: 72rem;
 }
 
 /* ============ DARK THEME TOKENS ============ */

@@ -1,0 +1,132 @@
+.background {
+  position: absolute;
+  inset: 0;
+  z-index: -10;
+  overflow: hidden;
+  pointer-events: none;
+  background: linear-gradient(
+    var(--color-canvas),
+    color-mix(in srgb, var(--color-canvas), var(--color-surface) 52%) 50%,
+    var(--color-canvas)
+  );
+}
+
+.background::after {
+  position: absolute;
+  inset: 0 0 auto;
+  block-size: clamp(2.5rem, 5vw, 4.5rem);
+  background: linear-gradient(var(--color-canvas), transparent);
+  content: "";
+}
+
+.grid {
+  --grid-cell: clamp(1.875rem, 2.55vw, 3rem);
+  --grid-line: color-mix(in srgb, var(--color-emerald) 6%, transparent);
+
+  position: absolute;
+  inset: 0;
+  background-image:
+    linear-gradient(to right, var(--grid-line) 1px, transparent 1px),
+    linear-gradient(to bottom, var(--grid-line) 1px, transparent 1px);
+  background-size: var(--grid-cell) var(--grid-cell);
+  mask-image:
+    radial-gradient(ellipse 68% 76% at 50% 40%, transparent 24%, #000 62%, transparent 100%),
+    linear-gradient(transparent, #000 19% 53%, transparent 88%);
+  mask-composite: intersect;
+}
+
+.wash {
+  --wash-width: clamp(19rem, 53vw, 56rem);
+
+  position: absolute;
+  inline-size: var(--wash-width);
+  block-size: clamp(17rem, 73%, 39rem);
+}
+
+.wash::before {
+  position: absolute;
+  inset: 0;
+  content: "";
+  background: radial-gradient(
+    ellipse at center,
+    color-mix(in srgb, var(--color-emerald-600) var(--wash-strength), transparent),
+    transparent 70%
+  );
+  opacity: 0.82;
+}
+
+.washLeft {
+  --wash-strength: 18%;
+  --parallax-scale: 1;
+  --drift-x: 0.75rem;
+  --drift-y: 0.5rem;
+  --drift-duration: 30s;
+
+  inset-block-start: -19%;
+  inset-inline-start: calc(var(--wash-width) * -0.54);
+}
+
+.washRight {
+  --wash-strength: 16%;
+  --parallax-scale: -0.8;
+  --drift-x: -0.75rem;
+  --drift-y: -0.5rem;
+  --drift-duration: 34s;
+  --drift-delay: -8s;
+
+  inset-block-start: 27%;
+  inset-inline-end: calc(var(--wash-width) * -0.54);
+}
+
+.mesh {
+  position: absolute;
+  inset: auto 0 0;
+  block-size: clamp(5rem, 13vw, 15rem);
+  background: url("/brand/hero-mesh.webp") center bottom / 100% auto no-repeat;
+  opacity: 0.64;
+  mask-image:
+    linear-gradient(to bottom, transparent, #000 25% 62%, transparent),
+    linear-gradient(to right, #000 18%, transparent 32% 68%, #000 82%);
+  mask-composite: intersect;
+}
+
+@media (width < 40rem) {
+  .washLeft,
+  .washRight {
+    --wash-strength: 12%;
+  }
+
+  .mesh {
+    opacity: 0.56;
+  }
+}
+
+@keyframes drift {
+  0%, 100% {
+    transform: translate(0, 0);
+    opacity: 0.82;
+  }
+
+  50% {
+    transform: translate(var(--drift-x), var(--drift-y));
+    opacity: 0.96;
+  }
+}
+
+@media (hover: hover) and (pointer: fine) and (update: fast) and (prefers-reduced-motion: no-preference) {
+  .wash {
+    transform: translate(
+      calc(var(--pointer-x, 0px) * var(--parallax-scale)),
+      calc(var(--pointer-y, 0px) * var(--parallax-scale))
+    );
+    transition: transform 620ms cubic-bezier(0.2, 0.65, 0.3, 1);
+  }
+
+  .wash::before {
+    animation: drift var(--drift-duration) ease-in-out var(--drift-delay, 0s) infinite paused;
+  }
+
+  .background[data-motion-active] .wash::before {
+    animation-play-state: running;
+  }
+}

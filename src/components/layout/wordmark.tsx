@@ -1,17 +1,33 @@
 import Image from "next/image";
 import Link from "next/link";
+import type { MouseEventHandler } from "react";
 
-export function Wordmark({ className }: { className?: string }) {
+import { cn } from "@/lib/utils";
+
+export function Wordmark({
+  className,
+  onClick,
+}: {
+  className?: string;
+  onClick?: MouseEventHandler<HTMLAnchorElement>;
+}) {
   return (
     <Link
       href="/"
-      className="flex items-center gap-2.5 rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#087a52] focus-visible:ring-offset-2 focus-visible:ring-offset-white"
+      onClick={onClick}
+      className={cn("inline-flex shrink-0 items-center gap-2 rounded-md text-sm font-semibold hover:text-emerald", className)}
       aria-label="Code Yaar Home"
     >
-      <div className="relative h-6 w-6 shrink-0">
-        <Image src="/brand/logo-mark.png" alt="" fill sizes="24px" className="object-contain" />
-      </div>
-      <span className={className}>Code Yaar</span>
+      <Image
+        src="/brand/logo-mark.png"
+        alt=""
+        width={24}
+        height={24}
+        className="size-6 shrink-0 object-contain"
+      />
+      <span className="whitespace-nowrap tracking-tight">
+        Code Yaar
+      </span>
     </Link>
   );
 }

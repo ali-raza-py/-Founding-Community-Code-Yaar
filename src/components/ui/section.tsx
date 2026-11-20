@@ -22,6 +22,6 @@ export function Section({ children, padded, className, ...props }: SectionProps)
 
 export function SectionInner({ className, ...props }: React.HTMLAttributes<HTMLElement>) {
   return (
-    <div className={cn("mx-auto max-w-[1152px] px-4 sm:px-6 lg:px-8", className)} {...props} />
+    <div className={cn("mx-auto max-w-page px-4 sm:px-6 lg:px-8", className)} {...props} />
   );
 }
