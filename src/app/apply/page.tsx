@@ -5,7 +5,7 @@ import Link from "next/link";
 
 import { EMPTY_APPLICATION, REVIEW_GROUPS } from "@/lib/application";
 import { clearDraft, getDraftSnapshot, getServerDraftSnapshot, saveDraft, subscribeToDraft, markSubmittedThisSession } from "@/lib/draft";
-import { APPLICATION_ENDPOINT, IS_SUBMISSION_CONFIGURED } from "@/lib/submission";
+import { IS_SUBMISSION_CONFIGURED } from "@/lib/submission";
 import { COUNTRIES, AGE_RANGES, EDUCATION_LEVELS, EXPERIENCE_LEVELS, WEEKLY_TIME_OPTIONS, PRIVACY_CONSENT_TEXT, FORM_VERSION, TOTAL_STEPS, STEP_LABELS } from "@/lib/constants";
 import { personalInformationSchema, educationSchema, programmingBackgroundSchema, motivationSchema } from "@/lib/validation";
 import { submitApplication } from "@/lib/submission";
@@ -13,6 +13,7 @@ import { type ApplicationData, type SubmissionStatus } from "@/types/application
 import { Button } from "@/components/ui/button";
 import { Field, Input, Select, Textarea } from "@/components/ui/field";
 import { Section, SectionInner } from "@/components/ui/section";
+import { cn } from "@/lib/utils";
 
 const STEP_SCHEMAS = {
   1: personalInformationSchema,
@@ -34,6 +35,8 @@ export default function ApplyPage() {
   const [consent, setConsent] = useState(false);
 
   const submissionIdRef = useRef<string>(crypto.randomUUID());
+  const restoredRef = useRef(false);
+  const saveTimerRef = useRef<NodeJS.Timeout | null>(null);
 
   // --- Draft persistence (external store, no logging of applicant data) ---
   const draft = useSyncExternalStore(
@@ -41,23 +44,26 @@ export default function ApplyPage() {
     getDraftSnapshot,
     getServerDraftSnapshot,
   );
-  // Restore the saved draft once after hydration.
+  // Restore the saved draft exactly once after hydration so it never
+  // overwrites values while the applicant is actively typing.
   useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    if (draft) setValues(draft);
+    if (!restoredRef.current && draft) {
+      restoredRef.current = true;
+      setValues(draft);
+    }
   }, [draft]);
+  // Persist to localStorage only when the applicant pauses typing.
   useEffect(() => {
-    saveDraft(values);
+    if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
+    saveTimerRef.current = setTimeout(() => saveDraft(values), 600);
+    return () => {
+      if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
+    };
   }, [values]);
 
   // --- Field helpers ---
   const setField = useCallback((key: keyof ApplicationData, value: string) => {
     setValues((current) => ({ ...current, [key]: value }));
-    setErrors((current) => {
-      const next = { ...current };
-      if (next[key]) delete next[key];
-      return next;
-    });
   }, []);
 
   // --- Step validation ---
@@ -169,7 +175,7 @@ export default function ApplyPage() {
     typeof window !== "undefined" &&
     window.sessionStorage.getItem("codeyaar.first100.submitted.v1") === "true";
 
-  const configured = IS_SUBMISSION_CONFIGURED && !!APPLICATION_ENDPOINT;
+  const configured = IS_SUBMISSION_CONFIGURED;
 
   if (alreadySubmitted) {
     return (
@@ -210,10 +216,39 @@ export default function ApplyPage() {
         </div>
 
         <form noValidate onSubmit={handleSubmit} className="space-y-8">
-          {/* Step indicator */}
-          <div className="flex items-center justify-between mb-2">
-            <span className="type-small">Step {step} of {TOTAL_STEPS}</span>
-            <span className="type-small font-semibold">{stepLabel}</span>
+          {/* Step progress */}
+          <div className="mb-6">
+            <div className="flex items-center justify-between mb-2">
+              <span className="type-small">Step {step} of {TOTAL_STEPS}</span>
+              <span className="type-small font-semibold">{stepLabel}</span>
+            </div>
+            <div className="w-full bg-[#e8ece8] rounded-full h-1.5">
+              <div
+                className="bg-[#087a52] h-1.5 rounded-full transition-all duration-300"
+                style={{ width: `${(step / TOTAL_STEPS) * 100}%` }}
+                role="progressbar"
+                aria-valuenow={step}
+                aria-valuemin={1}
+                aria-valuemax={TOTAL_STEPS}
+              />
+            </div>
+            <div className="flex justify-between mt-2">
+              {STEP_LABELS.map((label, index) => (
+                <span
+                  key={label}
+                  className={cn(
+                    "text-[0.75rem] font-medium transition-colors duration-200",
+                    index + 1 < step
+                      ? "text-[#087a52]"
+                      : index + 1 === step
+                        ? "text-[#19231d] font-semibold"
+                        : "text-[#6b7a70]",
+                  )}
+                >
+                  {label}
+                </span>
+              ))}
+            </div>
           </div>
 
           {/* -------- Step 1: Personal information -------- */}
