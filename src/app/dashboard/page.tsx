@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 
@@ -10,7 +10,6 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Section, SectionInner } from "@/components/ui/section";
 import { SectionHeading } from "@/components/ui/section-heading";
-import { cn } from "@/lib/utils";
 
 type StatusVariant = "pending" | "accepted" | "rejected" | "under_review" | "shortlisted" | "waitlisted";
 
@@ -30,7 +29,16 @@ function statusBadge(status: string | null | undefined) {
 }
 
 export default function DashboardPage() {
-  const { user, accessToken, isAuthenticated, isLoading, isAdmin, isSuperAdmin, backendUnavailable, signOut } = useAuth();
+  const {
+    user,
+    accessToken,
+    isAuthenticated,
+    isLoading,
+    isAdmin,
+    isSuperAdmin,
+    backendUnavailable,
+    signOut,
+  } = useAuth();
   const router = useRouter();
 
   const [applications, setApplications] = useState<Array<any>>([]);
@@ -40,6 +48,7 @@ export default function DashboardPage() {
   const [announcements, setAnnouncements] = useState<Array<any>>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const mounted = useRef(true);
 
   const loadData = useCallback(async () => {
     if (!accessToken) {
@@ -60,23 +69,32 @@ export default function DashboardPage() {
           communityApi.getAnnouncements(accessToken),
         ]);
 
+      if (!mounted.current) return;
+
       if (appRes.ok) setApplications(appRes.data ?? []);
       if (participantRes.ok) setParticipant(participantRes.data ?? null);
       if (referralRes.ok) setReferrals(referralRes.data ?? null);
       if (taskRes.ok) setTasks(taskRes.data ?? []);
       if (announcementRes.ok) setAnnouncements(announcementRes.data ?? []);
     } catch {
+      if (!mounted.current) return;
       setError("Unable to load dashboard data. Please try again.");
     } finally {
+      if (!mounted.current) return;
       setLoading(false);
     }
   }, [accessToken]);
 
   useEffect(() => {
+    mounted.current = true;
     loadData();
+
+    return () => {
+      mounted.current = false;
+    };
   }, [loadData]);
 
-  // Redirect unauthenticated users to sign-in.
+  // While auth state is being resolved, show a neutral loading state.
   if (isLoading) {
     return (
       <Section padded>
@@ -87,33 +105,34 @@ export default function DashboardPage() {
     );
   }
 
+  // Redirect unauthenticated users to sign-in.
   if (!isAuthenticated) {
     router.push(`/auth/sign-in?redirectTo=${encodeURIComponent("/dashboard")}`);
     return null;
   }
 
-  // Role-based redirect: admins go to admin dashboard.
+  // Role-based redirect: admins and super admins go to admin dashboard.
   if (isAdmin || isSuperAdmin) {
     router.push("/admin");
     return null;
   }
 
-  {backendUnavailable && (
-    <Section padded>
-      <SectionInner>
-        <div className="rounded-lg border border-amber bg-amber-light p-4 mb-6">
-          <p className="type-body text-amber">
-            The Code Yaar API is currently unreachable. You are signed in via
-            Supabase, but some dashboard features may be limited until the API
-            is restored.
-          </p>
-        </div>
-      </SectionInner>
-    </Section>
-  )}
-
   return (
     <>
+      {backendUnavailable && (
+        <Section padded>
+          <SectionInner>
+            <div className="rounded-lg border border-amber bg-amber-light p-4 mb-6">
+              <p className="type-body text-amber">
+                The Code Yaar API is currently unreachable. You are signed in via
+                Supabase, but some dashboard features may be limited until the API
+                is restored.
+              </p>
+            </div>
+          </SectionInner>
+        </Section>
+      )}
+
       <Section padded>
         <SectionInner>
           <SectionHeading

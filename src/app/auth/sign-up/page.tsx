@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 
@@ -9,7 +9,6 @@ import { Button } from "@/components/ui/button";
 import { Field, Input } from "@/components/ui/field";
 import { Section, SectionInner } from "@/components/ui/section";
 import { SectionHeading } from "@/components/ui/section-heading";
-import { cn } from "@/lib/utils";
 
 export default function SignUpPage() {
   const router = useRouter();
@@ -20,7 +19,8 @@ export default function SignUpPage() {
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
 
-  const supabase = createSupabaseBrowserClient();
+  // Stable Supabase client reference — created once, not on every render.
+  const supabase = useMemo(() => createSupabaseBrowserClient(), []);
 
   const handleSubmit = useCallback(
     async (event: React.FormEvent) => {

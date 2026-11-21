@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 
@@ -10,7 +10,6 @@ import { Button } from "@/components/ui/button";
 import { Field, Input } from "@/components/ui/field";
 import { Section, SectionInner } from "@/components/ui/section";
 import { SectionHeading } from "@/components/ui/section-heading";
-import { cn } from "@/lib/utils";
 
 export default function SignInPage() {
   const router = useRouter();
@@ -20,7 +19,8 @@ export default function SignInPage() {
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
 
-  const supabase = createSupabaseBrowserClient();
+  // Stable Supabase client reference — created once, not on every render.
+  const supabase = useMemo(() => createSupabaseBrowserClient(), []);
 
   const handleSubmit = useCallback(
     async (event: React.FormEvent) => {
@@ -36,6 +36,7 @@ export default function SignInPage() {
 
       setIsLoading(true);
 
+      // Step 1: Authenticate with Supabase Auth
       const { data, error: signInError } = await supabase.auth.signInWithPassword({
         email,
         password,
@@ -50,22 +51,47 @@ export default function SignInPage() {
         return;
       }
 
-      // Supabase sign-in succeeded. Optionally verify with the Community API
-      // backend to resolve the user's role, but do not block sign-in if the
-      // backend is temporarily unavailable.
+      const accessToken = data.session.access_token;
+
+      // Step 2: Verify session with the Community API backend to resolve role
+      let verifiedRole: "super_admin" | "admin" | "participant" | null = null;
+      let backendError = false;
+
       try {
-        const result = await communityApi.session(data.session.access_token);
-        if (!result.ok) {
+        const result = await communityApi.session(accessToken);
+
+        if (result.ok) {
+          verifiedRole = result.data.user.role;
+        } else {
+          // Backend returned an error (e.g., 401, 403, profile missing)
+          backendError = true;
           setError(
-            "Your session could not be verified by the Code Yaar API. Some features may be limited.",
+            "Your session could not be verified by the Code Yaar API. Please contact the Code Yaar team.",
           );
         }
       } catch {
-        // Backend unreachable — still allow sign-in via Supabase.
+        backendError = true;
+        setError(
+          "The Code Yaar API is currently unreachable. Please try again later.",
+        );
       }
 
       setIsLoading(false);
-      await router.push("/dashboard");
+
+      if (backendError) {
+        // Sign out of Supabase since backend verification failed
+        await supabase.auth.signOut();
+        return;
+      }
+
+      // Step 3: Redirect based on verified backend role
+      if (verifiedRole === "super_admin") {
+        await router.push("/admin/users");
+      } else if (verifiedRole === "admin") {
+        await router.push("/admin");
+      } else {
+        await router.push("/dashboard");
+      }
     },
     [email, password, router, supabase],
   );

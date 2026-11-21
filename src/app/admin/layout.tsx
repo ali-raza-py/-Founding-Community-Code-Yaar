@@ -1,6 +1,5 @@
 "use client";
 
-import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { AdminLayout } from "@/components/admin/layout";
 import { useAuth } from "@/lib/api/auth";
@@ -10,19 +9,16 @@ export default function AdminRouteLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const { isAuthenticated, isAdmin, isLoading, signOut } = useAuth();
+  const { isAuthenticated, isAdmin, isLoading } = useAuth();
   const router = useRouter();
-  const [mounted, setMounted] = useState(false);
 
-  useEffect(() => {
-    setMounted(true);
-  }, []);
-
-  // Redirect unauthenticated or non-admin users.
-  if (isLoading || !mounted) {
+  // While auth state is being resolved, show a neutral loading state
+  // to prevent flashing unauthorized content.
+  if (isLoading) {
     return null;
   }
 
+  // Redirect unauthenticated or non-admin users.
   if (!isAuthenticated || !isAdmin) {
     router.replace("/dashboard");
     return null;

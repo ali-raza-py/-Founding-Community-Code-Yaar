@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { communityApi } from "@/lib/api/client";
 import { createSupabaseBrowserClient, isSupabaseConfigured } from "@/lib/supabase";
 
@@ -40,7 +40,11 @@ export function useAuth(): AuthState & { signOut: () => Promise<void> } {
     backendUnavailable: false,
   });
 
-  const supabase = createSupabaseBrowserClient();
+  // Create Supabase client once and keep it stable across renders.
+  // Creating it directly in the component body produces a new object every
+  // render, which would destabilize effect dependencies and cause infinite
+  // re-render loops.
+  const supabase = useMemo(() => createSupabaseBrowserClient(), []);
 
   const verifySession = useCallback(async () => {
     if (!isSupabaseConfigured() || !supabase) {
