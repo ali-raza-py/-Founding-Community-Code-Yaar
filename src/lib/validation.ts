@@ -1,6 +1,7 @@
 import { z } from "zod";
 
 import {
+  APPLYING_FOR_OPTIONS,
   EDUCATION_LEVELS,
   EXPERIENCE_LEVELS,
   WEEKLY_TIME_OPTIONS,
@@ -66,6 +67,13 @@ export const personalInformationSchema = z.object({
     .min(13, "You must be at least 13 years old to apply.")
     .max(120, "Please enter a valid age.")
     .refine((value) => Number.isInteger(value), "Please enter a whole number."),
+  applyingFor: z
+    .string()
+    .min(1, "Select what you are applying for.")
+    .refine(
+      (value) => APPLYING_FOR_OPTIONS.some((o) => o.value === value),
+      "Select what you are applying for.",
+    ),
 });
 
 export const educationSchema = z.object({

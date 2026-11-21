@@ -48,6 +48,11 @@ export const EDUCATION_LEVELS = [
   { value: "not-studying", label: "Not currently studying" },
 ] as const;
 
+export const APPLYING_FOR_OPTIONS = [
+  { value: "founding-cohort", label: "Founding Cohort (The First 100)" },
+  { value: "global-ambassador", label: "Global Ambassador Programme" },
+] as const;
+
 export const EXPERIENCE_LEVELS = [
   {
     value: "beginner",
@@ -75,6 +80,7 @@ export const WEEKLY_TIME_OPTIONS = [
 ] as const;
 
 export const LABEL_LOOKUPS = {
+  applyingFor: APPLYING_FOR_OPTIONS,
   ageRange: AGE_RANGES,
   educationLevel: EDUCATION_LEVELS,
   experienceLevel: EXPERIENCE_LEVELS,

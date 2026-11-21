@@ -1,9 +1,12 @@
 import type { Metadata } from "next";
 
+import { BenefitsSection } from "@/components/sections/benefits";
 import { CohortIntroSection } from "@/components/sections/cohort-intro";
 import { FinalCtaSection } from "@/components/sections/final-cta";
 import { FoundingHero } from "@/components/sections/hero";
-import { Section, SectionInner } from "@/components/ui/section";
+import { JourneySection } from "@/components/sections/journey";
+import { MissionSection } from "@/components/sections/mission";
+import { PrinciplesSection } from "@/components/sections/principles";
 import { SITE_URL } from "@/lib/constants";
 
 const description =
@@ -28,9 +31,12 @@ export default function HomePage() {
   return (
     <>
       <FoundingHero />
-      <Section padded>
-        <SectionInner />
-      </Section>
+      <MissionSection />
+      <PrinciplesSection />
+      <BenefitsSection />
+      <CohortIntroSection />
+      <JourneySection />
+      <FinalCtaSection />
     </>
   );
 }

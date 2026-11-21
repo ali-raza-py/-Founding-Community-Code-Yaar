@@ -8,7 +8,7 @@
 
 | Step | Label | Required fields | Optional fields |
 |---|---|---|---|
-| 1 | Personal | fullName, email, country, city, age | region |
+| 1 | Personal | fullName, email, country, city, age, applyingFor | region |
 | 2 | Education | educationLevel, yearOrGrade | institution, fieldOfStudy |
 | 3 | Programming | experienceLevel, languages | previousProjects, github, linkedin, portfolio |
 | 4 | Motivation | motivation, learningGoals, contribution, weeklyTime, preferredLanguage, timezone | (none) |
@@ -20,6 +20,7 @@
 - email: valid email, max 254
 - country/city: from COUNTRIES list / max 80
 - age: number, 13–120, integer
+- applyingFor: enum from APPLYING_FOR_OPTIONS ("founding-cohort" or "global-ambassador")
 - educationLevel: enum from EDUCATION_LEVELS
 - yearOrGrade: 1–60 chars
 - experienceLevel: enum from EXPERIENCE_LEVELS

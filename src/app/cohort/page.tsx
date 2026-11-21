@@ -168,7 +168,8 @@ export default function CohortPage() {
               <strong>Application review.</strong> A person on the team reads
               your application. Selection considers motivation, willingness to
               learn, interest in practical work, collaboration, and realistic
-              availability — not existing skill level.
+              availability — not existing skill level. There are no interviews;
+              every application is reviewed on its merits.
             </li>
             <li>
               <strong>Selection notification.</strong> You are contacted by

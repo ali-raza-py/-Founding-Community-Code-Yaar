@@ -42,7 +42,6 @@ export function CohortIntroSection() {
               {points.map((point) => <li key={point}>{point}</li>)}
             </ul>
           </div>
-<<<<<<< HEAD
           <div className="card-hairline self-start p-5 sm:p-7">
             <h3 className="text-base">What to expect</h3>
             <ul className="type-body-muted mt-4 list-disc space-y-2 pl-5 marker:text-emerald">
@@ -54,29 +53,9 @@ export function CohortIntroSection() {
               <li>Founding recognition, subject to participation</li>
             </ul>
             <p className="type-caption mt-5 border-t border-line pt-4 text-ink-muted">
-              We do not promise jobs, internships, scholarships, or
-              certifications. Founding recognition is tied to participation.
+              Founding recognition is tied to your participation in The
+              First 100.
             </p>
-=======
-          <div className="hidden lg:block">
-            <div className="card-hairline p-8 lg:p-10">
-              <p className="type-caption mb-3">What to expect</p>
-              <ul className="space-y-4 prose-body">
-                <li>Early community participation</li>
-                <li>Product feedback opportunities</li>
-                <li>Learning discussions</li>
-                <li>Collaborative activities as they become available</li>
-                <li>Project showcases</li>
-                <li className="type-small text-[#6b7a70]">
-                  Founding recognition, subject to participation
-                </li>
-              </ul>
-              <p className="mt-6 type-caption text-[#6b7a70]">
-                Founding recognition is tied to your participation in The
-                First 100.
-              </p>
-            </div>
->>>>>>> 016fcdc069fd3796364ea519784a533d0f235f8a
           </div>
         </div>
         <div className="mt-8 flex flex-wrap gap-3">
