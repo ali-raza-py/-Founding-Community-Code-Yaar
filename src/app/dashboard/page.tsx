@@ -30,7 +30,7 @@ function statusBadge(status: string | null | undefined) {
 }
 
 export default function DashboardPage() {
-  const { user, accessToken, isAuthenticated, isLoading, isAdmin, isSuperAdmin, signOut } = useAuth();
+  const { user, accessToken, isAuthenticated, isLoading, isAdmin, isSuperAdmin, backendUnavailable, signOut } = useAuth();
   const router = useRouter();
 
   const [applications, setApplications] = useState<Array<any>>([]);
@@ -97,6 +97,20 @@ export default function DashboardPage() {
     router.push("/admin");
     return null;
   }
+
+  {backendUnavailable && (
+    <Section padded>
+      <SectionInner>
+        <div className="rounded-lg border border-amber bg-amber-light p-4 mb-6">
+          <p className="type-body text-amber">
+            The Code Yaar API is currently unreachable. You are signed in via
+            Supabase, but some dashboard features may be limited until the API
+            is restored.
+          </p>
+        </div>
+      </SectionInner>
+    </Section>
+  )}
 
   return (
     <>

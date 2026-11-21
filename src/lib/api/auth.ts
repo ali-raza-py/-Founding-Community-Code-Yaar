@@ -17,6 +17,7 @@ export interface AuthState {
   isAuthenticated: boolean;
   isAdmin: boolean;
   isSuperAdmin: boolean;
+  backendUnavailable: boolean;
 }
 
 /** Hook to manage Supabase Auth session and verify it against the Community API.
@@ -24,6 +25,9 @@ export interface AuthState {
  * The frontend relies on Supabase Auth for login/signup. The access token is
  * sent to the Community API as a Bearer token; the backend verifies it
  * server-side and resolves the role from the trusted profiles table.
+ *
+ * If the backend is unavailable, sign-in via Supabase still succeeds — the
+ * user is treated as a participant with limited role info.
  */
 export function useAuth(): AuthState & { signOut: () => Promise<void> } {
   const [state, setState] = useState<AuthState>({
@@ -33,6 +37,7 @@ export function useAuth(): AuthState & { signOut: () => Promise<void> } {
     isAuthenticated: false,
     isAdmin: false,
     isSuperAdmin: false,
+    backendUnavailable: false,
   });
 
   const supabase = createSupabaseBrowserClient();
@@ -55,11 +60,12 @@ export function useAuth(): AuthState & { signOut: () => Promise<void> } {
         isAuthenticated: false,
         isAdmin: false,
         isSuperAdmin: false,
+        backendUnavailable: false,
       });
       return;
     }
 
-    // Verify with the Community API backend.
+    // Verify with the Community API backend to resolve the user's actual role.
     const result = await communityApi.session(session.access_token);
     if (result.ok) {
       setState({
@@ -71,16 +77,23 @@ export function useAuth(): AuthState & { signOut: () => Promise<void> } {
           result.data.user.role === "admin" ||
           result.data.user.role === "super_admin",
         isSuperAdmin: result.data.user.role === "super_admin",
+        backendUnavailable: false,
       });
     } else {
-      // Session invalid or expired.
+      // Backend unavailable or verification failed — still allow sign-in
+      // via Supabase, defaulting to participant role.
       setState({
-        user: null,
-        accessToken: null,
+        user: {
+          id: session.user?.id ?? "",
+          email: session.user?.email ?? null,
+          role: "participant",
+        },
+        accessToken: session.access_token,
         isLoading: false,
-        isAuthenticated: false,
+        isAuthenticated: true,
         isAdmin: false,
         isSuperAdmin: false,
+        backendUnavailable: true,
       });
     }
   }, [supabase]);
@@ -105,6 +118,7 @@ export function useAuth(): AuthState & { signOut: () => Promise<void> } {
       isAuthenticated: false,
       isAdmin: false,
       isSuperAdmin: false,
+      backendUnavailable: false,
     });
   }, [state.accessToken, supabase]);
 
@@ -130,6 +144,7 @@ export function useAuth(): AuthState & { signOut: () => Promise<void> } {
               isAuthenticated: false,
               isAdmin: false,
               isSuperAdmin: false,
+              backendUnavailable: false,
             });
           }
         }

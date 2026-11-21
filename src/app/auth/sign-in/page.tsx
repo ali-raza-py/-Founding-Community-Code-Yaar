@@ -50,17 +50,22 @@ export default function SignInPage() {
         return;
       }
 
-      // Verify the session against the Community API backend.
-      const result = await communityApi.session(data.session.access_token);
-      setIsLoading(false);
-
-      if (result.ok) {
-        await router.push("/dashboard");
-      } else {
-        setError(
-          "Your session could not be verified. Please contact the Code Yaar team.",
-        );
+      // Supabase sign-in succeeded. Optionally verify with the Community API
+      // backend to resolve the user's role, but do not block sign-in if the
+      // backend is temporarily unavailable.
+      try {
+        const result = await communityApi.session(data.session.access_token);
+        if (!result.ok) {
+          setError(
+            "Your session could not be verified by the Code Yaar API. Some features may be limited.",
+          );
+        }
+      } catch {
+        // Backend unreachable — still allow sign-in via Supabase.
       }
+
+      setIsLoading(false);
+      await router.push("/dashboard");
     },
     [email, password, router, supabase],
   );
@@ -123,9 +128,14 @@ export default function SignInPage() {
             </Button>
           </form>
 
-          <p className="mt-8 text-center type-body text-ink-muted">
-            Don&rsquo;t have an account? Contact the Code Yaar team to request
-            access.
+          <p className="mt-6 text-center type-body text-ink-muted">
+            Don&rsquo;t have an account?{" "}
+            <Link
+              href="/auth/sign-up"
+              className="text-emerald hover:underline font-medium"
+            >
+              Create an account
+            </Link>
           </p>
         </div>
       </SectionInner>
