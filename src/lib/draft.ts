@@ -9,7 +9,9 @@ const DRAFT_FIELDS = Object.keys(EMPTY_APPLICATION) as (keyof ApplicationData)[]
 function isApplicationData(value: unknown): value is ApplicationData {
   if (typeof value !== "object" || value === null) return false;
   return DRAFT_FIELDS.every(
-    (field) => typeof (value as Record<string, unknown>)[field] === "string",
+    (field) =>
+      typeof (value as Record<string, unknown>)[field] === "string" ||
+      typeof (value as Record<string, unknown>)[field] === "number",
   );
 }
 
@@ -17,8 +19,7 @@ function isApplicationData(value: unknown): value is ApplicationData {
 export function saveDraft(values: ApplicationData): void {
   if (typeof window === "undefined") return;
   try {
-    const draft: ApplicationData = { ...EMPTY_APPLICATION };
-    for (const field of DRAFT_FIELDS) draft[field] = values[field];
+    const draft: ApplicationData = { ...EMPTY_APPLICATION, ...values };
     window.localStorage.setItem(DRAFT_KEY, JSON.stringify(draft));
   } catch {
     // Storage can be unavailable (private mode, quota). Drafts are best-effort.

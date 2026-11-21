@@ -6,7 +6,7 @@ import Link from "next/link";
 import { EMPTY_APPLICATION, REVIEW_GROUPS } from "@/lib/application";
 import { clearDraft, markSubmittedThisSession } from "@/lib/draft";
 import { IS_SUBMISSION_CONFIGURED } from "@/lib/submission";
-import { COUNTRIES, AGE_RANGES, EDUCATION_LEVELS, EXPERIENCE_LEVELS, WEEKLY_TIME_OPTIONS, PRIVACY_CONSENT_TEXT, FORM_VERSION, TOTAL_STEPS, STEP_LABELS } from "@/lib/constants";
+import { COUNTRIES, EDUCATION_LEVELS, EXPERIENCE_LEVELS, WEEKLY_TIME_OPTIONS, PRIVACY_CONSENT_TEXT, FORM_VERSION, TOTAL_STEPS, STEP_LABELS } from "@/lib/constants";
 import { personalInformationSchema, educationSchema, programmingBackgroundSchema, motivationSchema } from "@/lib/validation";
 import { submitApplication } from "@/lib/submission";
 import { extractReferralCode, COHORT_REFERRAL_KEY } from "@/lib/referral";
@@ -88,7 +88,7 @@ export default function ApplyPage() {
     for (const group of REVIEW_GROUPS) {
       const items = group.fields.map((field: { key: keyof ApplicationData; label: string }) => ({
         label: field.label,
-        value: values[field.key] ?? "",
+        value: values[field.key] == null ? "" : String(values[field.key]),
       }));
       groups.push({ step: group.step, title: group.title, items });
     }
@@ -132,7 +132,7 @@ export default function ApplyPage() {
         let message = "Unable to submit your application. Please try again.";
         if (result.reason === "not-configured") {
           message =
-            "Application submission is not configured on this site yet. Your answers have been saved locally — please try again later or contact the Code Yaar team.";
+            "Application submission is not configured on this site yet — please try again later or contact the Code Yaar team.";
         } else if (result.reason === "timeout") {
           message = "The request timed out. Please try again.";
         } else if (result.reason === "network") {
@@ -289,19 +289,19 @@ export default function ApplyPage() {
                   onChange={(e) => setField("region", e.currentTarget.value)}
                 />
               </Field>
-              <Field label="Age range" required error={errors.ageRange?.[0]}>
-                <Select
-                  value={values.ageRange}
-                  onChange={(e) => setField("ageRange", e.currentTarget.value)}
+              <Field label="Age" required error={errors.age?.[0]}>
+                <Input
+                  type="number"
+                  min="13"
+                  max="120"
+                  placeholder="Enter your age"
+                  value={String(values.age ?? "")}
+                  onChange={(e) => setField("age", e.currentTarget.value)}
                   required
-                >
-                  <option value="">Select your age range</option>
-                  {AGE_RANGES.map((option) => (
-                    <option key={option.value} value={option.value}>
-                      {option.label}
-                    </option>
-                  ))}
-                </Select>
+                />
+                <p className="type-caption">
+                  You must be at least 13 years old to apply.
+                </p>
               </Field>
             </>
           )}
@@ -544,7 +544,9 @@ export default function ApplyPage() {
         <p className="mt-10 type-caption text-center">
           Applications are reviewed by people, not algorithms. Places are
           limited to one hundred founding members. Submission endpoint:
-          {configured ? "configured" : "not configured — submissions are accepted locally only"}.
+          {configured
+            ? "configured — submitted to Web3Forms"
+            : "not configured — submissions disabled"}.
         </p>
       </SectionInner>
     </Section>

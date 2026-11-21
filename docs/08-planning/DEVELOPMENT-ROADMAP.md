@@ -17,7 +17,7 @@
 
 ## Remaining (founder approval required)
 
-- Configure `NEXT_PUBLIC_APPLICATION_ENDPOINT` (or Web3Forms key) to enable real submissions
+- Configure `NEXT_PUBLIC_APPLICATION_ENDPOINT` to enable real submissions over HTTPS; when unset, applications save to browser localStorage
 - Legal review of privacy page (PRIVACY-REQUIREMENTS.md TBD items)
 - Confirm retention period, privacy contact, guardian-consent process for minors
 - Publish review timeline and onboarding details

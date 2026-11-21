@@ -13,6 +13,7 @@ const actionClassName =
 
 export function FoundingHero() {
   return (
+<<<<<<< HEAD
     <Section aria-labelledby="founding-hero-title">
       <AnimatedHeroBackground />
       <SectionInner className={styles.content}>
@@ -50,6 +51,42 @@ export function FoundingHero() {
               Discover The First 100
             </Link>
           </div>
+=======
+    <section
+      ref={heroRef}
+      className="relative isolate overflow-hidden py-20 sm:py-28 lg:py-36"
+    >
+      <div className="absolute inset-0 -z-10 bg-[linear-gradient(to_bottom,var(--color-canvas)_0%,var(--color-surface-raised)_100%)] dark:bg-[linear-gradient(to_bottom,var(--color-canvas)_0%,var(--color-surface)_100%)]" />
+      <SectionInner className="text-center">
+        <p className="type-label mx-auto mb-6 max-w-[42rem] tracking-widest">
+          CODE YAAR &mdash; GLOBAL FOUNDING COMMUNITY 2026&ndash;27
+        </p>
+        <h1 className="type-display mx-auto mb-8 max-w-[56rem]">
+          BUILD WHAT{" "}
+          <br className="hidden sm:block" />
+          <span className="text-emerald">COMES NEXT.</span>
+        </h1>
+        <p className="type-lead mx-auto mb-12 max-w-[42rem] lg:mb-16">
+          A global community for people who want to learn, build, contribute
+          and shape the future of technology.
+        </p>
+        <div className="flex flex-col sm:flex-row gap-3 justify-center items-center">
+          <Link
+            href="/apply"
+            className={`
+              inline-flex items-center justify-center gap-2 rounded-md bg-emerald px-8 py-3.5 text-base font-medium text-white
+              transition-colors hover:bg-emerald-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald
+            `}
+          >
+            Apply to The First 100
+          </Link>
+          <Link
+            href="/cohort"
+            className="inline-flex items-center justify-center gap-2 rounded-md border border-line bg-surface px-8 py-3.5 text-base font-medium text-ink transition-colors hover:bg-surface-raised hover:text-emerald focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald"
+          >
+            Discover The First 100
+          </Link>
+>>>>>>> 016fcdc069fd3796364ea519784a533d0f235f8a
         </div>
 
         <div className={styles.signoff}>

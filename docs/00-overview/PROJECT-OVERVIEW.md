@@ -40,8 +40,7 @@ The founding community website is a separate, frontend-only community initiative
 
 ## Configuration requiring founder approval
 
-- `NEXT_PUBLIC_APPLICATION_ENDPOINT` — the submission endpoint (applications are NOT submitted until configured)
-- `NEXT_PUBLIC_WEB3FORMS_ACCESS_KEY` — optional Web3Forms access key
+- `NEXT_PUBLIC_APPLICATION_ENDPOINT` — the submission endpoint (applications are saved to browser localStorage until configured)
 - `NEXT_PUBLIC_APPLICATION_PUBLIC_KEY` — optional public key header
 - `NEXT_PUBLIC_APPLICATION_TIMEOUT_MS` — request timeout
 - `NEXT_PUBLIC_SITE_URL` — site URL for metadata/sitemap

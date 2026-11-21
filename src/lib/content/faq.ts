@@ -6,6 +6,12 @@ export const faqs = [
       "It is the first 100 members of the Code Yaar community: a founding cohort of learners and aspiring developers who take part in practical activities, give feedback, and help set the tone for everyone who joins later. The cohort is being assembled now, so this is the beginning of the community rather than an established network.",
   },
   {
+    id: "how-to-apply",
+    question: "How do I apply?",
+    answer:
+      "Open the application form and complete the five steps: personal information, education, programming background, motivation, and review. You can save your draft and return to it before submitting. Applications are reviewed by the Code Yaar team.",
+  },
+  {
     id: "free",
     question: "Is the cohort free?",
     answer:
@@ -49,9 +55,9 @@ export const faqs = [
   },
   {
     id: "certificate",
-    question: "Will I receive a certificate?",
+    question: "Will I receive founding recognition?",
     answer:
-      "A certificate is not currently part of the founding cohort, and founding membership is not a certification or a credential. If that changes, it will be stated on this site and in the cohort details before anyone is asked to rely on it.",
+      "Yes. Founding members of The First 100 receive founding recognition tied to their participation in the community. It recognizes your role as one of the earliest members and your contribution to shaping Code Yaar.",
   },
   {
     id: "job",
