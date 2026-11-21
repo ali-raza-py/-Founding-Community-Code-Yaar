@@ -1,6 +1,6 @@
 "use client";
 
-import { ArrowRight } from "lucide-react";
+import { ArrowRight, LogIn } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
@@ -109,6 +109,20 @@ export function SiteHeader() {
         </nav>
 
         <div className="flex shrink-0 items-center gap-1.5 sm:gap-2 xl:justify-self-end">
+          <Link
+            href="/auth/sign-in"
+            aria-label="Sign in"
+            aria-current={pathname === "/auth/sign-in" ? "page" : undefined}
+            onClick={() => setOpen(false)}
+            className={cn(
+              buttonVariants({ variant: "outline" }),
+              "h-11 gap-2 rounded-lg whitespace-nowrap px-3.5 sm:px-4 text-ink",
+            )}
+          >
+            <LogIn className="size-4" />
+            <span className="hidden sm:inline">Sign in</span>
+          </Link>
+
           <Link
             href="/apply"
             aria-label={APPLY_LABEL}
