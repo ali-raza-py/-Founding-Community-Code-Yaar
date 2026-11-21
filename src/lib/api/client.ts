@@ -1,6 +1,9 @@
 import type {
   AdminApplicationItem,
+  AdminParticipantItem,
   AdminProfile,
+  AdminReferralItem,
+  AdminTaskItem,
   ApiClientError,
   ApiResponse,
   Announcement,
@@ -9,6 +12,7 @@ import type {
   PaginatedResponse,
   ParticipantRecord,
   ReferralRecord,
+  ReferralRegistration,
   ReferralRegisterRequest,
   SubmitApplicationRequest,
   SubmitApplicationResponse,
@@ -401,6 +405,49 @@ export class CommunityApiClient {
     return this.patch<AdminProfile>(
       `/api/v1/admin/profiles/${encodeURIComponent(id)}/role`,
       { role },
+      authToken
+    );
+  }
+
+  // ------------------------------------------------------------------
+  // Additional admin methods
+  // ------------------------------------------------------------------
+
+  async verifyAdminReferral(
+    authToken: string,
+    id: string
+  ): Promise<ApiResult<ReferralRegistration>> {
+    return this.patch<ReferralRegistration>(
+      `/api/v1/admin/referrals/${encodeURIComponent(id)}/verify`,
+      {},
+      authToken
+    );
+  }
+
+  async createAdminParticipant(
+    authToken: string,
+    body: {
+      user_id: string;
+      application_id: string;
+      program_id: string;
+      participant_status?: "active" | "inactive" | "suspended" | "graduated";
+    }
+  ): Promise<ApiResult<AdminParticipantItem>> {
+    return this.post<AdminParticipantItem>(
+      "/api/v1/admin/participants",
+      body,
+      authToken
+    );
+  }
+
+  async updateAdminParticipant(
+    authToken: string,
+    id: string,
+    body: { participant_status: "active" | "inactive" | "suspended" | "graduated" }
+  ): Promise<ApiResult<AdminParticipantItem>> {
+    return this.patch<AdminParticipantItem>(
+      `/api/v1/admin/participants/${encodeURIComponent(id)}`,
+      body,
       authToken
     );
   }

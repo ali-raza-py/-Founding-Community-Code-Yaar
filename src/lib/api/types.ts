@@ -171,6 +171,71 @@ export interface AdminProfile {
   updated_at?: string;
 }
 
+/** Admin participant list item (GET /api/v1/admin/participants). */
+export interface AdminParticipantItem {
+  id: string;
+  user_id: string;
+  application_id: string | null;
+  program_id: string;
+  participant_status: string;
+  joined_at: string;
+  created_at: string;
+  profiles?: { full_name: string; email: string; role: string } | null;
+  programs?: { name: string; slug: string } | null;
+}
+
+/** Admin referral list item (GET /api/v1/admin/referrals). */
+export interface AdminReferralItem {
+  id: string;
+  participant_id: string;
+  referral_code: string;
+  total_registrations: number;
+  verified_registrations: number;
+  created_at: string;
+  updated_at?: string;
+  participants?: {
+    user_id: string;
+    profiles: { full_name: string; email: string } | null;
+  } | null;
+}
+
+/** Referral registration (for verification). */
+export interface ReferralRegistration {
+  id: string;
+  referral_id: string;
+  registered_email: string;
+  verification_status: string;
+  created_at: string;
+}
+
+/** Admin task record (POST /api/v1/admin/tasks, GET /api/v1/tasks/mine). */
+export interface AdminTaskItem {
+  id: string;
+  title: string;
+  description: string;
+  program_id: string;
+  assigned_to: string;
+  due_date: string | null;
+  status: string;
+  created_at: string;
+  updated_at?: string;
+}
+
+/** Application status values supported by the backend. */
+export type ApplicationStatus =
+  | "pending"
+  | "under_review"
+  | "shortlisted"
+  | "accepted"
+  | "rejected"
+  | "waitlisted";
+
+/** Participant status values supported by the backend. */
+export type ParticipantStatus = "active" | "inactive" | "suspended" | "graduated";
+
+/** Task status values supported by the backend. */
+export type TaskStatus = "pending" | "in_progress" | "completed" | "overdue";
+
 /** Network/API error classification. */
 export type ApiErrorReason =
   | "not-configured"
