@@ -1,16 +1,17 @@
 "use client";
 
-import { useCallback, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 
 import { EMPTY_APPLICATION, REVIEW_GROUPS } from "@/lib/application";
 import { clearDraft, markSubmittedThisSession } from "@/lib/draft";
 import { IS_SUBMISSION_CONFIGURED } from "@/lib/submission";
+import { submitApplication as submitViaLegacy } from "@/lib/submission";
+import { communityApi } from "@/lib/api/client";
 import { COUNTRIES, APPLYING_FOR_OPTIONS, EDUCATION_LEVELS, EXPERIENCE_LEVELS, WEEKLY_TIME_OPTIONS, PRIVACY_CONSENT_TEXT, FORM_VERSION, TOTAL_STEPS, STEP_LABELS } from "@/lib/constants";
 import { personalInformationSchema, educationSchema, programmingBackgroundSchema, motivationSchema } from "@/lib/validation";
-import { submitApplication } from "@/lib/submission";
 import { extractReferralCode, COHORT_REFERRAL_KEY } from "@/lib/referral";
-import { type ApplicationData, type SubmissionStatus } from "@/types/application";
+import { type ApplicationData, type SubmissionStatus, type SubmissionFailureReason } from "@/types/application";
 import { Button } from "@/components/ui/button";
 import { Field, Input, Select, Textarea } from "@/components/ui/field";
 import { Section, SectionInner } from "@/components/ui/section";
@@ -36,6 +37,52 @@ export default function ApplyPage() {
   const [consent, setConsent] = useState(false);
 
   const submissionIdRef = useRef<string>(crypto.randomUUID());
+  const turnstileRef = useRef<HTMLDivElement>(null);
+  const turnstileTokenRef = useRef<string | null>(null);
+  const [turnstileReady, setTurnstileReady] = useState(false);
+
+  const programId = typeof window !== "undefined"
+    ? (process.env.NEXT_PUBLIC_PROGRAM_ID_FOUNDING_COHORT ?? "")
+    : "";
+  const turnstileSiteKey = typeof window !== "undefined"
+    ? (process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY ?? "")
+    : "";
+
+  // Load Turnstile script on mount.
+  useEffect(() => {
+    if (!turnstileSiteKey || typeof window === "undefined") return;
+    const scriptId = "codeyaar-turnstile";
+    const existing = document.getElementById(scriptId);
+    if (existing) {
+      setTimeout(() => setTurnstileReady(true), 0);
+      return;
+    }
+    const script = document.createElement("script");
+    script.id = scriptId;
+    script.src = "https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit";
+    script.async = true;
+    script.defer = true;
+    script.onload = () => setTurnstileReady(true);
+    script.onerror = () => setTurnstileReady(false);
+    document.head.appendChild(script);
+  }, [turnstileSiteKey]);
+
+  // Render Turnstile widget when ready.
+  useEffect(() => {
+    if (!turnstileReady || !turnstileSiteKey || !turnstileRef.current || typeof window === "undefined") return;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const turnstile = (window as any).turnstile;
+    if (!turnstile) return;
+    turnstile.render(turnstileRef.current, {
+      sitekey: turnstileSiteKey,
+      callback: (token: string) => {
+        turnstileTokenRef.current = token;
+      },
+      "expired-callback": () => {
+        turnstileTokenRef.current = null;
+      },
+    });
+  }, [turnstileReady, turnstileSiteKey]);
 
   // Read referral code from URL during render (no effect needed).
   const refFromUrl = typeof window !== "undefined"
@@ -113,42 +160,122 @@ export default function ApplyPage() {
         return;
       }
 
-      const envelope = {
-        submissionId: submissionIdRef.current,
-        formVersion: FORM_VERSION,
-        submittedAt: new Date().toISOString(),
-        application: values,
-        referralCode: referralCode ?? null,
+      // Build the backend-compatible submission payload.
+      const applicationAnswers: Record<string, unknown> = {
+        age: values.age,
+        educationLevel: values.educationLevel,
+        fieldOfStudy: values.fieldOfStudy,
+        yearOrGrade: values.yearOrGrade,
+        experienceLevel: values.experienceLevel,
+        languages: values.languages,
+        previousProjects: values.previousProjects,
+        github: values.github,
+        linkedin: values.linkedin,
+        portfolio: values.portfolio,
+        motivation: values.motivation,
+        learningGoals: values.learningGoals,
+        contribution: values.contribution,
+        weeklyTime: values.weeklyTime,
+        preferredLanguage: values.preferredLanguage,
+        timezone: values.timezone,
+        applyingFor: values.applyingFor,
+      };
+
+      const request = {
+        program_id: programId,
+        applicant_name: values.fullName,
+        email: values.email,
+        phone: "",
+        institution: values.institution,
+        city: values.city,
+        application_answers: applicationAnswers,
+        referral_code: referralCode ?? "",
+        turnstile_token: turnstileTokenRef.current ?? "",
       };
 
       setStatus({ state: "submitting" });
-      const result = await submitApplication(envelope);
 
-      if (result.ok) {
-        markSubmittedThisSession();
-        clearDraft();
-        setStatus({ state: "success", reference: result.reference ?? null });
-      } else {
-        let message = "Unable to submit your application. Please try again.";
-        if (result.reason === "not-configured") {
-          message =
-            "Application submission is not configured on this site yet — please try again later or contact the Code Yaar team.";
-        } else if (result.reason === "timeout") {
-          message = "The request timed out. Please try again.";
-        } else if (result.reason === "network") {
-          message = "Network error. Please check your connection and try again.";
-        } else if (result.reason === "rejected") {
-          message =
-            `The submission was rejected${result.status != null ? ` (HTTP ${result.status})` : ""}. Please try again later.`;
-        } else if (result.reason === "server") {
-          message =
-            `Server error${result.status != null ? ` (HTTP ${result.status})` : ""}. Please try again later.`;
+      // Prefer the Community API when configured; fall back to legacy adapter.
+      if (communityApi.isConfigured()) {
+        const result = await communityApi.submitApplication(request);
+
+        if (result.ok) {
+          markSubmittedThisSession();
+          clearDraft();
+          setStatus({ state: "success", reference: result.data.id ?? null });
+        } else {
+          const err = result.error;
+          let message = "Unable to submit your application. Please try again.";
+          if (err.reason === "not-configured") {
+            message =
+              "Application submission is not configured on this site yet — please try again later or contact the Code Yaar team.";
+          } else if (err.reason === "timeout") {
+            message = "The request timed out. Please try again.";
+          } else if (err.reason === "network") {
+            message = "Network error. Please check your connection and try again.";
+          } else if (err.reason === "conflict") {
+            message =
+              "You have already submitted an application to this program. Duplicate submissions are not allowed.";
+          } else if (err.reason === "unauthorized") {
+            message =
+              "Your session is not authorized. Please sign in and try again.";
+          } else if (err.reason === "forbidden") {
+            message =
+              "You are not permitted to perform this action.";
+          } else if (err.reason === "validation") {
+            message =
+              `Validation error: ${err.message}. Please check your entries and try again.`;
+          } else if (err.reason === "rate-limited") {
+            message =
+              "Too many submission attempts. Please wait a moment and try again.";
+          } else if (err.reason === "server") {
+            message =
+              `Server error${err.status != null ? ` (HTTP ${err.status})` : ""}. Please try again later.`;
+          }
+          setSubmitError(message);
+          const legacyReason: SubmissionFailureReason =
+            err.reason === "network" || err.reason === "timeout"
+              ? err.reason
+              : err.reason === "server" || err.reason === "rate-limited"
+                ? "server"
+                : "rejected";
+          setStatus({ state: "error", reason: legacyReason, status: err.status });
         }
-        setSubmitError(message);
-        setStatus({ state: "error", reason: result.reason, status: result.status });
+      } else {
+        const legacyResult = await submitViaLegacy({
+          submissionId: submissionIdRef.current,
+          formVersion: FORM_VERSION,
+          submittedAt: new Date().toISOString(),
+          application: values,
+          referralCode: referralCode ?? null,
+        });
+
+        if (legacyResult.ok) {
+          markSubmittedThisSession();
+          clearDraft();
+          setStatus({ state: "success", reference: legacyResult.reference ?? null });
+        } else {
+          let message = "Unable to submit your application. Please try again.";
+          if (legacyResult.reason === "not-configured") {
+            message =
+              "Application submission is not configured on this site yet — please try again later or contact the Code Yaar team.";
+          } else if (legacyResult.reason === "timeout") {
+            message = "The request timed out. Please try again.";
+          } else if (legacyResult.reason === "network") {
+            message = "Network error. Please check your connection and try again.";
+          } else if (legacyResult.reason === "rejected") {
+            message =
+              `The submission was rejected${legacyResult.status != null ? ` (HTTP ${legacyResult.status})` : ""}. Please try again later.`;
+          } else if (legacyResult.reason === "server") {
+            message =
+              `Server error${legacyResult.status != null ? ` (HTTP ${legacyResult.status})` : ""}. Please try again later.`;
+          }
+          setSubmitError(message);
+          setStatus({ state: "error", reason: legacyResult.reason, status: legacyResult.status });
+        }
       }
     },
-    [values, consent, validateStep, referralCode],
+    [values, consent, validateStep, referralCode, programId]
   );
 
   const resetForm = useCallback(() => {
@@ -165,8 +292,6 @@ export default function ApplyPage() {
   const alreadySubmitted =
     typeof window !== "undefined" &&
     window.sessionStorage.getItem("codeyaar.first100.submitted.v1") === "true";
-
-  const configured = IS_SUBMISSION_CONFIGURED;
 
   if (alreadySubmitted) {
     return (
@@ -548,13 +673,32 @@ export default function ApplyPage() {
                 Continue
               </Link>
             ) : (
-              <button
-                type="submit"
-                disabled={status.state === "submitting"}
-                className="inline-flex items-center justify-center gap-2 rounded-md bg-emerald px-8 py-3 text-sm font-medium text-white transition-colors disabled:opacity-50 hover:bg-emerald-hover:not(:disabled) focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald"
-              >
-                {status.state === "submitting" ? "Submitting…" : "Submit application"}
-              </button>
+              <>
+                {turnstileSiteKey && turnstileReady && (
+                  <div
+                    ref={turnstileRef}
+                    className="mb-4"
+                    aria-label="Turnstile bot protection"
+                  />
+                )}
+                <button
+                  type="submit"
+                  disabled={status.state === "submitting"}
+                  className="inline-flex items-center justify-center gap-2 rounded-md bg-emerald px-8 py-3 text-sm font-medium text-white transition-colors disabled:opacity-50 hover:bg-emerald-hover:not(:disabled) focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald"
+                >
+                  {status.state === "submitting" ? "Submitting…" : "Submit application"}
+                </button>
+                {turnstileSiteKey && !turnstileReady && (
+                  <p className="mt-2 type-caption text-ink-muted">
+                    Security check is loading. Please wait before submitting.
+                  </p>
+                )}
+                {!turnstileSiteKey && communityApi.isConfigured() && (
+                  <p className="mt-2 type-caption text-ink-muted">
+                    Turnstile site key not configured — submission disabled.
+                  </p>
+                )}
+              </>
             )}
           </div>
         </form>
@@ -562,9 +706,11 @@ export default function ApplyPage() {
         <p className="mt-10 type-caption text-center">
           Applications are reviewed by people, not algorithms. Places are
           limited to one hundred founding members. Submission endpoint:
-          {configured
-            ? "configured — submitted to Web3Forms"
-            : "not configured — submissions disabled"}.
+          {communityApi.isConfigured()
+            ? "configured — submitted to Code Yaar Community API"
+            : IS_SUBMISSION_CONFIGURED
+              ? "configured — submitted via legacy adapter"
+              : "not configured — submissions disabled"}.
         </p>
       </SectionInner>
     </Section>

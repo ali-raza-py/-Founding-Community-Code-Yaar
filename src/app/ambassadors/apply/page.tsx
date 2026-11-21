@@ -2,6 +2,7 @@
 
 import {
   useCallback,
+  useEffect,
   useRef,
   useState,
 } from "react";
@@ -26,7 +27,8 @@ import {
   ambassadorAvailabilitySchema,
   ambassadorAgreementSchema,
 } from "@/lib/validation";
-import { submitApplication, IS_SUBMISSION_CONFIGURED } from "@/lib/submission";
+import { submitApplication as submitViaLegacy, IS_SUBMISSION_CONFIGURED } from "@/lib/submission";
+import { communityApi } from "@/lib/api/client";
 import { type ApplicationData } from "@/types/application";
 import { Button } from "@/components/ui/button";
 import { Field, Input, Select, Textarea } from "@/components/ui/field";
@@ -125,6 +127,52 @@ export default function AmbassadorApplyPage() {
   const [status, setStatus] = useState<ReturnType<typeof emptyStatus>>(emptyStatus);
 
   const submissionIdRef = useRef<string>(crypto.randomUUID());
+  const turnstileRef = useRef<HTMLDivElement>(null);
+  const turnstileTokenRef = useRef<string | null>(null);
+  const [turnstileReady, setTurnstileReady] = useState(false);
+
+  const programId = typeof window !== "undefined"
+    ? (process.env.NEXT_PUBLIC_PROGRAM_ID_AMBASSADOR ?? "")
+    : "";
+  const turnstileSiteKey = typeof window !== "undefined"
+    ? (process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY ?? "")
+    : "";
+
+  // Load Turnstile script on mount.
+  useEffect(() => {
+    if (!turnstileSiteKey || typeof window === "undefined") return;
+    const scriptId = "codeyaar-turnstile";
+    const existing = document.getElementById(scriptId);
+    if (existing) {
+      setTimeout(() => setTurnstileReady(true), 0);
+      return;
+    }
+    const script = document.createElement("script");
+    script.id = scriptId;
+    script.src = "https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit";
+    script.async = true;
+    script.defer = true;
+    script.onload = () => setTurnstileReady(true);
+    script.onerror = () => setTurnstileReady(false);
+    document.head.appendChild(script);
+  }, [turnstileSiteKey]);
+
+  // Render Turnstile widget when ready.
+  useEffect(() => {
+    if (!turnstileReady || !turnstileSiteKey || !turnstileRef.current || typeof window === "undefined") return;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const turnstile = (window as any).turnstile;
+    if (!turnstile) return;
+    turnstile.render(turnstileRef.current, {
+      sitekey: turnstileSiteKey,
+      callback: (token: string) => {
+        turnstileTokenRef.current = token;
+      },
+      "expired-callback": () => {
+        turnstileTokenRef.current = null;
+      },
+    });
+  }, [turnstileReady, turnstileSiteKey]);
 
   const setField = useCallback((key: keyof AmbassadorValues, value: string | boolean) => {
     setValues((current) => ({ ...current, [key]: value }));
@@ -181,40 +229,116 @@ export default function AmbassadorApplyPage() {
         return;
       }
 
-      const envelope = {
-        submissionId: submissionIdRef.current,
-        formVersion: "1.0.0",
-        submittedAt: new Date().toISOString(),
-        application: values as unknown as ApplicationData,
-        referralCode: null,
+      const request = {
+        program_id: programId,
+        applicant_name: values.fullName,
+        email: values.email,
+        phone: "",
+        institution: values.institution,
+        city: values.city,
+        application_answers: {
+          ageRange: values.ageRange,
+          currentStatus: values.currentStatus,
+          ambassadorCategory: values.ambassadorCategory,
+          categoryInterest: values.categoryInterest,
+          fieldOfStudy: values.fieldOfStudy,
+          belongsToCommunity: values.belongsToCommunity,
+          communityName: values.communityName,
+          communityDescription: values.communityDescription,
+          hasLeadershipExperience: values.hasLeadershipExperience,
+          linkedin: values.linkedin,
+          github: values.github,
+          instagram: values.instagram,
+          twitter: values.twitter,
+          website: values.website,
+          whyAmbassador: values.whyAmbassador,
+          howIntroduce: values.howIntroduce,
+          whySuitable: values.whySuitable,
+          initiativeIdea: values.initiativeIdea,
+          first30Days: values.first30Days,
+          weeklyTime: values.weeklyTime,
+          canAttendMeetings: values.canAttendMeetings,
+          informationAccurate: values.informationAccurate,
+          noSelectionGuarantee: values.noSelectionGuarantee,
+          agreeToGuidelines: values.agreeToGuidelines,
+          consentDataProcessing: values.consentDataProcessing,
+          guardianConsent: values.guardianConsent,
+        },
+        referral_code: "",
+        turnstile_token: turnstileTokenRef.current ?? "",
       };
 
       setStatus({ state: "submitting" });
-      const result = await submitApplication(envelope);
 
-      if (result.ok) {
-        setStatus({ state: "success", reference: result.reference ?? null });
-      } else {
-        let message = "Unable to submit your application. Please try again.";
-        if (result.reason === "not-configured") {
-          message =
-            "Application submission is not configured on this site yet. Your answers have been saved locally — please try again later or contact the Code Yaar team.";
-        } else if (result.reason === "timeout") {
-          message = "The request timed out. Please try again.";
-        } else if (result.reason === "network") {
-          message = "Network error. Please check your connection and try again.";
-        } else if (result.reason === "rejected") {
-          message =
-            `The submission was rejected${result.status != null ? ` (HTTP ${result.status})` : ""}. Please try again later.`;
-        } else if (result.reason === "server") {
-          message =
-            `Server error${result.status != null ? ` (HTTP ${result.status})` : ""}. Please try again later.`;
+      // Prefer the Community API when configured; fall back to legacy adapter.
+      if (communityApi.isConfigured()) {
+        const result = await communityApi.submitApplication(request);
+
+        if (result.ok) {
+          setStatus({ state: "success", reference: result.data.id ?? null });
+        } else {
+          const err = result.error;
+          let message = "Unable to submit your application. Please try again.";
+          if (err.reason === "not-configured") {
+            message =
+              "Application submission is not configured on this site yet. Your answers have been saved locally — please try again later or contact the Code Yaar team.";
+          } else if (err.reason === "timeout") {
+            message = "The request timed out. Please try again.";
+          } else if (err.reason === "network") {
+            message = "Network error. Please check your connection and try again.";
+          } else if (err.reason === "conflict") {
+            message =
+              "You have already submitted an application to this program. Duplicate submissions are not allowed.";
+          } else if (err.reason === "validation") {
+            message =
+              `Validation error: ${err.message}. Please check your entries and try again.`;
+          } else if (err.reason === "rate-limited") {
+            message =
+              "Too many submission attempts. Please wait a moment and try again.";
+          } else if (err.reason === "server") {
+            message =
+              `Server error${err.status != null ? ` (HTTP ${err.status})` : ""}. Please try again later.`;
+          } else {
+            message = err.message;
+          }
+          setSubmitError(message);
+          setStatus({ state: "error", reason: err.reason, status: err.status });
         }
-        setSubmitError(message);
-        setStatus({ state: "error", reason: result.reason, status: result.status });
+      } else {
+        const envelope = {
+          submissionId: submissionIdRef.current,
+          formVersion: "1.0.0",
+          submittedAt: new Date().toISOString(),
+          application: values as unknown as ApplicationData,
+          referralCode: null,
+        };
+
+        const legacyResult = await submitViaLegacy(envelope);
+
+        if (legacyResult.ok) {
+          setStatus({ state: "success", reference: legacyResult.reference ?? null });
+        } else {
+          let message = "Unable to submit your application. Please try again.";
+          if (legacyResult.reason === "not-configured") {
+            message =
+              "Application submission is not configured on this site yet. Your answers have been saved locally — please try again later or contact the Code Yaar team.";
+          } else if (legacyResult.reason === "timeout") {
+            message = "The request timed out. Please try again.";
+          } else if (legacyResult.reason === "network") {
+            message = "Network error. Please check your connection and try again.";
+          } else if (legacyResult.reason === "rejected") {
+            message =
+              `The submission was rejected${legacyResult.status != null ? ` (HTTP ${legacyResult.status})` : ""}. Please try again later.`;
+          } else if (legacyResult.reason === "server") {
+            message =
+              `Server error${legacyResult.status != null ? ` (HTTP ${legacyResult.status})` : ""}. Please try again later.`;
+          }
+          setSubmitError(message);
+          setStatus({ state: "error", reason: legacyResult.reason, status: legacyResult.status });
+        }
       }
     },
-    [values, validateStep, errors],
+    [values, validateStep, errors, programId, turnstileTokenRef],
   );
 
   const isUnder18 = values.ageRange === "under-16" || values.ageRange === "16-17";
@@ -796,13 +920,32 @@ export default function AmbassadorApplyPage() {
                 Continue
               </Link>
             ) : (
-              <button
-                type="submit"
-                disabled={status.state === "submitting"}
-                className="inline-flex items-center justify-center gap-2 rounded-md bg-emerald px-8 py-3 text-sm font-medium text-white transition-colors disabled:opacity-50 hover:bg-emerald-hover:not(:disabled) focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald"
-              >
-                {status.state === "submitting" ? "Submitting…" : "Submit application"}
-              </button>
+              <>
+                {turnstileSiteKey && turnstileReady && (
+                  <div
+                    ref={turnstileRef}
+                    className="mb-4"
+                    aria-label="Turnstile bot protection"
+                  />
+                )}
+                <button
+                  type="submit"
+                  disabled={status.state === "submitting"}
+                  className="inline-flex items-center justify-center gap-2 rounded-md bg-emerald px-8 py-3 text-sm font-medium text-white transition-colors disabled:opacity-50 hover:bg-emerald-hover:not(:disabled) focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald"
+                >
+                  {status.state === "submitting" ? "Submitting…" : "Submit application"}
+                </button>
+                {turnstileSiteKey && !turnstileReady && (
+                  <p className="mt-2 type-caption text-ink-muted">
+                    Security check is loading. Please wait before submitting.
+                  </p>
+                )}
+                {!turnstileSiteKey && communityApi.isConfigured() && (
+                  <p className="mt-2 type-caption text-ink-muted">
+                    Turnstile site key not configured — submission disabled.
+                  </p>
+                )}
+              </>
             )}
           </div>
         </form>
@@ -810,7 +953,11 @@ export default function AmbassadorApplyPage() {
         <p className="mt-10 type-caption text-center text-ink-subtle">
           Applications are reviewed by people, not algorithms. Submission
           endpoint:
-          {IS_SUBMISSION_CONFIGURED ? "configured" : "not configured — submissions are accepted locally only"}.
+          {communityApi.isConfigured()
+            ? "configured — submitted to Code Yaar Community API"
+            : IS_SUBMISSION_CONFIGURED
+              ? "configured — submitted via legacy adapter"
+              : "not configured — submissions are accepted locally only"}.
         </p>
       </SectionInner>
     </Section>
