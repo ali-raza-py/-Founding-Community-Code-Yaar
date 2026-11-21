@@ -63,28 +63,20 @@ export default function SignInPage() {
         if (result.ok) {
           verifiedRole = result.data.user.role;
         } else {
-          // Backend returned an error (e.g., 401, 403, profile missing)
+          // Backend returned an error — allow sign-in but limit role info
           backendError = true;
-          setError(
-            "Your session could not be verified by the Code Yaar API. Please contact the Code Yaar team.",
-          );
+          verifiedRole = null;
         }
       } catch {
+        // Backend unreachable — allow sign-in via Supabase with limited info
         backendError = true;
-        setError(
-          "The Code Yaar API is currently unreachable. Please try again later.",
-        );
+        verifiedRole = null;
       }
 
       setIsLoading(false);
 
-      if (backendError) {
-        // Sign out of Supabase since backend verification failed
-        await supabase.auth.signOut();
-        return;
-      }
-
-      // Step 3: Redirect based on verified backend role
+      // Step 3: Redirect based on verified backend role.
+      // If backend verification failed, default to participant dashboard.
       if (verifiedRole === "super_admin") {
         await router.push("/admin/users");
       } else if (verifiedRole === "admin") {
