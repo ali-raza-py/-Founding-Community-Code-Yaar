@@ -55,7 +55,7 @@ export default function ApplyPage() {
     return storedRef;
   }, [refFromUrl, storedRef]);
 
-  const setField = useCallback((key: keyof ApplicationData, value: string) => {
+  const setField = useCallback((key: keyof ApplicationData, value: string | number) => {
     setValues((current) => ({ ...current, [key]: value }));
   }, []);
 
@@ -295,8 +295,8 @@ export default function ApplyPage() {
                   min="13"
                   max="120"
                   placeholder="Enter your age"
-                  value={String(values.age ?? "")}
-                  onChange={(e) => setField("age", e.currentTarget.value)}
+                  value={values.age}
+                  onChange={(e) => setField("age", Number(e.currentTarget.value) || "")}
                   required
                 />
                 <p className="type-caption">
