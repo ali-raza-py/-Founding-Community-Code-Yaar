@@ -127,14 +127,12 @@ export interface TaskRecord {
 
 /** Paginated list response. */
 export interface PaginatedResponse<T> {
-  data: {
-    items: T[];
-    meta: {
-      page: number;
-      pageSize: number;
-      total: number;
-      totalPages: number;
-    };
+  items: T[];
+  meta: {
+    page: number;
+    pageSize: number;
+    total: number;
+    totalPages: number;
   };
 }
 
@@ -161,6 +159,16 @@ export interface AdminApplicationItem {
 export interface AdminStats {
   applications: number;
   participants: number | null;
+}
+
+/** Admin profile record (GET /api/v1/admin/profiles). */
+export interface AdminProfile {
+  id: string;
+  full_name: string;
+  email: string;
+  role: "super_admin" | "admin" | "participant";
+  created_at: string;
+  updated_at?: string;
 }
 
 /** Network/API error classification. */

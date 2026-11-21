@@ -5,10 +5,8 @@ import Link from "next/link";
 
 import { EMPTY_APPLICATION, REVIEW_GROUPS } from "@/lib/application";
 import { clearDraft, markSubmittedThisSession } from "@/lib/draft";
-import { IS_SUBMISSION_CONFIGURED } from "@/lib/submission";
-import { submitApplication as submitViaLegacy } from "@/lib/submission";
 import { communityApi } from "@/lib/api/client";
-import { COUNTRIES, APPLYING_FOR_OPTIONS, EDUCATION_LEVELS, EXPERIENCE_LEVELS, WEEKLY_TIME_OPTIONS, PRIVACY_CONSENT_TEXT, FORM_VERSION, TOTAL_STEPS, STEP_LABELS } from "@/lib/constants";
+import { COUNTRIES, APPLYING_FOR_OPTIONS, EDUCATION_LEVELS, EXPERIENCE_LEVELS, WEEKLY_TIME_OPTIONS, PRIVACY_CONSENT_TEXT, TOTAL_STEPS, STEP_LABELS } from "@/lib/constants";
 import { personalInformationSchema, educationSchema, programmingBackgroundSchema, motivationSchema } from "@/lib/validation";
 import { extractReferralCode, COHORT_REFERRAL_KEY } from "@/lib/referral";
 import { type ApplicationData, type SubmissionStatus, type SubmissionFailureReason } from "@/types/application";
@@ -240,38 +238,6 @@ export default function ApplyPage() {
                 ? "server"
                 : "rejected";
           setStatus({ state: "error", reason: legacyReason, status: err.status });
-        }
-      } else {
-        const legacyResult = await submitViaLegacy({
-          submissionId: submissionIdRef.current,
-          formVersion: FORM_VERSION,
-          submittedAt: new Date().toISOString(),
-          application: values,
-          referralCode: referralCode ?? null,
-        });
-
-        if (legacyResult.ok) {
-          markSubmittedThisSession();
-          clearDraft();
-          setStatus({ state: "success", reference: legacyResult.reference ?? null });
-        } else {
-          let message = "Unable to submit your application. Please try again.";
-          if (legacyResult.reason === "not-configured") {
-            message =
-              "Application submission is not configured on this site yet — please try again later or contact the Code Yaar team.";
-          } else if (legacyResult.reason === "timeout") {
-            message = "The request timed out. Please try again.";
-          } else if (legacyResult.reason === "network") {
-            message = "Network error. Please check your connection and try again.";
-          } else if (legacyResult.reason === "rejected") {
-            message =
-              `The submission was rejected${legacyResult.status != null ? ` (HTTP ${legacyResult.status})` : ""}. Please try again later.`;
-          } else if (legacyResult.reason === "server") {
-            message =
-              `Server error${legacyResult.status != null ? ` (HTTP ${legacyResult.status})` : ""}. Please try again later.`;
-          }
-          setSubmitError(message);
-          setStatus({ state: "error", reason: legacyResult.reason, status: legacyResult.status });
         }
       }
     },
@@ -708,9 +674,7 @@ export default function ApplyPage() {
           limited to one hundred founding members. Submission endpoint:
           {communityApi.isConfigured()
             ? "configured — submitted to Code Yaar Community API"
-            : IS_SUBMISSION_CONFIGURED
-              ? "configured — submitted via legacy adapter"
-              : "not configured — submissions disabled"}.
+            : "not configured — submissions disabled"}.
         </p>
       </SectionInner>
     </Section>

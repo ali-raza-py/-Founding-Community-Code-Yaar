@@ -27,9 +27,7 @@ import {
   ambassadorAvailabilitySchema,
   ambassadorAgreementSchema,
 } from "@/lib/validation";
-import { submitApplication as submitViaLegacy, IS_SUBMISSION_CONFIGURED } from "@/lib/submission";
 import { communityApi } from "@/lib/api/client";
-import { type ApplicationData } from "@/types/application";
 import { Button } from "@/components/ui/button";
 import { Field, Input, Select, Textarea } from "@/components/ui/field";
 import { Section, SectionInner } from "@/components/ui/section";
@@ -303,38 +301,6 @@ export default function AmbassadorApplyPage() {
           }
           setSubmitError(message);
           setStatus({ state: "error", reason: err.reason, status: err.status });
-        }
-      } else {
-        const envelope = {
-          submissionId: submissionIdRef.current,
-          formVersion: "1.0.0",
-          submittedAt: new Date().toISOString(),
-          application: values as unknown as ApplicationData,
-          referralCode: null,
-        };
-
-        const legacyResult = await submitViaLegacy(envelope);
-
-        if (legacyResult.ok) {
-          setStatus({ state: "success", reference: legacyResult.reference ?? null });
-        } else {
-          let message = "Unable to submit your application. Please try again.";
-          if (legacyResult.reason === "not-configured") {
-            message =
-              "Application submission is not configured on this site yet. Your answers have been saved locally — please try again later or contact the Code Yaar team.";
-          } else if (legacyResult.reason === "timeout") {
-            message = "The request timed out. Please try again.";
-          } else if (legacyResult.reason === "network") {
-            message = "Network error. Please check your connection and try again.";
-          } else if (legacyResult.reason === "rejected") {
-            message =
-              `The submission was rejected${legacyResult.status != null ? ` (HTTP ${legacyResult.status})` : ""}. Please try again later.`;
-          } else if (legacyResult.reason === "server") {
-            message =
-              `Server error${legacyResult.status != null ? ` (HTTP ${legacyResult.status})` : ""}. Please try again later.`;
-          }
-          setSubmitError(message);
-          setStatus({ state: "error", reason: legacyResult.reason, status: legacyResult.status });
         }
       }
     },
@@ -955,9 +921,7 @@ export default function AmbassadorApplyPage() {
           endpoint:
           {communityApi.isConfigured()
             ? "configured — submitted to Code Yaar Community API"
-            : IS_SUBMISSION_CONFIGURED
-              ? "configured — submitted via legacy adapter"
-              : "not configured — submissions are accepted locally only"}.
+            : "not configured — submissions disabled"}.
         </p>
       </SectionInner>
     </Section>

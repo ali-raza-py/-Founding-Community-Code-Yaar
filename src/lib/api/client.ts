@@ -1,6 +1,7 @@
 import type {
-  ApiClientError,
   AdminApplicationItem,
+  AdminProfile,
+  ApiClientError,
   ApiResponse,
   Announcement,
   ApplicationListItem,
@@ -382,6 +383,24 @@ export class CommunityApiClient {
   ): Promise<ApiResult<{ applications: number; participants: number | null }>> {
     return this.get<{ applications: number; participants: number | null }>(
       "/api/v1/admin/stats",
+      authToken
+    );
+  }
+
+  async getAdminProfiles(
+    authToken: string
+  ): Promise<ApiResult<AdminProfile[]>> {
+    return this.get<AdminProfile[]>("/api/v1/admin/profiles", authToken);
+  }
+
+  async updateAdminProfileRole(
+    authToken: string,
+    id: string,
+    role: string
+  ): Promise<ApiResult<AdminProfile>> {
+    return this.patch<AdminProfile>(
+      `/api/v1/admin/profiles/${encodeURIComponent(id)}/role`,
+      { role },
       authToken
     );
   }

@@ -25,7 +25,7 @@ export interface AuthState {
  * sent to the Community API as a Bearer token; the backend verifies it
  * server-side and resolves the role from the trusted profiles table.
  */
-export function useAuth(): AuthState {
+export function useAuth(): AuthState & { signOut: () => Promise<void> } {
   const [state, setState] = useState<AuthState>({
     user: null,
     accessToken: null,
@@ -85,6 +85,29 @@ export function useAuth(): AuthState {
     }
   }, [supabase]);
 
+  const signOut = useCallback(async () => {
+    // Call backend logout first (if authenticated).
+    if (state.accessToken) {
+      try {
+        await communityApi.logout(state.accessToken);
+      } catch {
+        // Ignore backend logout errors; still clear local session.
+      }
+    }
+
+    // Sign out of Supabase (clears browser session).
+    await supabase.auth.signOut();
+
+    setState({
+      user: null,
+      accessToken: null,
+      isLoading: false,
+      isAuthenticated: false,
+      isAdmin: false,
+      isSuperAdmin: false,
+    });
+  }, [state.accessToken, supabase]);
+
   useEffect(() => {
     const checkSession = async () => {
       await verifySession();
@@ -116,5 +139,5 @@ export function useAuth(): AuthState {
     };
   }, [verifySession, supabase]);
 
-  return state;
+  return { ...state, signOut };
 }
