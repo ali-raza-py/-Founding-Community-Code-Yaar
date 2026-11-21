@@ -38,7 +38,7 @@ export function useAuth(): AuthState & { signOut: () => Promise<void> } {
   const supabase = createSupabaseBrowserClient();
 
   const verifySession = useCallback(async () => {
-    if (!isSupabaseConfigured()) {
+    if (!isSupabaseConfigured() || !supabase) {
       setState((prev) => ({ ...prev, isLoading: false }));
       return;
     }
@@ -96,7 +96,7 @@ export function useAuth(): AuthState & { signOut: () => Promise<void> } {
     }
 
     // Sign out of Supabase (clears browser session).
-    await supabase.auth.signOut();
+    if (supabase) await supabase.auth.signOut();
 
     setState({
       user: null,
@@ -115,28 +115,30 @@ export function useAuth(): AuthState & { signOut: () => Promise<void> } {
     checkSession();
 
     // Listen for auth state changes.
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange(
-      (event: string) => {
-        if (event === "SIGNED_IN" || event === "TOKEN_REFRESHED") {
-          void verifySession();
-        } else if (event === "SIGNED_OUT") {
-          setState({
-            user: null,
-            accessToken: null,
-            isLoading: false,
-            isAuthenticated: false,
-            isAdmin: false,
-            isSuperAdmin: false,
-          });
+    if (supabase) {
+      const {
+        data: { subscription },
+      } = supabase.auth.onAuthStateChange(
+        (event: string) => {
+          if (event === "SIGNED_IN" || event === "TOKEN_REFRESHED") {
+            void verifySession();
+          } else if (event === "SIGNED_OUT") {
+            setState({
+              user: null,
+              accessToken: null,
+              isLoading: false,
+              isAuthenticated: false,
+              isAdmin: false,
+              isSuperAdmin: false,
+            });
+          }
         }
-      }
-    );
+      );
 
-    return () => {
-      subscription.unsubscribe();
-    };
+      return () => {
+        subscription.unsubscribe();
+      };
+    }
   }, [verifySession, supabase]);
 
   return { ...state, signOut };

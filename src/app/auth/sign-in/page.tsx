@@ -27,7 +27,7 @@ export default function SignInPage() {
       event.preventDefault();
       setError(null);
 
-      if (!isSupabaseConfigured()) {
+      if (!isSupabaseConfigured() || !supabase) {
         setError(
           "Authentication is not configured. Please contact the Code Yaar team.",
         );
