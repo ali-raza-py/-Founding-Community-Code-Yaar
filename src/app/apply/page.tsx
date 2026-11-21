@@ -6,7 +6,7 @@ import Link from "next/link";
 import { EMPTY_APPLICATION, REVIEW_GROUPS } from "@/lib/application";
 import { clearDraft, markSubmittedThisSession } from "@/lib/draft";
 import { IS_SUBMISSION_CONFIGURED } from "@/lib/submission";
-import { COUNTRIES, EDUCATION_LEVELS, EXPERIENCE_LEVELS, WEEKLY_TIME_OPTIONS, PRIVACY_CONSENT_TEXT, FORM_VERSION, TOTAL_STEPS, STEP_LABELS } from "@/lib/constants";
+import { COUNTRIES, APPLYING_FOR_OPTIONS, EDUCATION_LEVELS, EXPERIENCE_LEVELS, WEEKLY_TIME_OPTIONS, PRIVACY_CONSENT_TEXT, FORM_VERSION, TOTAL_STEPS, STEP_LABELS } from "@/lib/constants";
 import { personalInformationSchema, educationSchema, programmingBackgroundSchema, motivationSchema } from "@/lib/validation";
 import { submitApplication } from "@/lib/submission";
 import { extractReferralCode, COHORT_REFERRAL_KEY } from "@/lib/referral";
@@ -302,6 +302,24 @@ export default function ApplyPage() {
                 <p className="type-caption">
                   You must be at least 13 years old to apply.
                 </p>
+              </Field>
+              <Field
+                label="What are you applying for?"
+                required
+                error={errors.applyingFor?.[0]}
+              >
+                <Select
+                  value={values.applyingFor}
+                  onChange={(e) => setField("applyingFor", e.currentTarget.value)}
+                  required
+                >
+                  <option value="">Select an option</option>
+                  {APPLYING_FOR_OPTIONS.map((option) => (
+                    <option key={option.value} value={option.value}>
+                      {option.label}
+                    </option>
+                  ))}
+                </Select>
               </Field>
             </>
           )}

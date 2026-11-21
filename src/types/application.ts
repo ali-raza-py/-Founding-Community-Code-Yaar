@@ -16,9 +16,7 @@ export type ProgrammingBackground = z.infer<
 export type Motivation = z.infer<typeof motivationSchema>;
 
 /** Every field the applicant can enter, before consent. */
-export type ApplicationData = z.infer<typeof applicationSchema>;
-
-export type ApplicationStepValues = Partial<ApplicationData>;
+export type ApplicationData = z.infer<typeof applicationSchema>;export type ApplicationStepValues = Partial<ApplicationData>;
 
 export type ApplicationEnvelope = {
   submissionId: string;
