@@ -227,6 +227,22 @@ export default function AmbassadorApplyPage() {
         return;
       }
 
+      // Validate Turnstile token is present before submission.
+      if (!turnstileTokenRef.current) {
+        setSubmitError(
+          "Please complete the security verification before submitting.",
+        );
+        return;
+      }
+
+      // Verify the program is configured.
+      if (!programId) {
+        setSubmitError(
+          "Application submission is not configured — please contact the Code Yaar team.",
+        );
+        return;
+      }
+
       const request = {
         program_id: programId,
         applicant_name: values.fullName,
@@ -896,7 +912,9 @@ export default function AmbassadorApplyPage() {
                 )}
                 <button
                   type="submit"
-                  disabled={status.state === "submitting"}
+                  disabled={
+                    status.state === "submitting" || !turnstileTokenRef.current
+                  }
                   className="inline-flex items-center justify-center gap-2 rounded-md bg-emerald px-8 py-3 text-sm font-medium text-white transition-colors disabled:opacity-50 hover:bg-emerald-hover:not(:disabled) focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald"
                 >
                   {status.state === "submitting" ? "Submitting…" : "Submit application"}
