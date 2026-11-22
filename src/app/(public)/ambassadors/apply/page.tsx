@@ -126,7 +126,7 @@ export default function AmbassadorApplyPage() {
 
   const submissionIdRef = useRef<string>(crypto.randomUUID());
   const turnstileRef = useRef<HTMLDivElement>(null);
-  const turnstileTokenRef = useRef<string | null>(null);
+  const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
   const [turnstileReady, setTurnstileReady] = useState(false);
 
   const programId = typeof window !== "undefined"
@@ -164,10 +164,10 @@ export default function AmbassadorApplyPage() {
     turnstile.render(turnstileRef.current, {
       sitekey: turnstileSiteKey,
       callback: (token: string) => {
-        turnstileTokenRef.current = token;
+        setTurnstileToken(token);
       },
       "expired-callback": () => {
-        turnstileTokenRef.current = null;
+        setTurnstileToken(null);
       },
     });
   }, [turnstileReady, turnstileSiteKey]);
@@ -228,7 +228,7 @@ export default function AmbassadorApplyPage() {
       }
 
       // Validate Turnstile token is present before submission.
-      if (!turnstileTokenRef.current) {
+      if (!turnstileToken) {
         setSubmitError(
           "Please complete the security verification before submitting.",
         );
@@ -279,7 +279,7 @@ export default function AmbassadorApplyPage() {
           guardianConsent: values.guardianConsent,
         },
         referral_code: "",
-        turnstile_token: turnstileTokenRef.current ?? "",
+        turnstile_token: turnstileToken ?? "",
       };
 
       setStatus({ state: "submitting" });
@@ -320,7 +320,7 @@ export default function AmbassadorApplyPage() {
         }
       }
     },
-    [values, validateStep, errors, programId, turnstileTokenRef],
+    [values, validateStep, errors, programId, turnstileToken],
   );
 
   const isUnder18 = values.ageRange === "under-16" || values.ageRange === "16-17";
@@ -913,7 +913,7 @@ export default function AmbassadorApplyPage() {
                 <button
                   type="submit"
                   disabled={
-                    status.state === "submitting" || !turnstileTokenRef.current
+                    status.state === "submitting" || !turnstileToken
                   }
                   className="inline-flex items-center justify-center gap-2 rounded-md bg-emerald px-8 py-3 text-sm font-medium text-white transition-colors disabled:opacity-50 hover:bg-emerald-hover:not(:disabled) focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald"
                 >
