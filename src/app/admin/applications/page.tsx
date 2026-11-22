@@ -1,7 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import Link from "next/link";
+import { useCallback, useEffect, useMemo, useState } from "react";
 
 import { useAuth } from "@/lib/api/auth";
 import { communityApi } from "@/lib/api/client";
@@ -16,7 +15,6 @@ import {
   LoadingState,
   AdminStatusBadge,
 } from "@/components/admin/shared";
-import { cn } from "@/lib/utils";
 
 export default function AdminApplicationsPage() {
   const { accessToken, isAuthenticated, isLoading, isAdmin } = useAuth();
@@ -27,30 +25,42 @@ export default function AdminApplicationsPage() {
   const [search, setSearch] = useState("");
   const [programFilter, setProgramFilter] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
-  const pageRef = useRef(1);
+  const [currentPage, setCurrentPage] = useState(1);
   const [statusUpdateLoading, setStatusUpdateLoading] = useState<string | null>(null);
 
   const loadApplications = useCallback(async (page = 1) => {
-    if (!accessToken) return;
+    if (!accessToken) {
+      setLoading(false);
+      return;
+    }
     setLoading(true);
     setError(null);
-    const res = await communityApi.getAdminApplications(accessToken, {
-      page,
-      pageSize: 20,
-      search: search || undefined,
-      programId: programFilter || undefined,
-      status: statusFilter || undefined,
-      sortBy: "created_at",
-      sortDir: "desc",
-    });
-    if (res.ok) {
-      setApplications(res.data.items);
-      setMeta(res.data.meta);
-      pageRef.current = page;
-    } else {
-      setError(res.error.message);
+    try {
+      const res = await communityApi.getAdminApplications(accessToken, {
+        page,
+        pageSize: 20,
+        search: search || undefined,
+        programId: programFilter || undefined,
+        status: statusFilter || undefined,
+        sortBy: "created_at",
+        sortDir: "desc",
+      });
+      if (res.ok) {
+        setApplications(res.data?.items ?? []);
+        setMeta(res.data?.meta ?? null);
+        setCurrentPage(page);
+      } else {
+        setError(res.error.message || "Failed to load applications.");
+        setApplications([]);
+        setMeta(null);
+      }
+    } catch {
+      setError("Unable to load applications. Please try again.");
+      setApplications([]);
+      setMeta(null);
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
   }, [accessToken, search, programFilter, statusFilter]);
 
   useEffect(() => {
@@ -58,17 +68,32 @@ export default function AdminApplicationsPage() {
   }, [loadApplications]);
 
   const handleStatusUpdate = useCallback(async (id: string, status: string) => {
+    if (!accessToken) return;
     setStatusUpdateLoading(id);
-    const res = await communityApi.updateApplicationStatus(accessToken!, id, status);
-    setStatusUpdateLoading(null);
-    if (res.ok) {
-      setApplications((prev) =>
-        prev.map((a) => (a.id === id ? { ...a, application_status: status, reviewed_at: new Date().toISOString() } : a)),
-      );
-    } else {
-      setError(res.error.message);
+    try {
+      const res = await communityApi.updateApplicationStatus(accessToken, id, status);
+      setStatusUpdateLoading(null);
+      if (res.ok) {
+        setApplications((prev) =>
+          prev.map((a) => (a.id === id ? { ...a, application_status: status, reviewed_at: new Date().toISOString() } : a)),
+        );
+      } else {
+        setError(res.error.message || "Failed to update application status.");
+      }
+    } catch {
+      setStatusUpdateLoading(null);
+      setError("Unable to update application status. Please try again.");
     }
   }, [accessToken]);
+
+  const statusCounts = useMemo(() => {
+    const counts: Record<string, number> = {};
+    (applications || []).forEach((a) => {
+      const s = a?.application_status;
+      if (s) counts[s] = (counts[s] ?? 0) + 1;
+    });
+    return counts;
+  }, [applications]);
 
   if (isLoading || loading) {
     return <LoadingState />;
@@ -77,14 +102,6 @@ export default function AdminApplicationsPage() {
   if (!isAuthenticated || !isAdmin) {
     return null;
   }
-
-  const statusCounts = useMemo(() => {
-    const counts: Record<string, number> = {};
-    applications.forEach((a) => {
-      counts[a.application_status] = (counts[a.application_status] ?? 0) + 1;
-    });
-    return counts;
-  }, [applications]);
 
   return (
     <Section padded>
@@ -102,6 +119,13 @@ export default function AdminApplicationsPage() {
           <StatCard title="Under Review" value={statusCounts["under_review"] ?? 0} />
           <StatCard title="Accepted" value={statusCounts["accepted"] ?? 0} />
         </div>
+
+        {/* Error state with retry */}
+        {error && (
+          <div className="mt-8">
+            <ErrorState message={error} onRetry={() => void loadApplications(1)} />
+          </div>
+        )}
 
         {/* Filters */}
         <div className="mt-8 rounded-xl border border-line bg-surface p-5 sm:p-6">
@@ -150,9 +174,7 @@ export default function AdminApplicationsPage() {
 
         {/* Applications table */}
         <div className="mt-8 rounded-xl border border-line bg-surface overflow-hidden">
-          {error ? (
-            <ErrorState message={error} />
-          ) : applications.length === 0 ? (
+          {(applications || []).length === 0 ? (
             <EmptyState
               title="No applications found"
               description="No applications match your current filters."
@@ -172,7 +194,7 @@ export default function AdminApplicationsPage() {
                   </tr>
                 </thead>
                 <tbody>
-                  {applications.map((app: any) => (
+                  {(applications || []).map((app: any) => (
                     <tr
                       key={app.id}
                       className="border-b border-line hover:bg-surface-raised transition-colors cursor-pointer"
@@ -181,19 +203,19 @@ export default function AdminApplicationsPage() {
                       }}
                     >
                       <td className="px-4 py-3 text-sm text-ink">
-                        {app.applicant_name || "—"}
+                        {app?.applicant_name || "—"}
                       </td>
                       <td className="px-4 py-3 text-sm text-ink-muted">
-                        {app.email || "—"}
+                        {app?.email || "—"}
                       </td>
                       <td className="px-4 py-3 text-sm text-ink-muted">
-                        {app.programs?.name || "—"}
+                        {app?.programs?.name || "—"}
                       </td>
                       <td className="px-4 py-3 text-sm text-ink">
-                        <AdminStatusBadge status={app.application_status} />
+                        <AdminStatusBadge status={app?.application_status || "pending"} />
                       </td>
                       <td className="px-4 py-3 text-sm text-ink-muted">
-                        {app.created_at ? new Date(app.created_at).toLocaleDateString() : "—"}
+                        {app?.created_at ? new Date(app.created_at).toLocaleDateString() : "—"}
                       </td>
                       <td className="px-4 py-3 text-sm text-right">
                         <select
@@ -226,23 +248,23 @@ export default function AdminApplicationsPage() {
         {meta && (
           <div className="mt-6 flex items-center justify-between">
             <p className="text-[0.8125rem] text-ink-muted">
-              {meta.total} applications &middot; Page {meta.page} of {meta.totalPages}
+              {meta.total} applications &middot; Page {currentPage} of {meta.totalPages}
             </p>
             <div className="flex items-center gap-2">
               <Button
                 onClick={() => {
-                  if (pageRef.current > 1) void loadApplications(pageRef.current - 1);
+                  if (currentPage > 1) void loadApplications(currentPage - 1);
                 }}
-                disabled={pageRef.current <= 1 || loading}
+                disabled={currentPage <= 1 || loading}
                 size="sm"
               >
                 Prev
               </Button>
               <Button
                 onClick={() => {
-                  if (pageRef.current < meta.totalPages) void loadApplications(pageRef.current + 1);
+                  if (currentPage < meta.totalPages) void loadApplications(currentPage + 1);
                 }}
-                disabled={pageRef.current >= meta.totalPages || loading}
+                disabled={currentPage >= meta.totalPages || loading}
                 size="sm"
               >
                 Next
