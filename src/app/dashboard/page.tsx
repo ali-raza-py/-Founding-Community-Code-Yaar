@@ -4,6 +4,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 
+import { SiteHeader } from "@/components/layout/site-header";
 import { useAuth } from "@/lib/api/auth";
 import { communityApi } from "@/lib/api/client";
 import { Button } from "@/components/ui/button";
@@ -119,6 +120,7 @@ export default function DashboardPage() {
 
   return (
     <>
+      <SiteHeader />
       {backendUnavailable && (
         <Section padded>
           <SectionInner>

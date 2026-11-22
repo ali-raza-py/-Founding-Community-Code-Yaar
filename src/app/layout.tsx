@@ -1,9 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { Figtree, JetBrains_Mono, Montserrat } from "next/font/google";
 
-import { SiteFooter } from "@/components/layout/site-footer";
-import { SiteHeader } from "@/components/layout/site-header";
-
 import "./globals.css";
 
 const montserrat = Montserrat({
@@ -52,7 +49,7 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title,
     description,
-    images: ["/og-image.png"],
+    images: [{ url: "/og-image.png" }],
   },
   robots: {
     index: true,
@@ -84,11 +81,9 @@ export default function RootLayout({
         >
           Skip to content
         </a>
-        <SiteHeader />
         <main id="main" className="flex-1">
           {children}
         </main>
-        <SiteFooter />
       </body>
     </html>
   );
