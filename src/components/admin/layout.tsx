@@ -130,17 +130,17 @@ export function AdminLayout({ children }: AdminLayoutProps) {
                 Community Administration Panel
               </p>
             </div>
-            <div className="flex items-center gap-3">
-              <span className="hidden sm:inline text-[0.8125rem] text-ink-muted">
+            <div className="flex items-center gap-2">
+              <span className="hidden sm:inline whitespace-nowrap text-[0.75rem] text-ink-muted">
                 {user?.email}
               </span>
               <Badge
                 variant={isSuperAdmin ? "emerald" : "outline"}
-                className="text-[0.75rem]"
+                className="whitespace-nowrap text-[0.75rem] px-2 py-1"
               >
                 {isSuperAdmin ? "Super Admin" : isAdmin ? "Admin" : "Participant"}
               </Badge>
-              <Button onClick={signOut} variant="ghost" size="sm" className="hidden sm:flex">
+              <Button onClick={signOut} variant="ghost" size="sm" className="hidden sm:flex whitespace-nowrap">
                 <LogOut className="size-4" />
               </Button>
             </div>
