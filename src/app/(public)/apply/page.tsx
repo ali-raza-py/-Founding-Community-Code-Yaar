@@ -35,7 +35,7 @@ export default function ApplyPage() {
   const [consent, setConsent] = useState(false);
 
   const submissionIdRef = useRef<string>(crypto.randomUUID());
-  const turnstileRef = useRef<HTMLDivElement>(null);
+  const [turnstileContainer, setTurnstileContainer] = useState<HTMLDivElement | null>(null);
   const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
   const [turnstileReady, setTurnstileReady] = useState(false);
 
@@ -67,11 +67,11 @@ export default function ApplyPage() {
 
   // Render Turnstile widget when ready.
   useEffect(() => {
-    if (!turnstileReady || !turnstileSiteKey || !turnstileRef.current || typeof window === "undefined") return;
+    if (!turnstileContainer || !turnstileReady || !turnstileSiteKey || typeof window === "undefined") return;
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const turnstile = (window as any).turnstile;
     if (!turnstile) return;
-    turnstile.render(turnstileRef.current, {
+    const widgetId = turnstile.render(turnstileContainer, {
       sitekey: turnstileSiteKey,
       callback: (token: string) => {
         setTurnstileToken(token);
@@ -80,7 +80,14 @@ export default function ApplyPage() {
         setTurnstileToken(null);
       },
     });
-  }, [turnstileReady, turnstileSiteKey]);
+    return () => {
+      try {
+        turnstile.remove(widgetId);
+      } catch {
+        // Ignore cleanup errors
+      }
+    };
+  }, [turnstileContainer, turnstileReady, turnstileSiteKey]);
 
   // Read referral code from URL during render (no effect needed).
   const refFromUrl = typeof window !== "undefined"
@@ -658,7 +665,7 @@ export default function ApplyPage() {
               <>
                 {turnstileSiteKey && turnstileReady && (
                   <div
-                    ref={turnstileRef}
+                    ref={setTurnstileContainer}
                     className="mb-4"
                     aria-label="Turnstile bot protection"
                   />
