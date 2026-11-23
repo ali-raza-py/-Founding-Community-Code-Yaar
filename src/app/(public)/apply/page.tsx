@@ -4,7 +4,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 
 import { EMPTY_APPLICATION, REVIEW_GROUPS } from "@/lib/application";
-import { clearDraft, markSubmittedThisSession } from "@/lib/draft";
+import { clearDraft, loadDraft, markSubmittedThisSession, saveDraft } from "@/lib/draft";
 import { communityApi } from "@/lib/api/client";
 import { COUNTRIES, APPLYING_FOR_OPTIONS, EDUCATION_LEVELS, EXPERIENCE_LEVELS, WEEKLY_TIME_OPTIONS, PRIVACY_CONSENT_TEXT, TOTAL_STEPS, STEP_LABELS } from "@/lib/constants";
 import { personalInformationSchema, educationSchema, programmingBackgroundSchema, motivationSchema } from "@/lib/validation";
@@ -35,9 +35,11 @@ export default function ApplyPage() {
   const [consent, setConsent] = useState(false);
 
   const submissionIdRef = useRef<string>(crypto.randomUUID());
+  const saveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [turnstileContainer, setTurnstileContainer] = useState<HTMLDivElement | null>(null);
   const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
   const [turnstileReady, setTurnstileReady] = useState(false);
+  const [saveStatus, setSaveStatus] = useState<"idle" | "saving" | "saved" | "error">("idle");
 
   const programId = typeof window !== "undefined"
     ? (process.env.NEXT_PUBLIC_PROGRAM_ID_FOUNDING_COHORT ?? "")
@@ -88,6 +90,49 @@ export default function ApplyPage() {
       }
     };
   }, [turnstileContainer, turnstileReady, turnstileSiteKey]);
+
+  // Load saved draft on mount so applicants can resume where they left off.
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const saved = loadDraft();
+    if (saved) {
+      setValues((prev) => saved);
+    }
+  }, []);
+
+  // Debounced auto-save: persist form values ~800ms after the last input change.
+  // Never auto-submits; only writes the draft to localStorage.
+  useEffect(() => {
+    if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
+
+    const hasAnyValue = Object.values(values).some(
+      (v) => v !== "" && v !== 0 && v !== null,
+    );
+    if (!hasAnyValue) return;
+
+    saveTimerRef.current = setTimeout(() => {
+      setSaveStatus("saving");
+      try {
+        saveDraft(values);
+        setSaveStatus("saved");
+        setTimeout(() => setSaveStatus("idle"), 3000);
+      } catch {
+        setSaveStatus("error");
+        setTimeout(() => setSaveStatus("idle"), 3000);
+      }
+    }, 800);
+
+    return () => {
+      if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
+    };
+  }, [values]);
+
+  // Cleanup pending timer on unmount.
+  useEffect(() => {
+    return () => {
+      if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
+    };
+  }, []);
 
   // Read referral code from URL during render (no effect needed).
   const refFromUrl = typeof window !== "undefined"
@@ -319,6 +364,29 @@ export default function ApplyPage() {
             answers stay in your browser until you submit.
           </p>
         </div>
+
+        {saveStatus !== "idle" && (
+          <div className="mb-6 rounded-lg border border-line bg-surface p-3 flex items-center gap-3">
+            {saveStatus === "saving" && (
+              <span className="text-[0.75rem] text-ink-muted flex items-center gap-2">
+                <span className="h-3 w-3 rounded-full border-2 border-emerald border-t-transparent rounded-full animate-spin"></span>
+                Saving…
+              </span>
+            )}
+            {saveStatus === "saved" && (
+              <span className="text-[0.75rem] text-emerald flex items-center gap-2">
+                <span className="h-3 w-3 rounded-full border-2 border-emerald border-t-emerald rounded-full"></span>
+                All changes saved
+              </span>
+            )}
+            {saveStatus === "error" && (
+              <span className="text-[0.75rem] text-danger flex items-center gap-2">
+                <span className="h-3 w-3 rounded-full border-2 border-danger border-t-danger rounded-full"></span>
+                Unable to save. Retrying…
+              </span>
+            )}
+          </div>
+        )}
 
         <form noValidate onSubmit={handleSubmit} className="space-y-8">
           <div className="mb-6">
