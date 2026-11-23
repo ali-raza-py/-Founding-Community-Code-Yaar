@@ -910,12 +910,35 @@ export default function AmbassadorApplyPage() {
               </Link>
             ) : (
               <>
-                {turnstileSiteKey && turnstileReady && (
-                  <div
-                    ref={setTurnstileContainer}
-                    className="mb-4"
-                    aria-label="Turnstile bot protection"
-                  />
+                {!turnstileSiteKey ? (
+                  <div className="mb-4 p-4 rounded-lg border border-line bg-surface-raised">
+                    <p className="type-caption text-danger mb-2">
+                      Turnstile site key not configured — submission disabled.
+                    </p>
+                    <p className="type-caption text-ink-muted">
+                      Set NEXT_PUBLIC_TURNSTILE_SITE_KEY in your deployment
+                      environment and redeploy.
+                    </p>
+                  </div>
+                ) : turnstileReady ? (
+                  <>
+                    <div
+                      ref={setTurnstileContainer}
+                      className="mb-4"
+                      aria-label="Turnstile bot protection"
+                    />
+                    {!turnstileToken && (
+                      <p className="mb-2 type-caption text-ink-muted">
+                        Please complete the security verification before
+                        submitting.
+                      </p>
+                    )}
+                  </>
+                ) : (
+                  <p className="mb-2 type-caption text-ink-muted">
+                    Security verification is loading. Please wait before
+                    submitting.
+                  </p>
                 )}
                 <button
                   type="submit"
@@ -926,16 +949,6 @@ export default function AmbassadorApplyPage() {
                 >
                   {status.state === "submitting" ? "Submitting…" : "Submit application"}
                 </button>
-                {turnstileSiteKey && !turnstileReady && (
-                  <p className="mt-2 type-caption text-ink-muted">
-                    Security check is loading. Please wait before submitting.
-                  </p>
-                )}
-                {!turnstileSiteKey && communityApi.isConfigured() && (
-                  <p className="mt-2 type-caption text-ink-muted">
-                    Turnstile site key not configured — submission disabled.
-                  </p>
-                )}
               </>
             )}
           </div>
