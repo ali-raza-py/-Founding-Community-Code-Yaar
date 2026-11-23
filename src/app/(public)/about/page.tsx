@@ -18,16 +18,10 @@ const founders = [
     focus: "Technology, backend architecture & engineering",
     image: "/team/abdullah.png",
   },
-  {
-    name: "Shabbar",
-    role: "Co-Founder & Chief Growth Officer",
-    focus: "Community, content & brand growth",
-    image: "/team/shabbar-raza.png",
-  },
 ];
 
 const description =
-  "About Code Yaar Global Founding Community — The First 100. Meet the founding team behind the initiative: Ali Raza, Abdullah, and Shabbar.";
+  "About Code Yaar Global Founding Community — The First 100. Meet the founding team behind the initiative: Ali Raza and Abdullah.";
 
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
