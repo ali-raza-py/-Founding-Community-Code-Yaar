@@ -9,6 +9,11 @@ import type {
   Announcement,
   ApplicationListItem,
   AuthSessionResponse,
+  EmailConfig,
+  EmailDetail,
+  EmailListItem,
+  EmailStats,
+  EmailTemplate,
   PaginatedResponse,
   ParticipantRecord,
   ReferralRecord,
@@ -17,6 +22,10 @@ import type {
   SubmitApplicationRequest,
   SubmitApplicationResponse,
   TaskRecord,
+  TestEmailRequest,
+  TestEmailResponse,
+  SendEmailRequest,
+  SendEmailResponse,
 } from "./types";
 import { COMMUNITY_API_URL, API_TIMEOUT_MS, IS_API_CONFIGURED } from "./config";
 import {
@@ -187,9 +196,10 @@ export class CommunityApiClient {
     path: string,
     body: unknown,
     authToken?: string,
-    timeoutMs?: number
+    timeoutMs?: number,
+    headers?: Record<string, string>
   ): Promise<ApiResult<T>> {
-    return this.request<T>(path, { method: "POST", body, authToken, timeoutMs });
+    return this.request<T>(path, { method: "POST", body, authToken, timeoutMs, headers });
   }
 
   /** PATCH helper. */
@@ -449,6 +459,104 @@ export class CommunityApiClient {
       `/api/v1/admin/participants/${encodeURIComponent(id)}`,
       body,
       authToken
+    );
+  }
+
+  // ------------------------------------------------------------------
+  // Email management methods (Community API — Founding Community API repo)
+  //
+  // NOTE: None of these endpoints exist in the deployed backend yet; every one
+  // returns 404 "Route not found". They are implemented here as the frontend
+  // contract and must be implemented in the backend before email management is
+  // functional in production. See the implementation report for details.
+  // ------------------------------------------------------------------
+
+  async getAdminEmailStats(
+    authToken: string
+  ): Promise<ApiResult<EmailStats>> {
+    return this.get<EmailStats>("/api/v1/admin/emails/stats", authToken);
+  }
+
+  async getAdminEmails(
+    authToken: string,
+    params?: {
+      page?: number;
+      pageSize?: number;
+      search?: string;
+      type?: string;
+      status?: string;
+      from?: string;
+      to?: string;
+      sortBy?: string;
+      sortDir?: "asc" | "desc";
+    }
+  ): Promise<ApiResult<PaginatedResponse<EmailListItem>>> {
+    const searchParams = new URLSearchParams();
+    if (params?.page) searchParams.set("page", String(params.page));
+    if (params?.pageSize) searchParams.set("pageSize", String(params.pageSize));
+    if (params?.search) searchParams.set("search", params.search);
+    if (params?.type) searchParams.set("type", params.type);
+    if (params?.status) searchParams.set("status", params.status);
+    if (params?.from) searchParams.set("from", params.from);
+    if (params?.to) searchParams.set("to", params.to);
+    if (params?.sortBy) searchParams.set("sortBy", params.sortBy);
+    if (params?.sortDir) searchParams.set("sortDir", params.sortDir);
+
+    const path = `/api/v1/admin/emails${searchParams.toString() ? `?${searchParams.toString()}` : ""}`;
+    return this.get<PaginatedResponse<EmailListItem>>(path, authToken);
+  }
+
+  async getAdminEmail(
+    authToken: string,
+    id: string
+  ): Promise<ApiResult<EmailDetail>> {
+    return this.get<EmailDetail>(
+      `/api/v1/admin/emails/${encodeURIComponent(id)}`,
+      authToken
+    );
+  }
+
+  async postAdminEmailTest(
+    authToken: string,
+    request: TestEmailRequest
+  ): Promise<ApiResult<TestEmailResponse>> {
+    return this.post<TestEmailResponse>("/api/v1/admin/emails/test", request, authToken);
+  }
+
+  async postAdminEmailRetry(
+    authToken: string,
+    id: string
+  ): Promise<ApiResult<{ success: boolean; messageId: string | null }>> {
+    return this.post<{ success: boolean; messageId: string | null }>(
+      `/api/v1/admin/emails/${encodeURIComponent(id)}/retry`,
+      {},
+      authToken
+    );
+  }
+
+  async getAdminEmailTemplates(
+    authToken: string
+  ): Promise<ApiResult<EmailTemplate[]>> {
+    return this.get<EmailTemplate[]>("/api/v1/admin/email-templates", authToken);
+  }
+
+  async getAdminEmailConfig(
+    authToken: string
+  ): Promise<ApiResult<EmailConfig>> {
+    return this.get<EmailConfig>("/api/v1/admin/email-config", authToken);
+  }
+
+  async postAdminEmailSend(
+    authToken: string,
+    request: SendEmailRequest,
+    idempotencyKey?: string
+  ): Promise<ApiResult<SendEmailResponse>> {
+    return this.post<SendEmailResponse>(
+      "/api/v1/admin/emails/send",
+      request,
+      authToken,
+      undefined,
+      idempotencyKey ? { "Idempotency-Key": idempotencyKey } : undefined
     );
   }
 }

@@ -24,7 +24,15 @@ interface AdminLayoutProps {
   children: React.ReactNode;
 }
 
-const MAIN_NAV = [
+interface NavItem {
+  href: string;
+  label: string;
+  icon: typeof LayoutDashboard;
+  /** When set, only users with the given role(s) see this item. */
+  roles?: ("admin" | "super_admin")[];
+}
+
+const MAIN_NAV: NavItem[] = [
   { href: "/admin", label: "Overview", icon: LayoutDashboard },
   { href: "/admin/applications", label: "Applications", icon: FileText },
   { href: "/admin/founding-cohort", label: "Founding Cohort", icon: UserCheck },
@@ -34,12 +42,22 @@ const MAIN_NAV = [
   { href: "/admin/tasks", label: "Tasks", icon: ListChecks },
 ] as const;
 
-const MANAGEMENT_NAV = [
-  { href: "/admin/announcements", label: "Announcements", icon: BarChart3 },
+const MANAGEMENT_NAV: NavItem[] = [
+  {
+    href: "/admin/announcements",
+    label: "Announcements",
+    icon: BarChart3,
+    roles: ["super_admin"],
+  },
+  {
+    href: "/admin/mail",
+    label: "Mail",
+    icon: Mail,
+  },
 ] as const;
 
-const SYSTEM_NAV = [
-  { href: "/admin/users", label: "Users", icon: ShieldAlert },
+const SYSTEM_NAV: NavItem[] = [
+  { href: "/admin/users", label: "Users", icon: ShieldAlert, roles: ["super_admin"] },
 ] as const;
 
 export function AdminLayout({ children }: AdminLayoutProps) {
@@ -58,10 +76,17 @@ export function AdminLayout({ children }: AdminLayoutProps) {
 
   const allNavItems = useMemo(() => {
     if (!isAdmin) return [];
+    const visible = (item: NavItem) => {
+      if (!item.roles) return true;
+      return item.roles.includes("super_admin") ? isSuperAdmin : true;
+    };
     return [
-      { section: "MAIN", items: MAIN_NAV },
-      ...(isSuperAdmin ? [{ section: "MANAGEMENT", items: MANAGEMENT_NAV }] : []),
-      ...(isSuperAdmin ? [{ section: "SYSTEM", items: SYSTEM_NAV }] : []),
+      { section: "MAIN", items: MAIN_NAV.filter(visible) },
+      {
+        section: "MANAGEMENT",
+        items: MANAGEMENT_NAV.filter(visible),
+      },
+      { section: "SYSTEM", items: SYSTEM_NAV.filter(visible) },
     ];
   }, [isAdmin, isSuperAdmin]);
 

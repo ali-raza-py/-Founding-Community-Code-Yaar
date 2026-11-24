@@ -221,6 +221,124 @@ export interface AdminTaskItem {
   updated_at?: string;
 }
 
+/**
+ * Email management types.
+ *
+ * NOTE: The Founding Community API (separate repository) does not yet expose
+ * email management endpoints. These types describe the expected backend
+ * contract and must be confirmed against the real API before the endpoints are
+ * wired to production. All paths below return 404 "Route not found" today.
+ * See the Email Management section of the implementation report for the full
+ * list of missing backend endpoints.
+ */
+
+/** Email delivery status values, matching Resend's lifecycle. */
+export type EmailStatus = "accepted" | "delivered" | "failed" | "pending";
+
+/** Email provider values. */
+export type EmailProvider = "resend";
+
+/** Summary statistics for the email dashboard. */
+export interface EmailStats {
+  total: number;
+  accepted: number;
+  delivered: number;
+  failed: number;
+  pending: number;
+  successRate: number;
+  failureRate: number;
+  activity: Array<{
+    date: string;
+    sent: number;
+    delivered: number;
+    failed: number;
+  }>;
+}
+
+/** Email log list item (GET /api/v1/admin/emails). */
+export interface EmailListItem {
+  id: string;
+  recipient: string;
+  type: string;
+  subject: string;
+  status: EmailStatus;
+  provider: EmailProvider;
+  messageId: string | null;
+  sentAt: string;
+}
+
+/** Email detail (GET /api/v1/admin/emails/:id). */
+export interface EmailDetail {
+  id: string;
+  recipient: string;
+  type: string;
+  subject: string;
+  status: EmailStatus;
+  provider: EmailProvider;
+  messageId: string | null;
+  createdAt: string;
+  acceptedAt: string | null;
+  deliveredAt: string | null;
+  failureReason: string | null;
+}
+
+/** Email provider configuration status. */
+export interface EmailConfig {
+  provider: EmailProvider;
+  senderAddress: string;
+  senderName: string;
+  status: "configured" | "misconfigured" | "not-configured";
+  lastTestedAt: string | null;
+}
+
+/** Test email request (POST /api/v1/admin/emails/test). */
+export interface TestEmailRequest {
+  recipient: string;
+}
+
+/** Test email response. */
+export interface TestEmailResponse {
+  success: boolean;
+  messageId: string | null;
+  error: string | null;
+}
+
+/** Email template overview (GET /api/v1/admin/email-templates). */
+export interface EmailTemplate {
+  id: string;
+  name: string;
+  description: string;
+  active: boolean;
+  updatedAt: string | null;
+}
+
+/** Send email request (POST /api/v1/admin/emails/send). */
+export interface SendEmailRequest {
+  recipients: string[];
+  subject: string;
+  body: string;
+  templateId?: string | null;
+}
+
+/** Send email response (POST /api/v1/admin/emails/send). */
+export interface SendEmailResponse {
+  success: boolean;
+  messageId: string | null;
+  accepted: number;
+  failed: number;
+  errors: Array<{ recipient: string; reason: string }>;
+}
+
+/** Email recipient directory entry (participants and applicants). */
+export interface EmailRecipient {
+  id: string;
+  email: string;
+  name: string | null;
+  source: "participant" | "applicant";
+  status: string | null;
+  program?: { name: string; slug: string } | null;
+}
+
 /** Application status values supported by the backend. */
 export type ApplicationStatus =
   | "pending"
