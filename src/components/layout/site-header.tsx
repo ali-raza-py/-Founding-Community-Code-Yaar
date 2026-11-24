@@ -8,6 +8,7 @@ import { useEffect, useRef, useState } from "react";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/lib/api/auth";
+import { Spinner } from "@/components/auth/spinner";
 
 import { Wordmark } from "./wordmark";
 
@@ -57,7 +58,12 @@ function NavigationLinks({
 
 export function SiteHeader() {
   const pathname = usePathname();
-  const { isAuthenticated, isAdmin, isSuperAdmin, signOut } = useAuth();
+  const {
+    isAuthenticated,
+    isAdmin,
+    isLoading,
+    signOut,
+  } = useAuth();
   const [open, setOpen] = useState(false);
   const headerRef = useRef<HTMLElement>(null);
   const menuTriggerRef = useRef<HTMLButtonElement>(null);
@@ -123,7 +129,13 @@ export function SiteHeader() {
         </nav>
 
         <div className="flex shrink-0 items-center gap-1.5 sm:gap-2 xl:justify-self-end">
-          {isAuthenticated ? (
+          {isLoading ? (
+            <>
+              <span className="flex items-center gap-2 rounded-md bg-surface p-1">
+                <Spinner className="size-3 size-sm shrink-0" />
+              </span>
+            </>
+          ) : isAuthenticated ? (
             <>
               <Link
                 href="/dashboard"
@@ -216,7 +228,14 @@ export function SiteHeader() {
             </Link>
           </li>
         )}
-        {isAuthenticated && (
+        {isLoading ? (
+          <li>
+            <span className="flex min-h-11 items-center whitespace-nowrap rounded-md px-2.5 text-sm font-medium text-ink-muted">
+              <Spinner className="size-3 mr-1.5" />
+              Loading…
+            </span>
+          </li>
+        ) : isAuthenticated && (
           <li>
             <Link
               href="/dashboard"
@@ -228,7 +247,7 @@ export function SiteHeader() {
             </Link>
           </li>
         )}
-        {isAuthenticated && (
+        {isLoading ? null : isAuthenticated && (
           <li>
             <button
               onClick={signOut}

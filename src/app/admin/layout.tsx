@@ -13,7 +13,8 @@ export default function AdminRouteLayout({
   const router = useRouter();
 
   // While auth state is being resolved, show a neutral loading state
-  // to prevent flashing unauthorized content.
+  // to prevent flashing unauthorized content and to avoid redirecting
+  // before the session has finished loading.
   if (isLoading) {
     return null;
   }

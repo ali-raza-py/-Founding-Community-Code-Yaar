@@ -1,11 +1,12 @@
 "use client";
 
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { CheckCircle2, Eye, EyeOff } from "lucide-react";
+import { Eye, EyeOff, Mail, RefreshCw } from "lucide-react";
 
 import { createSupabaseBrowserClient, isSupabaseConfigured } from "@/lib/supabase";
+import { getAuthCallbackUrl } from "@/lib/auth-url";
 import { Button } from "@/components/ui/button";
 import { Field, Input } from "@/components/ui/field";
 import { Section, SectionInner } from "@/components/ui/section";
@@ -47,9 +48,18 @@ export default function SignUpPage() {
   const [terms, setTerms] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
-  const [success, setSuccess] = useState(false);
+const [error, setError] = useState<string | null>(null);
+const [isLoading, setIsLoading] = useState(false);
+const [emailConfirmationSent, setEmailConfirmationSent] = useState(false);
+const [resendStatus, setResendStatus] = useState<
+  "idle" | "sending" | "sent" | "error"
+>("idle");
+const [resendMessage, setResendMessage] = useState<string | null>(null);
+const [resendCooldownUntil, setResendCooldownUntil] = useState(0);
+const [tick, setTick] = useState(0);
+
+const RESEND_COOLDOWN_MS = 60_000;
+
   const [fieldErrors, setFieldErrors] = useState<Record<FormField, string>>({
     fullName: undefined as unknown as string,
     email: undefined as unknown as string,
@@ -127,6 +137,51 @@ export default function SignUpPage() {
     return !invalid;
   };
 
+  // Tick every second while the resend cooldown is active so the countdown
+  // shown to the user stays current.
+  useEffect(() => {
+    if (resendCooldownUntil === 0) return;
+    const id = setInterval(() => setTick(Date.now()), 1000);
+    return () => clearInterval(id);
+  }, [resendCooldownUntil]);
+
+  const secondsRemaining = resendCooldownUntil > 0
+    ? Math.max(0, Math.ceil((resendCooldownUntil - tick) / 1000))
+    : 0;
+
+  const canResend = secondsRemaining === 0 && resendStatus !== "sending";
+
+  const handleResend = useCallback(async () => {
+    if (!isSupabaseConfigured() || !supabase || !canResend) return;
+
+    setResendStatus("sending");
+    setResendMessage(null);
+
+    try {
+      const { error: resendError } = await supabase.auth.resend({
+        email: email.trim(),
+        type: "signup",
+      });
+
+      if (resendError) {
+        setResendStatus("error");
+        setResendMessage(
+          resendError.message ?? "Unable to resend the verification email.",
+        );
+        return;
+      }
+
+      setResendStatus("sent");
+      setResendCooldownUntil(Date.now() + RESEND_COOLDOWN_MS);
+      setResendMessage("A new verification link has been sent to your inbox.");
+    } catch {
+      setResendStatus("error");
+      setResendMessage(
+        "Unable to resend the verification email. Please try again.",
+      );
+    }
+  }, [email, supabase, canResend]);
+
   const handleSubmit = useCallback(
     async (event: React.FormEvent) => {
       event.preventDefault();
@@ -151,6 +206,10 @@ export default function SignUpPage() {
             data: {
               full_name: fullName.trim(),
             },
+            // Confirmation (and all email-based OTP) links route through the
+            // application callback on the configured production site URL —
+            // never localhost in production.
+            emailRedirectTo: getAuthCallbackUrl(),
           },
         });
 
@@ -162,21 +221,13 @@ export default function SignUpPage() {
         }
 
         if (data?.user) {
-          const emailConfirmationRequired = Boolean(
-            data.user.identities?.[0]?.identity_data?.email,
-          );
-          setSuccess(true);
-
-          const destination = emailConfirmationRequired
-            ? `/auth/sign-in?message=${encodeURIComponent(
-                "Account created. Please check your email to confirm your account, then sign in.",
-              )}`
-            : "/dashboard";
-
-          // Let the success state be seen before redirecting.
-          setTimeout(() => {
-            void router.push(destination);
-          }, 1500);
+          // When email confirmations are disabled the account is signed in
+          // immediately — otherwise show the confirmation screen.
+          if (data.session) {
+            void router.replace("/dashboard");
+            return;
+          }
+          setEmailConfirmationSent(true);
         }
       } catch {
         setIsLoading(false);
@@ -200,34 +251,60 @@ export default function SignUpPage() {
     );
   }
 
-  if (success) {
+  if (emailConfirmationSent) {
     return (
       <AuthShell
         brand={
           <div className="flex flex-col items-start lg:items-center gap-6 text-center lg:text-center">
             <AuthLogo />
-            <h2 className="type-display text-ink">Join Code Yaar</h2>
-            <p className="type-body-muted max-w-[24rem]">
-              Build something meaningful with a community of ambitious builders.
+            <h2 className="type-display text-ink">Check your inbox</h2>
+            <p className="type-body-muted max-w-[22rem]">
+              We&rsquo;ve sent a verification link to your email address. Verify your email to activate your Code Yaar account.
             </p>
+            <p className="type-caption text-ink-subtle mt-2">{email}</p>
           </div>
         }
         form={
           <div className="flex flex-col items-center justify-center text-center space-y-4 pt-6">
-            <CheckCircle2 className="size-12 text-emerald" />
-            <h2 className="type-display text-ink">Account created</h2>
-            <p className="type-body-muted max-w-[22rem]">
-              Please check your email to confirm your account, then sign in.
-            </p>
-            <p className="type-caption text-ink-subtle">
-              You&rsquo;ll be redirected automatically.
-            </p>
-            <Link
-              href="/auth/sign-in"
-              className="type-small text-emerald hover:underline font-medium"
+            {resendStatus === "sent" && secondsRemaining > 0 ? (
+              <div className="rounded-lg border border-emerald/30 bg-emerald-soft p-4 text-emerald-900">
+                <p className="text-sm font-medium">{resendMessage}</p>
+              </div>
+            ) : resendStatus === "error" ? (
+              <AuthAlert>{resendMessage}</AuthAlert>
+            ) : null}
+
+            <Button
+              disabled={!canResend}
+              onClick={handleResend}
+              className="w-full sm:w-[22rem]"
             >
-              Go to sign in
-            </Link>
+              {resendStatus === "sending" ? (
+                <>
+                  <Spinner className="mr-2 size-3" /> Sending…
+                </>
+              ) : secondsRemaining > 0 ? (
+                <>
+                  <RefreshCw className="mr-2 size-4" />
+                  Resend in {secondsRemaining}s
+                </>
+              ) : (
+                <>
+                  <Mail className="mr-2 size-4" /> Resend verification email
+                </>
+              )}
+            </Button>
+
+            <p className="mt-8 text-center type-body text-ink-muted">
+              Already verified?{" "}
+              <Link
+                href="/auth/sign-in"
+                className="text-emerald hover:underline font-medium"
+              >
+                Go to sign in
+              </Link>
+              .
+            </p>
           </div>
         }
       />

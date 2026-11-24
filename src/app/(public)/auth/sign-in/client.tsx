@@ -1,12 +1,13 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { ChevronRight, Eye, EyeOff, AlertCircle, CheckCircle2 } from "lucide-react";
 
 import { createSupabaseBrowserClient, isSupabaseConfigured } from "@/lib/supabase";
 import { communityApi } from "@/lib/api/client";
+import { validateRedirectDestination } from "@/lib/auth-url";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Field, Input } from "@/components/ui/field";
@@ -27,6 +28,12 @@ export default function SignInPageClient() {
   const urlMessage = searchParams.get("message");
   const urlVariant = searchParams.get("variant");
 
+  // Preserve the intended destination so the user is returned there after
+  // signing in. Only same-origin relative paths are accepted.
+  const redirectTo = validateRedirectDestination(
+    searchParams.get("redirectTo") ?? null,
+  );
+
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [rememberMe, setRememberMe] = useState(false);
@@ -34,6 +41,9 @@ export default function SignInPageClient() {
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [fieldErrors, setFieldErrors] = useState<{ email?: string; password?: string }>({});
+
+  // Stable Supabase client — created once and shared across the page.
+  const supabase = useMemo(() => createSupabaseBrowserClient(), []);
 
   // Restore persisted email when "Remember me" was previously checked.
   useEffect(() => {
@@ -81,15 +91,7 @@ export default function SignInPageClient() {
       setFieldErrors(nextErrors);
       if (invalid) return;
 
-      if (!isSupabaseConfigured()) {
-        setError(
-          "Authentication is not configured. Please contact the Code Yaar team.",
-        );
-        return;
-      }
-
-      const supabase = createSupabaseBrowserClient();
-      if (!supabase) {
+      if (!isSupabaseConfigured() || !supabase) {
         setError(
           "Authentication is not configured. Please contact the Code Yaar team.",
         );
@@ -141,20 +143,20 @@ export default function SignInPageClient() {
         localStorage.removeItem("code_yaar_auth_email");
       }
 
-      // Step 3: Redirect based on verified backend role.
-      // Use fire-and-forget navigation so a navigation rejection cannot surface
-      // as an error after the Supabase session has already been established.
-      const safeNavigate = (path: string) => {
-        router.push(path);
-      };
+      // Return the user to their intended destination, or fall back to the
+      // role-based default. `redirectTo` was already validated for open
+      // redirect safety when it was parsed.
+      const defaultDestination =
+        verifiedRole === "super_admin"
+          ? "/admin/users"
+          : verifiedRole === "admin"
+            ? "/admin"
+            : "/dashboard";
 
-      if (verifiedRole === "super_admin") {
-        safeNavigate("/admin/users");
-      } else if (verifiedRole === "admin") {
-        safeNavigate("/admin");
-      } else {
-        safeNavigate("/dashboard");
-      }
+      const destination = redirectTo ?? defaultDestination;
+      // Fire-and-forget navigation so a navigation rejection cannot surface
+      // as an error after the Supabase session has already been established.
+      void router.push(destination);
     },
     [email, password, rememberMe, router],
   );

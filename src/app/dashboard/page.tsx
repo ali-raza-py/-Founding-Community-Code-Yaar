@@ -90,6 +90,15 @@ export default function DashboardPage() {
     mounted.current = true;
     loadData();
 
+    // Do not navigate while the session is still being resolved: redirecting
+    // on the initial unauthenticated render would kick out an authenticated
+    // user whose session has not finished loading yet.
+    if (isLoading) {
+      return () => {
+        mounted.current = false;
+      };
+    }
+
     // Redirects must run in an effect, not during render, to avoid
     // React warnings and navigation failures when auth state resolves.
     if (!isAuthenticated) {
@@ -104,7 +113,7 @@ export default function DashboardPage() {
     return () => {
       mounted.current = false;
     };
-  }, [loadData, isAuthenticated, isAdmin, isSuperAdmin, router]);
+  }, [loadData, isAuthenticated, isAdmin, isSuperAdmin, isLoading, router]);
 
   // While auth state is being resolved, show a neutral loading state.
   if (isLoading) {
