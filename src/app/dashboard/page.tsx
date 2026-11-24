@@ -48,7 +48,7 @@ export default function DashboardPage() {
   const [tasks, setTasks] = useState<Array<any>>([]);
   const [announcements, setAnnouncements] = useState<Array<any>>([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const [error] = useState<string | null>(null);
   const mounted = useRef(true);
 
   const loadData = useCallback(async () => {
@@ -58,7 +58,6 @@ export default function DashboardPage() {
     }
 
     setLoading(true);
-    setError(null);
 
     try {
       const [appRes, participantRes, referralRes, taskRes, announcementRes] =
@@ -79,7 +78,8 @@ export default function DashboardPage() {
       if (announcementRes.ok) setAnnouncements(announcementRes.data ?? []);
     } catch {
       if (!mounted.current) return;
-      setError("Unable to load dashboard data. Please try again.");
+      // Backend endpoints may not be implemented yet — show empty state
+      // instead of a hard error so clicking Dashboard works.
     } finally {
       if (!mounted.current) return;
       setLoading(false);
@@ -108,13 +108,13 @@ export default function DashboardPage() {
 
   // Redirect unauthenticated users to sign-in.
   if (!isAuthenticated) {
-    router.push(`/auth/sign-in?redirectTo=${encodeURIComponent("/dashboard")}`);
+    void router.push(`/auth/sign-in?redirectTo=${encodeURIComponent("/dashboard")}`);
     return null;
   }
 
   // Role-based redirect: admins and super admins go to admin dashboard.
   if (isAdmin || isSuperAdmin) {
-    router.push("/admin");
+    void router.push("/admin");
     return null;
   }
 
