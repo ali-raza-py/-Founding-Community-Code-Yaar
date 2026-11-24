@@ -90,10 +90,21 @@ export default function DashboardPage() {
     mounted.current = true;
     loadData();
 
+    // Redirects must run in an effect, not during render, to avoid
+    // React warnings and navigation failures when auth state resolves.
+    if (!isAuthenticated) {
+      void router.push(`/auth/sign-in?redirectTo=${encodeURIComponent("/dashboard")}`);
+      return;
+    }
+    if (isAdmin || isSuperAdmin) {
+      void router.push("/admin");
+      return;
+    }
+
     return () => {
       mounted.current = false;
     };
-  }, [loadData]);
+  }, [loadData, isAuthenticated, isAdmin, isSuperAdmin, router]);
 
   // While auth state is being resolved, show a neutral loading state.
   if (isLoading) {
@@ -106,15 +117,8 @@ export default function DashboardPage() {
     );
   }
 
-  // Redirect unauthenticated users to sign-in.
-  if (!isAuthenticated) {
-    void router.push(`/auth/sign-in?redirectTo=${encodeURIComponent("/dashboard")}`);
-    return null;
-  }
-
-  // Role-based redirect: admins and super admins go to admin dashboard.
-  if (isAdmin || isSuperAdmin) {
-    void router.push("/admin");
+  // While redirects are pending, render null.
+  if (!isAuthenticated || isAdmin || isSuperAdmin) {
     return null;
   }
 
