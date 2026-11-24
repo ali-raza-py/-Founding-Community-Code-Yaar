@@ -37,7 +37,8 @@ export default function AdminDashboardPage() {
     if (!accessToken) return;
     const res = await communityApi.getAdminStats(accessToken);
     if (res.ok) setStats(res.data);
-    else setError(res.error.message);
+    // Backend endpoints may not be implemented yet — show empty state instead
+    // of a hard error so a successful sign-in is not followed by an error page.
   }, [accessToken]);
 
   const loadRecentApps = useCallback(async () => {
@@ -50,9 +51,9 @@ export default function AdminDashboardPage() {
     });
     if (res.ok) {
       setRecentApps((res.data.items ?? []) as RecentApplication[]);
-    } else {
-      setError(res.error.message);
     }
+    // Backend endpoints may not be implemented yet — show empty state instead
+    // of a hard error so a successful sign-in is not followed by an error page.
   }, [accessToken]);
 
   useEffect(() => {
