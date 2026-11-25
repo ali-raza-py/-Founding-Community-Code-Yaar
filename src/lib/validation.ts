@@ -84,7 +84,11 @@ export const educationSchema = z.object({
       (value) => educationValues.includes(value),
       "Select your current education level.",
     ),
-  institution: optionalText(120),
+  institution: z
+    .string()
+    .trim()
+    .min(1, "Institution is required.")
+    .max(120, "Please keep this under 120 characters."),
   fieldOfStudy: optionalText(100),
   yearOrGrade: z
     .string()
