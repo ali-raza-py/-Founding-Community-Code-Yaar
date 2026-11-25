@@ -227,24 +227,24 @@ export default function ApplyPage() {
       }
 
       // Build the backend-compatible submission payload.
-      const applicationAnswers: Record<string, unknown> = {
-        age: values.age,
-        educationLevel: values.educationLevel,
-        fieldOfStudy: values.fieldOfStudy,
-        yearOrGrade: values.yearOrGrade,
-        experienceLevel: values.experienceLevel,
-        languages: values.languages,
-        previousProjects: values.previousProjects,
-        github: values.github,
-        linkedin: values.linkedin,
-        portfolio: values.portfolio,
-        motivation: values.motivation,
-        learningGoals: values.learningGoals,
-        contribution: values.contribution,
-        weeklyTime: values.weeklyTime,
-        preferredLanguage: values.preferredLanguage,
-        timezone: values.timezone,
-        applyingFor: values.applyingFor,
+      const applicationAnswers: Record<string, string> = {
+        age: String(values.age ?? ""),
+        educationLevel: String(values.educationLevel ?? ""),
+        fieldOfStudy: String(values.fieldOfStudy ?? ""),
+        yearOrGrade: String(values.yearOrGrade ?? ""),
+        experienceLevel: String(values.experienceLevel ?? ""),
+        languages: String(values.languages ?? ""),
+        previousProjects: String(values.previousProjects ?? ""),
+        github: String(values.github ?? ""),
+        linkedin: String(values.linkedin ?? ""),
+        portfolio: String(values.portfolio ?? ""),
+        motivation: String(values.motivation ?? ""),
+        learningGoals: String(values.learningGoals ?? ""),
+        contribution: String(values.contribution ?? ""),
+        weeklyTime: String(values.weeklyTime ?? ""),
+        preferredLanguage: String(values.preferredLanguage ?? ""),
+        timezone: String(values.timezone ?? ""),
+        applyingFor: String(values.applyingFor ?? ""),
       };
 
       const request = {
