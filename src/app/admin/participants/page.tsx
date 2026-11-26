@@ -37,6 +37,7 @@ export default function AdminParticipantsPage() {
   const [detailTasks, setDetailTasks] = useState<Array<any>>([]);
   const pageRef = useRef(1);
   const [updateLoading, setUpdateLoading] = useState<string | null>(null);
+  const [participantStatus, setParticipantStatus] = useState<"active" | "inactive" | "suspended" | "graduated">("active");
 
   const loadParticipants = useCallback(async (page = 1) => {
     if (!accessToken) return;
@@ -147,7 +148,7 @@ export default function AdminParticipantsPage() {
       user_id: selectedUserId,
       application_id: selectedApplicationId,
       program_id: selectedProgramId,
-      participant_status: "active",
+      participant_status: participantStatus,
     });
 
     if (res.ok) {
@@ -155,11 +156,12 @@ export default function AdminParticipantsPage() {
       setSelectedUserId("");
       setSelectedProgramId("");
       setSelectedApplicationId("");
+      setParticipantStatus("active");
       setProgramApplications([]);
     } else {
       setError(res.error.message);
     }
-  }, [accessToken, participants, selectedUserId, selectedProgramId, selectedApplicationId]);
+  }, [accessToken, participants, selectedUserId, selectedProgramId, selectedApplicationId, participantStatus]);
 
   if (isLoading || loading) {
     return <LoadingState />;
@@ -256,7 +258,10 @@ export default function AdminParticipantsPage() {
               </Select>
             </Field>
             <Field label="Status">
-              <Select name="participant_status" defaultValue="active">
+              <Select
+                value={participantStatus}
+                onChange={(e) => setParticipantStatus(e.currentTarget.value as "active" | "inactive" | "suspended" | "graduated")}
+              >
                 <option value="active">Active</option>
                 <option value="inactive">Inactive</option>
                 <option value="suspended">Suspended</option>
@@ -353,7 +358,10 @@ export default function AdminParticipantsPage() {
                       <td className="px-4 py-3 text-sm text-ink">
                         <select
                           defaultValue={p.participant_status}
-                          onChange={(e) => void handleStatusUpdate(p.id, e.currentTarget.value as "active" | "inactive" | "suspended" | "graduated")}
+                          onChange={(e) => {
+                            e.stopPropagation();
+                            void handleStatusUpdate(p.id, e.currentTarget.value as "active" | "inactive" | "suspended" | "graduated");
+                          }}
                           disabled={updateLoading === p.id}
                           className="text-xs bg-transparent border-none text-ink focus-visible:ring-0"
                         >
