@@ -264,7 +264,14 @@ export function EmailCompose({
 
   const handleSendAttempt = useCallback(() => {
     setFieldErrors({});
-    const result = sendSchema.safeParse({ recipients, subject, body });
+    // Normalize recipient objects to email strings for validation, matching
+    // the submission payload contract (backend expects string[]).
+    const recipientEmails = recipients.map((r) => r.email);
+    const result = sendSchema.safeParse({
+      recipients: recipientEmails,
+      subject,
+      body,
+    });
     if (!result.success) {
       const next: Record<string, string[]> = {};
       for (const issue of result.error.issues) {
