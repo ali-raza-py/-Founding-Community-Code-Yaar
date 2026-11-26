@@ -729,13 +729,25 @@ export class CommunityApiClient {
     // as `idempotency_key` to match the backend validator; sending it only as a
     // header would be ignored and the backend would fall back to a
     // recipient+subject-derived key, which can suppress legitimate re-sends.
-    const payload = {
+    //
+    // template_id is only forwarded when it is a real backend template UUID.
+    // Frontend catalogue template IDs (e.g. "application-received") are not
+    // UUIDs, and the backend validates template_id as a UUID, so sending a
+    // catalogue slug here would fail with "Invalid template ID". Custom emails
+    // and catalogue templates intentionally send no template_id.
+    const templateId = request.templateId;
+    const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
+      templateId ?? ""
+    );
+    const payload: Record<string, unknown> = {
       to: request.recipients,
       subject: request.subject,
       html: request.body,
-      template_id: request.templateId ?? undefined,
       idempotency_key: idempotencyKey ?? crypto.randomUUID(),
     };
+    if (isUuid) {
+      payload.template_id = templateId;
+    }
     return this.post<SendEmailResponse>("/api/v1/admin/email/send", payload, authToken);
   }
 }
