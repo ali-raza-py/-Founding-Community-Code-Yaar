@@ -9,34 +9,45 @@ export function classifyError(
 ): ApiClientError {
   let reason: ApiErrorReason = "unknown";
 
-  switch (status) {
-    case 401:
-      reason = "unauthorized";
-      break;
-    case 403:
-      reason = "forbidden";
-      break;
-    case 404:
-      reason = "not-found";
-      break;
-    case 409:
-      reason = "conflict";
-      break;
-    case 422:
-      reason = "validation";
-      break;
-    case 429:
-      reason = "rate-limited";
-      break;
-    case 500:
-    case 502:
-    case 503:
-    case 504:
-      reason = "server";
-      break;
-    default:
-      if (status >= 400 && status < 500) reason = "validation";
-      else if (status >= 500) reason = "server";
+  // Turnstile/bot-protection failures are not form-validation errors, even
+  // when the backend reports them as HTTP 400. Classify them separately so
+  // the UI can surface the exact verification message without misleading
+  // "check your entries" wording.
+  if (
+    code === "TURNTILE_TOKEN_REUSED" ||
+    code === "TURNTILE_INVALID"
+  ) {
+    reason = "bot-verification";
+  } else {
+    switch (status) {
+      case 401:
+        reason = "unauthorized";
+        break;
+      case 403:
+        reason = "forbidden";
+        break;
+      case 404:
+        reason = "not-found";
+        break;
+      case 409:
+        reason = "conflict";
+        break;
+      case 422:
+        reason = "validation";
+        break;
+      case 429:
+        reason = "rate-limited";
+        break;
+      case 500:
+      case 502:
+      case 503:
+      case 504:
+        reason = "server";
+        break;
+      default:
+        if (status >= 400 && status < 500) reason = "validation";
+        else if (status >= 500) reason = "server";
+    }
   }
 
   return {

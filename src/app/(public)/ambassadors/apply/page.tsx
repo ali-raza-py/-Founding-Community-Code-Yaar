@@ -331,6 +331,8 @@ export default function AmbassadorApplyPage() {
           } else if (err.reason === "validation") {
             message =
               `Validation error: ${err.message}. Please check your entries and try again.`;
+          } else if (err.reason === "bot-verification") {
+            message = err.message;
           } else if (err.reason === "rate-limited") {
             message =
               "Too many submission attempts. Please wait a moment and try again.";

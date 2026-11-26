@@ -416,6 +416,7 @@ export type ApiErrorReason =
   | "conflict"
   | "validation"
   | "rate-limited"
+  | "bot-verification"
   | "server"
   | "unknown";
 

@@ -351,6 +351,8 @@ export default function ApplyPage() {
             } else if (err.reason === "forbidden") {
               message =
                 "You are not permitted to perform this action.";
+            } else if (err.reason === "bot-verification") {
+              message = err.message;
             } else if (err.reason === "validation") {
               message =
                 `Validation error: ${err.message}. Please check your entries and try again.`;
