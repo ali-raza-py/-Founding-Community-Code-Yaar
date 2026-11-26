@@ -125,6 +125,7 @@ export default function AmbassadorApplyPage() {
   const [status, setStatus] = useState<ReturnType<typeof emptyStatus>>(emptyStatus);
 
   const submissionIdRef = useRef<string>(crypto.randomUUID());
+  const turnstileWidgetRef = useRef<number | null>(null);
   const [turnstileContainer, setTurnstileContainer] = useState<HTMLDivElement | null>(null);
   const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
   const [turnstileReady, setTurnstileReady] = useState(false);
@@ -170,6 +171,7 @@ export default function AmbassadorApplyPage() {
         setTurnstileToken(null);
       },
     });
+    turnstileWidgetRef.current = widgetId;
     return () => {
       try {
         turnstile.remove(widgetId);
@@ -178,6 +180,20 @@ export default function AmbassadorApplyPage() {
       }
     };
   }, [turnstileContainer, turnstileReady, turnstileSiteKey]);
+
+  // Reset the Turnstile widget and clear any held token so the next attempt
+  // requires a fresh challenge (Turnstile tokens are single-use and expire).
+  const resetTurnstile = useCallback(() => {
+    const turnstile = (window as any).turnstile;
+    if (turnstile && turnstileWidgetRef.current != null) {
+      try {
+        turnstile.reset(turnstileWidgetRef.current);
+      } catch {
+        // Ignore reset failures; the token is cleared regardless.
+      }
+    }
+    setTurnstileToken(null);
+  }, []);
 
   const setField = useCallback((key: keyof AmbassadorValues, value: string | boolean) => {
     setValues((current) => ({ ...current, [key]: value }));
@@ -287,6 +303,7 @@ export default function AmbassadorApplyPage() {
         },
         referral_code: "",
         turnstile_token: turnstileToken ?? "",
+        idempotency_key: submissionIdRef.current,
       };
 
       setStatus({ state: "submitting" });
@@ -296,6 +313,7 @@ export default function AmbassadorApplyPage() {
         const result = await communityApi.submitApplication(request);
 
         if (result.ok) {
+          setTurnstileToken(null);
           setStatus({ state: "success", reference: result.data.id ?? null });
         } else {
           const err = result.error;
@@ -317,17 +335,19 @@ export default function AmbassadorApplyPage() {
             message =
               "Too many submission attempts. Please wait a moment and try again.";
           } else if (err.reason === "server") {
-            message =
-              `Server error${err.status != null ? ` (HTTP ${err.status})` : ""}. Please try again later.`;
+            message = err.message
+              ? `Server error: ${err.message}`
+              : `Server error${err.status != null ? ` (HTTP ${err.status})` : ""}. Please try again later.`;
           } else {
             message = err.message;
           }
           setSubmitError(message);
+          resetTurnstile();
           setStatus({ state: "error", reason: err.reason, status: err.status });
         }
       }
     },
-    [values, validateStep, errors, programId, turnstileToken],
+    [values, validateStep, errors, programId, turnstileToken, resetTurnstile],
   );
 
   const isUnder18 = values.ageRange === "under-16" || values.ageRange === "16-17";

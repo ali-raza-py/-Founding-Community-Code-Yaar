@@ -49,6 +49,7 @@ export default function ApplyPage() {
 
   const submissionIdRef = useRef<string>(crypto.randomUUID());
   const saveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const turnstileWidgetRef = useRef<number | null>(null);
   const [turnstileContainer, setTurnstileContainer] = useState<HTMLDivElement | null>(null);
   const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
   const [turnstileReady, setTurnstileReady] = useState(false);
@@ -95,6 +96,7 @@ export default function ApplyPage() {
         setTurnstileToken(null);
       },
     });
+    turnstileWidgetRef.current = widgetId;
     return () => {
       try {
         turnstile.remove(widgetId);
@@ -103,6 +105,20 @@ export default function ApplyPage() {
       }
     };
   }, [turnstileContainer, turnstileReady, turnstileSiteKey]);
+
+  // Reset the Turnstile widget and clear any held token so the next attempt
+  // requires a fresh challenge (Turnstile tokens are single-use and expire).
+  const resetTurnstile = useCallback(() => {
+    const turnstile = (window as any).turnstile;
+    if (turnstile && turnstileWidgetRef.current != null) {
+      try {
+        turnstile.reset(turnstileWidgetRef.current);
+      } catch {
+        // Ignore reset failures; the token is cleared regardless.
+      }
+    }
+    setTurnstileToken(null);
+  }, []);
 
   // Load saved draft on mount so applicants can resume where they left off.
   useEffect(() => {
@@ -302,6 +318,7 @@ export default function ApplyPage() {
         // confirmed ambassador attribution.
         referred_by_name: referredByAmbassador ? "" : manualReferredByName.trim(),
         turnstile_token: turnstileToken ?? "",
+        idempotency_key: submissionIdRef.current,
       };
 
       setStatus({ state: "submitting" });
@@ -313,45 +330,50 @@ export default function ApplyPage() {
         if (result.ok) {
           markSubmittedThisSession();
           clearDraft();
+          setTurnstileToken(null);
           setStatus({ state: "success", reference: result.data.id ?? null });
         } else {
-          const err = result.error;
-          let message = "Unable to submit your application. Please try again.";
-          if (err.reason === "not-configured") {
-            message =
-              "Application submission is not configured on this site yet — please try again later or contact the Code Yaar team.";
-          } else if (err.reason === "timeout") {
-            message = "The request timed out. Please try again.";
-          } else if (err.reason === "network") {
-            message = "Network error. Please check your connection and try again.";
-          } else if (err.reason === "conflict") {
-            message =
-              "You have already submitted an application to this program. Duplicate submissions are not allowed.";
-          } else if (err.reason === "unauthorized") {
-            message =
-              "Your session is not authorized. Please sign in and try again.";
-          } else if (err.reason === "forbidden") {
-            message =
-              "You are not permitted to perform this action.";
-          } else if (err.reason === "validation") {
-            message =
-              `Validation error: ${err.message}. Please check your entries and try again.`;
-          } else if (err.reason === "rate-limited") {
-            message =
-              "Too many submission attempts. Please wait a moment and try again.";
-          } else if (err.reason === "server") {
-            message =
-              `Server error${err.status != null ? ` (HTTP ${err.status})` : ""}. Please try again later.`;
+            const err = result.error;
+            let message = "Unable to submit your application. Please try again.";
+            if (err.reason === "not-configured") {
+              message =
+                "Application submission is not configured on this site yet — please try again later or contact the Code Yaar team.";
+            } else if (err.reason === "timeout") {
+              message = "The request timed out. Please try again.";
+            } else if (err.reason === "network") {
+              message = "Network error. Please check your connection and try again.";
+            } else if (err.reason === "conflict") {
+              message =
+                "You have already submitted an application to this program. Duplicate submissions are not allowed.";
+            } else if (err.reason === "unauthorized") {
+              message =
+                "Your session is not authorized. Please sign in and try again.";
+            } else if (err.reason === "forbidden") {
+              message =
+                "You are not permitted to perform this action.";
+            } else if (err.reason === "validation") {
+              message =
+                `Validation error: ${err.message}. Please check your entries and try again.`;
+            } else if (err.reason === "rate-limited") {
+              message =
+                "Too many submission attempts. Please wait a moment and try again.";
+            } else if (err.reason === "server") {
+              message = err.message
+                ? `Server error: ${err.message}`
+                : `Server error${err.status != null ? ` (HTTP ${err.status})` : ""}. Please try again later.`;
+            }
+            setSubmitError(message);
+            // Turnstile tokens are single-use: reset the widget so a retry
+            // requires a fresh challenge instead of resending a used token.
+            resetTurnstile();
+            const legacyReason: SubmissionFailureReason =
+              err.reason === "network" || err.reason === "timeout"
+                ? err.reason
+                : err.reason === "server" || err.reason === "rate-limited"
+                  ? "server"
+                  : "rejected";
+            setStatus({ state: "error", reason: legacyReason, status: err.status });
           }
-          setSubmitError(message);
-          const legacyReason: SubmissionFailureReason =
-            err.reason === "network" || err.reason === "timeout"
-              ? err.reason
-              : err.reason === "server" || err.reason === "rate-limited"
-                ? "server"
-                : "rejected";
-          setStatus({ state: "error", reason: legacyReason, status: err.status });
-        }
       }
     },
     [
