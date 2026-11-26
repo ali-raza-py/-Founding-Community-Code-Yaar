@@ -17,6 +17,7 @@ import {
   EMAIL_SENDER_ADDRESS,
   EMAIL_SENDER_NAME,
 } from "./constants";
+import { buildTestEmailContent } from "@/lib/test-email-content";
 
 interface EmailConfigProps {
   refresh?: () => void;
@@ -76,8 +77,15 @@ export function EmailConfig({ refresh }: EmailConfigProps) {
     setDialogOpen(false);
     setSending(true);
     setTestResult(null);
+
+    // Generate test email content automatically — the test-email flow does not
+    // depend on the email composer or editor being populated.
+    const content = buildTestEmailContent(recipient.trim());
     const res = await communityApi.postAdminEmailTest(accessToken, {
       recipient: recipient.trim(),
+      subject: content.subject,
+      html: content.html,
+      text: content.text,
     });
     setSending(false);
     if (res.ok) {

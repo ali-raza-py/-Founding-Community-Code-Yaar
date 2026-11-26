@@ -311,6 +311,9 @@ export interface EmailConfig {
 /** Test email request (POST /api/v1/admin/emails/test). */
 export interface TestEmailRequest {
   recipient: string;
+  subject: string;
+  html: string;
+  text: string;
 }
 
 /** Test email response. */

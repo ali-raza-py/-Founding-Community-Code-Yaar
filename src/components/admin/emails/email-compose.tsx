@@ -18,6 +18,7 @@ import {
   EMAIL_SENDER_NAME,
 } from "./constants";
 import { cn } from "@/lib/utils";
+import { buildTestEmailContent } from "@/lib/test-email-content";
 import {
   Mail,
   Send,
@@ -341,7 +342,13 @@ export function EmailCompose({
     // Test email and normal send results are independent; clear only the test
     // result so a stale test error does not linger after a fresh attempt.
     setTestResult(null);
-    const res = await communityApi.postAdminEmailTest(accessToken, { recipient: email });
+    const content = buildTestEmailContent(email);
+    const res = await communityApi.postAdminEmailTest(accessToken, {
+      recipient: email,
+      subject: content.subject,
+      html: content.html,
+      text: content.text,
+    });
     setTestSending(false);
     if (res.ok) {
       setTestResult({
