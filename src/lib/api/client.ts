@@ -311,6 +311,53 @@ export class CommunityApiClient {
     return this.get<TaskRecord[]>(`/api/v1/tasks/mine`, authToken);
   }
 
+  async getMyTask(
+    authToken: string,
+    id: string
+  ): Promise<ApiResult<TaskRecord>> {
+    return this.get<TaskRecord>(`/api/v1/tasks/${encodeURIComponent(id)}`, authToken);
+  }
+
+  async updateMyTaskStatus(
+    authToken: string,
+    id: string,
+    status: "in_progress"
+  ): Promise<ApiResult<TaskRecord>> {
+    return this.patch<TaskRecord>(
+      `/api/v1/tasks/${encodeURIComponent(id)}`,
+      { status },
+      authToken
+    );
+  }
+
+  async submitMyTask(
+    authToken: string,
+    id: string,
+    body: { description?: string; link?: string; file_url?: string }
+  ): Promise<ApiResult<TaskRecord>> {
+    return this.post<TaskRecord>(
+      `/api/v1/tasks/${encodeURIComponent(id)}/submit`,
+      body,
+      authToken
+    );
+  }
+
+  async getMyParticipants(
+    authToken: string
+  ): Promise<ApiResult<ParticipantRecord[]>> {
+    return this.get<ParticipantRecord[]>(`/api/v1/participants/mine`, authToken);
+  }
+
+  async getAdminParticipant(
+    authToken: string,
+    id: string
+  ): Promise<ApiResult<AdminParticipantItem>> {
+    return this.get<AdminParticipantItem>(
+      `/api/v1/admin/participants/${encodeURIComponent(id)}`,
+      authToken
+    );
+  }
+
   // Admin methods (require admin or super_admin role)
   async getAdminApplications(
     authToken: string,
@@ -436,6 +483,7 @@ export class CommunityApiClient {
       search?: string;
       programId?: string;
       status?: string;
+      assignedTo?: string;
       sortBy?: string;
       sortDir?: "asc" | "desc";
     }
@@ -446,6 +494,7 @@ export class CommunityApiClient {
     if (params?.search) searchParams.set("search", params.search);
     if (params?.programId) searchParams.set("programId", params.programId);
     if (params?.status) searchParams.set("status", params.status);
+    if (params?.assignedTo) searchParams.set("assignedTo", params.assignedTo);
     if (params?.sortBy) searchParams.set("sortBy", params.sortBy);
     if (params?.sortDir) searchParams.set("sortDir", params.sortDir);
 

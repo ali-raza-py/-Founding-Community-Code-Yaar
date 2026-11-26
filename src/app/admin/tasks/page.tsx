@@ -13,9 +13,11 @@ import { cn } from "@/lib/utils";
 
 type ParticipantOption = {
   id: string;
+  participantRecordId?: string;
   name: string;
   email: string;
   programId: string;
+  status?: string;
 };
 
 type TaskStatus = "pending" | "in_progress" | "completed" | "overdue";
@@ -67,7 +69,7 @@ export default function AdminTasksPage() {
         communityApi.getAdminParticipants(accessToken, { pageSize: 200 }).then((r) => {
           if (!r.ok || !r.data) return;
           const list = r.data.items as Array<{
-            id: string; user_id: string; program_id: string;
+            id: string; user_id: string; program_id: string; participant_status?: string;
           }>;
           // Profiles are fetched separately to resolve names without assuming
           // the participants endpoint joins them.
@@ -75,15 +77,17 @@ export default function AdminTasksPage() {
             if (!pr.ok || !pr.data) return;
             const profiles = pr.data as AdminProfile[];
             const profileByUserId = new Map(profiles.map((prf) => [prf.id, prf]));
-            const options = list.map((p) => {
-              const profile = profileByUserId.get(p.user_id);
-              return {
-                id: p.id,
-                name: profile?.full_name ?? "Unknown participant",
-                email: profile?.email ?? "",
-                programId: p.program_id,
-              };
-            });
+           const options = list.map((p) => {
+             const profile = profileByUserId.get(p.user_id);
+             return {
+               id: p.user_id,
+               participantRecordId: p.id,
+               name: profile?.full_name ?? "Unknown participant",
+               email: profile?.email ?? "",
+               programId: p.program_id,
+               status: p.participant_status,
+             };
+           });
             setParticipants(options);
           });
         }),
@@ -130,7 +134,7 @@ export default function AdminTasksPage() {
 
   const eligibleParticipants = useMemo(() => {
     if (!createValues.program_id) return [];
-    return participants.filter((p) => p.programId === createValues.program_id);
+    return participants.filter((p) => p.programId === createValues.program_id && p.status === "active");
   }, [createValues.program_id, participants]);
 
   // ------------------------------------------------------------------

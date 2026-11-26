@@ -11,6 +11,7 @@ export interface AuthUser {
   id: string;
   email: string | null;
   role: "super_admin" | "admin" | "participant";
+  isAmbassador?: boolean;
 }
 
 export interface AuthState {
@@ -20,6 +21,7 @@ export interface AuthState {
   isAuthenticated: boolean;
   isAdmin: boolean;
   isSuperAdmin: boolean;
+  isAmbassador: boolean;
   backendUnavailable: boolean;
 }
 
@@ -32,6 +34,7 @@ const initialState: AuthState = {
   isAuthenticated: false,
   isAdmin: false,
   isSuperAdmin: false,
+  isAmbassador: false,
   backendUnavailable: false,
 };
 
@@ -79,26 +82,31 @@ export function useAuth(): AuthStateWithSignOut {
     if (!session?.access_token) {
       setAuthState({
         ...initialState,
-        isLoading: false,
-        isAuthenticated: false,
-      });
+       isLoading: false,
+       isAuthenticated: false,
+       isAmbassador: false,
+     });
       return;
     }
 
     // Verify with the Community API backend to resolve the user's actual role.
     const result = await communityApi.session(session.access_token);
     if (result.ok) {
-      setAuthState({
-        user: result.data.user,
-        accessToken: session.access_token,
-        isLoading: false,
-        isAuthenticated: true,
-        isAdmin:
-          result.data.user.role === "admin" ||
-          result.data.user.role === "super_admin",
-        isSuperAdmin: result.data.user.role === "super_admin",
-        backendUnavailable: false,
-      });
+       setAuthState({
+         user: result.data.user,
+         accessToken: session.access_token,
+         isLoading: false,
+         isAuthenticated: true,
+         isAdmin:
+           result.data.user.role === "admin" ||
+           result.data.user.role === "super_admin",
+         isSuperAdmin: result.data.user.role === "super_admin",
+         isAmbassador:
+           Boolean(result.data.user?.isAmbassador) ||
+           Boolean(result.data.user?.is_ambassador) ||
+           Boolean(result.data.permissions?.is_ambassador),
+         backendUnavailable: false,
+       });
     } else {
       // Backend unavailable or verification failed — still allow sign-in
       // via Supabase, defaulting to participant role.
@@ -112,8 +120,9 @@ export function useAuth(): AuthStateWithSignOut {
         isLoading: false,
         isAuthenticated: true,
         isAdmin: false,
-        isSuperAdmin: false,
-        backendUnavailable: true,
+         isSuperAdmin: false,
+         isAmbassador: false,
+         backendUnavailable: true,
       });
     }
   }, [supabase, setAuthState]);

@@ -26,6 +26,15 @@ export default function AdminParticipantsPage() {
   const [search, setSearch] = useState("");
   const [programFilter, setProgramFilter] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
+  const [programs, setPrograms] = useState<Array<{ id: string; name: string }>>([]);
+  const [profiles, setProfiles] = useState<Array<{ id: string; full_name: string | null; email: string | null }>>([]);
+  const [programApplications, setProgramApplications] = useState<Array<{ id: string; applicant_name: string; email: string; program_id: string }>>([]);
+  const [selectedUserId, setSelectedUserId] = useState("");
+  const [selectedProgramId, setSelectedProgramId] = useState("");
+  const [selectedApplicationId, setSelectedApplicationId] = useState("");
+  const [selected, setSelected] = useState<any | null>(null);
+  const [detailLoading, setDetailLoading] = useState(false);
+  const [detailTasks, setDetailTasks] = useState<Array<any>>([]);
   const pageRef = useRef(1);
   const [updateLoading, setUpdateLoading] = useState<string | null>(null);
 
@@ -33,19 +42,33 @@ export default function AdminParticipantsPage() {
     if (!accessToken) return;
     setLoading(true);
     setError(null);
-    const res = await communityApi.getAdminParticipants(accessToken, {
-      page,
-      pageSize: 20,
-      search: search || undefined,
-      programId: programFilter || undefined,
-      status: statusFilter || undefined,
-    });
-    if (res.ok) {
-      setParticipants(res.data.items);
-      setMeta(res.data.meta);
+    const [progRes, partRes, profRes] = await Promise.all([
+      communityApi.getAdminPrograms(accessToken),
+      communityApi.getAdminParticipants(accessToken, {
+        page,
+        pageSize: 20,
+        search: search || undefined,
+        programId: programFilter || undefined,
+        status: statusFilter || undefined,
+      }),
+      communityApi.getAdminProfiles(accessToken),
+    ]);
+    if (progRes.ok && progRes.data) setPrograms(progRes.data.map((p: any) => ({ id: p.id, name: p.name })));
+    if (profRes.ok && profRes.data) {
+      setProfiles(
+        (profRes.data as Array<{ id: string; full_name: string | null; email: string | null }>).map((p) => ({
+          id: p.id,
+          full_name: p.full_name,
+          email: p.email,
+        })),
+      );
+    }
+    if (partRes.ok) {
+      setParticipants(partRes.data.items);
+      setMeta(partRes.data.meta);
       pageRef.current = page;
     } else {
-      setError(res.error.message);
+      setError(partRes.error.message);
     }
     setLoading(false);
   }, [accessToken, search, programFilter, statusFilter]);
@@ -55,6 +78,7 @@ export default function AdminParticipantsPage() {
   }, [loadParticipants]);
 
   const handleStatusUpdate = useCallback(async (id: string, status: "active" | "inactive" | "suspended" | "graduated") => {
+    if (!confirm(`Change participant status to ${status}?`)) return;
     setUpdateLoading(id);
     const res = await communityApi.updateAdminParticipant(accessToken!, id, {
       participant_status: status,
@@ -64,39 +88,78 @@ export default function AdminParticipantsPage() {
       setParticipants((prev) =>
         prev.map((p) => (p.id === id ? { ...p, participant_status: status } : p)),
       );
+      if (selected?.id === id) setSelected((prev: any) => ({ ...prev, participant_status: status }));
     } else {
       setError(res.error.message);
     }
+  }, [accessToken, selected]);
+
+  const openDetail = useCallback(async (p: any) => {
+    setSelected(p);
+    setDetailLoading(true);
+    setDetailTasks([]);
+    try {
+      const res = await communityApi.getAdminTasks(accessToken!, { assignedTo: p.user_id, pageSize: 50 });
+      if (res.ok && res.data) setDetailTasks(res.data.items);
+    } finally {
+      setDetailLoading(false);
+    }
   }, [accessToken]);
+
+  // Load applications for the selected programme so admins pick by name/email,
+  // not by raw UUID.
+  useEffect(() => {
+    if (!accessToken || !selectedProgramId) {
+      setProgramApplications([]);
+      setSelectedApplicationId("");
+      return;
+    }
+    (async () => {
+      const res = await communityApi.getAdminApplications(accessToken, {
+        page: 1,
+        pageSize: 100,
+        programId: selectedProgramId,
+        sortBy: "created_at",
+        sortDir: "desc",
+      });
+      if (res.ok && res.data) {
+        setProgramApplications(
+          (res.data.items as Array<{ id: string; applicant_name: string; email: string; program_id: string }>).map(
+            (a) => ({
+              id: a.id,
+              applicant_name: a.applicant_name,
+              email: a.email,
+              program_id: a.program_id,
+            }),
+          ),
+        );
+      }
+    })();
+  }, [accessToken, selectedProgramId]);
 
   const handleCreateParticipant = useCallback(async (event: React.FormEvent) => {
     event.preventDefault();
-    const formData = new FormData(event.currentTarget as HTMLFormElement);
-    const user_id = formData.get("user_id") as string;
-    const application_id = formData.get("application_id") as string;
-    const program_id = formData.get("program_id") as string;
-    const participant_status_value = (formData.get("participant_status") as string) || "active";
-    const participant_status = participant_status_value as "active" | "inactive" | "suspended" | "graduated";
-
-    if (!user_id || !application_id || !program_id) {
-      setError("All fields are required.");
+    if (!selectedUserId || !selectedApplicationId || !selectedProgramId) {
+      setError("Please select a user, application, and programme.");
       return;
     }
-
     const res = await communityApi.createAdminParticipant(accessToken!, {
-      user_id,
-      application_id,
-      program_id,
-      participant_status,
+      user_id: selectedUserId,
+      application_id: selectedApplicationId,
+      program_id: selectedProgramId,
+      participant_status: "active",
     });
 
     if (res.ok) {
       setParticipants([res.data, ...participants]);
-      (event.currentTarget as HTMLFormElement).reset();
+      setSelectedUserId("");
+      setSelectedProgramId("");
+      setSelectedApplicationId("");
+      setProgramApplications([]);
     } else {
       setError(res.error.message);
     }
-  }, [accessToken, participants]);
+  }, [accessToken, participants, selectedUserId, selectedProgramId, selectedApplicationId]);
 
   if (isLoading || loading) {
     return <LoadingState />;
@@ -137,26 +200,60 @@ export default function AdminParticipantsPage() {
             tag="h3"
           />
           <form onSubmit={handleCreateParticipant} className="mt-6 grid gap-4 sm:grid-cols-4">
-            <Field label="User ID" required>
-              <Input
-                name="user_id"
-                placeholder="User UUID"
+            <Field label="Programme" required>
+              <Select
+                value={selectedProgramId}
+                onChange={(e) => {
+                  setSelectedProgramId(e.currentTarget.value);
+                  setSelectedUserId("");
+                  setSelectedApplicationId("");
+                }}
                 required
-              />
+              >
+                <option value="">Select a programme</option>
+                {programs.map((p) => (
+                  <option key={p.id} value={p.id}>
+                    {p.name}
+                  </option>
+                ))}
+              </Select>
             </Field>
-            <Field label="Application ID" required>
-              <Input
-                name="application_id"
-                placeholder="Application UUID"
+            <Field label="User (search by name or email)" required>
+              <Select
+                value={selectedUserId}
+                onChange={(e) => setSelectedUserId(e.currentTarget.value)}
                 required
-              />
+                disabled={!selectedProgramId}
+              >
+                <option value="">Select a user</option>
+                {profiles
+                  .filter((p) => p.email || p.full_name)
+                  .map((p) => (
+                    <option key={p.id} value={p.id}>
+                      {p.full_name ?? "—"} — {p.email ?? "no email"}
+                    </option>
+                  ))}
+              </Select>
             </Field>
-            <Field label="Program ID" required>
-              <Input
-                name="program_id"
-                placeholder="Program UUID"
+            <Field label="Application" required hint="Applications already submitted to the selected programme.">
+              <Select
+                value={selectedApplicationId}
+                onChange={(e) => setSelectedApplicationId(e.currentTarget.value)}
                 required
-              />
+                disabled={!selectedProgramId || !selectedUserId}
+              >
+                <option value="">Select an application</option>
+                {programApplications.map((a) => (
+                  <option key={a.id} value={a.id}>
+                    {a.applicant_name} — {a.email}
+                  </option>
+                ))}
+                {programApplications.length === 0 && selectedProgramId && (
+                  <option value="" disabled>
+                    No applications found for this programme
+                  </option>
+                )}
+              </Select>
             </Field>
             <Field label="Status">
               <Select name="participant_status" defaultValue="active">
@@ -167,7 +264,7 @@ export default function AdminParticipantsPage() {
               </Select>
             </Field>
             <div className="flex items-end">
-              <Button type="submit" disabled={loading}>
+              <Button type="submit" disabled={loading || !selectedUserId || !selectedApplicationId || !selectedProgramId}>
                 Create Participant
               </Button>
             </div>
@@ -184,14 +281,17 @@ export default function AdminParticipantsPage() {
                 placeholder="Name or email"
               />
             </Field>
-            <Field label="Program">
-              <Select
-                value={programFilter}
-                onChange={(e) => setProgramFilter(e.currentTarget.value)}
-              >
-                <option value="">All programs</option>
-              </Select>
-            </Field>
+             <Field label="Programme">
+               <Select
+                 value={programFilter}
+                 onChange={(e) => setProgramFilter(e.currentTarget.value)}
+               >
+                 <option value="">All programmes</option>
+                 {programs.map((p) => (
+                   <option key={p.id} value={p.id}>{p.name}</option>
+                 ))}
+               </Select>
+             </Field>
             <Field label="Status">
               <Select
                 value={statusFilter}
@@ -235,11 +335,12 @@ export default function AdminParticipantsPage() {
                   </tr>
                 </thead>
                 <tbody>
-                  {participants.map((p: any) => (
-                    <tr
-                      key={p.id}
-                      className="border-b border-line hover:bg-surface-raised transition-colors"
-                    >
+                   {participants.map((p: any) => (
+                     <tr
+                       key={p.id}
+                       className="border-b border-line hover:bg-surface-raised transition-colors cursor-pointer"
+                       onClick={() => void openDetail(p)}
+                     >
                       <td className="px-4 py-3 text-sm text-ink">
                         {p.profiles?.full_name || "—"}
                       </td>
@@ -309,6 +410,49 @@ export default function AdminParticipantsPage() {
             </div>
           </div>
         )}
+        {selected && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-ink/40 p-4" onClick={() => setSelected(null)}>
+            <div className="max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-xl border border-line bg-surface p-6" onClick={(e) => e.stopPropagation()}>
+              <div className="flex items-start justify-between">
+                <h3 className="text-base font-semibold text-ink">Participant Profile</h3>
+                <button onClick={() => setSelected(null)} className="text-ink-muted">✕</button>
+              </div>
+              <div className="mt-4 space-y-2 text-sm">
+                <p><span className="font-semibold">Name:</span> {selected.full_name ?? selected.profiles?.full_name ?? "—"}</p>
+                <p><span className="font-semibold">Email:</span> {selected.email ?? selected.profiles?.email ?? "—"}</p>
+                <p><span className="font-semibold">Programme:</span> {selected.program_name ?? selected.programs?.name ?? "—"}</p>
+                <p><span className="font-semibold">Status:</span> {selected.participant_status}</p>
+                <p><span className="font-semibold">Joined:</span> {selected.joined_at ? new Date(selected.joined_at).toLocaleDateString() : "—"}</p>
+              </div>
+              <div className="mt-4 flex flex-wrap gap-2">
+                {(["active", "inactive", "suspended", "graduated"] as const).map((s) => (
+                  <Button key={s} size="sm" onClick={() => void handleStatusUpdate(selected.id, s)} disabled={updateLoading === selected.id}>
+                    {s}
+                  </Button>
+                ))}
+              </div>
+              <div className="mt-6">
+                <h4 className="text-sm font-semibold text-ink mb-2">Assigned tasks</h4>
+                {detailLoading ? (
+                  <p className="text-sm text-ink-muted">Loading…</p>
+                ) : detailTasks.length === 0 ? (
+                  <p className="text-sm text-ink-muted">No tasks assigned.</p>
+                ) : (
+                  <ul className="space-y-2">
+                    {detailTasks.map((t: any) => (
+                      <li key={t.id} className="rounded-md border border-line p-3 text-sm">
+                        <div className="font-medium text-ink">{t.title}</div>
+                        <div className="text-xs text-ink-muted">Status: {t.status} {t.due_date ? `· Due ${new Date(t.due_date).toLocaleDateString()}` : ""}</div>
+                        {t.feedback && <div className="mt-1 text-xs text-ink-muted">Feedback: {t.feedback}</div>}
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
+
       </SectionInner>
     </Section>
   );

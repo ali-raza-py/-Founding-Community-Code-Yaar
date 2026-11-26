@@ -64,6 +64,13 @@ export interface AuthSessionResponse {
     id: string;
     email: string | null;
     role: "super_admin" | "admin" | "participant";
+    isAmbassador?: boolean;
+    is_ambassador?: boolean;
+  };
+  permissions?: {
+    is_admin?: boolean;
+    is_super_admin?: boolean;
+    is_ambassador?: boolean;
   };
 }
 
@@ -134,6 +141,18 @@ export interface TaskRecord {
   due_date: string | null;
   status: string;
   created_at: string;
+  updated_at?: string;
+  priority?: string | null;
+  instructions?: string | null;
+  submission_requirements?: string | null;
+  feedback?: string | null;
+  submission_description?: string | null;
+  submission_link?: string | null;
+  submission_file_url?: string | null;
+  submitted_at?: string | null;
+  assigned_name?: string | null;
+  assigned_email?: string | null;
+  program_name?: string | null;
 }
 
 /** Paginated list response. */
@@ -231,6 +250,18 @@ export interface AdminTaskItem {
   status: string;
   created_at: string;
   updated_at?: string;
+  priority?: string | null;
+  instructions?: string | null;
+  submission_requirements?: string | null;
+  feedback?: string | null;
+  submission_description?: string | null;
+  submission_link?: string | null;
+  submission_file_url?: string | null;
+  submitted_at?: string | null;
+  assigned_name?: string | null;
+  assigned_email?: string | null;
+  program_name?: string | null;
+  participant_status?: string | null;
 }
 
 /**
