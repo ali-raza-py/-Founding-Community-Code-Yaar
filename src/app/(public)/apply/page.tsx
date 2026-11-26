@@ -34,6 +34,19 @@ export default function ApplyPage() {
   const [status, setStatus] = useState<SubmissionStatus>(emptyStatus);
   const [consent, setConsent] = useState(false);
 
+  // Referral attribution state. An applicant arriving through a valid referral
+  // link sees the ambassador's name (confirmed server-side). Without a link,
+  // they may optionally enter an ambassador name manually (unconfirmed).
+  const [referredByAmbassador, setReferredByAmbassador] = useState<{
+    code: string;
+    name: string;
+  } | null>(null);
+  const [referralLookupState, setReferralLookupState] = useState<
+    "idle" | "checking" | "resolved" | "invalid"
+  >("idle");
+  const [manualReferredByName, setManualReferredByName] = useState("");
+  const [referralWarning, setReferralWarning] = useState("");
+
   const submissionIdRef = useRef<string>(crypto.randomUUID());
   const saveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [turnstileContainer, setTurnstileContainer] = useState<HTMLDivElement | null>(null);
@@ -152,6 +165,34 @@ export default function ApplyPage() {
     return storedRef;
   }, [refFromUrl, storedRef]);
 
+  // Validate a referral code from the URL (or session storage) on mount. A
+  // valid code resolves to the ambassador's name, which is shown to the
+  // applicant before submission. An invalid code is cleared so the applicant
+  // applies directly rather than submitting an unverified claim.
+  useEffect(() => {
+    if (typeof window === "undefined" || !referralCode) return;
+    setReferralLookupState("checking");
+    communityApi
+      .getReferralLookup(referralCode)
+      .then((res) => {
+        if (res.ok && res.data?.valid && res.data.ambassador?.name) {
+          setReferredByAmbassador({ code: referralCode, name: res.data.ambassador.name });
+          setReferralLookupState("resolved");
+        } else {
+          setReferralLookupState("invalid");
+          setReferralWarning(
+            "That referral link is invalid or the ambassador is no longer active. You can still apply directly."
+          );
+        }
+      })
+      .catch(() => {
+        setReferralLookupState("invalid");
+        setReferralWarning(
+          "Unable to verify the referral link. You can still apply directly."
+        );
+      });
+  }, [referralCode, communityApi]);
+
   const setField = useCallback((key: keyof ApplicationData, value: string | number) => {
     setValues((current) => ({ ...current, [key]: value }));
   }, []);
@@ -255,7 +296,11 @@ export default function ApplyPage() {
         institution: values.institution,
         city: values.city,
         application_answers: applicationAnswers,
-        referral_code: referralCode ?? "",
+        // Only a server-validated referral code creates confirmed attribution.
+        referral_code: referredByAmbassador?.code ?? "",
+        // Manual entry without a validated link is recorded as a note, not
+        // confirmed ambassador attribution.
+        referred_by_name: referredByAmbassador ? "" : manualReferredByName.trim(),
         turnstile_token: turnstileToken ?? "",
       };
 
@@ -309,7 +354,14 @@ export default function ApplyPage() {
         }
       }
     },
-    [values, consent, validateStep, referralCode, programId]
+    [
+      values,
+      consent,
+      validateStep,
+      referredByAmbassador,
+      manualReferredByName,
+      programId,
+    ]
   );
 
   const resetForm = useCallback(() => {
@@ -440,8 +492,37 @@ export default function ApplyPage() {
                   value={values.email}
                   onChange={(e) => setField("email", e.currentTarget.value)}
                   required
+                  autoComplete="email"
                 />
               </Field>
+              {referredByAmbassador ? (
+                <div className="mb-6 rounded-lg border border-emerald bg-emerald-soft p-4">
+                  <p className="type-label mb-1">Referred by ambassador</p>
+                  <p className="text-sm font-semibold text-ink">
+                    {referredByAmbassador.name}
+                  </p>
+                  <p className="type-caption mt-1 text-ink-muted">
+                    Confirmed — your application will be attributed to this ambassador.
+                  </p>
+                </div>
+              ) : referralLookupState === "invalid" ? (
+                <div className="mb-6 rounded-lg border border-danger-soft bg-danger-soft p-4">
+                  <p className="type-sm text-danger">{referralWarning}</p>
+                </div>
+              ) : (
+                <Field label="Referred by ambassador name (optional)">
+                  <Input
+                    placeholder="Ambassador who referred you"
+                    value={manualReferredByName}
+                    onChange={(e) => setManualReferredByName(e.currentTarget.value)}
+                  />
+                  <p className="type-caption mt-1">
+                    Leave blank if you are applying directly. A name entered
+                    here is recorded as a note and is not confirmed attribution
+                    unless you arrived through a valid referral link.
+                  </p>
+                </Field>
+              )}
               <Field label="Country" required error={errors.country?.[0]}>
                 <Select
                   value={values.country}
@@ -671,12 +752,17 @@ export default function ApplyPage() {
                   Reference: <span className="font-mono">{status.reference}</span>
                 </p>
               )}
-              {referralCode && (
+              {referredByAmbassador ? (
                 <p className="mt-4 type-small text-ink-muted">
                   Referred by ambassador:{" "}
+                  <span className="font-mono text-emerald">{referredByAmbassador.name}</span>
+                </p>
+              ) : referralCode && !referredByAmbassador ? (
+                <p className="mt-4 type-small text-ink-muted">
+                  Referred by code:{" "}
                   <span className="font-mono text-emerald">{referralCode}</span>
                 </p>
-              )}
+              ) : null}
               <p className="mt-6 type-body">
                 Thank you for applying to The First 100. Your application will
                 be reviewed by the Code Yaar team, and you will be contacted by

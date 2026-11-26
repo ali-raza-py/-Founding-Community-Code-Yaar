@@ -25,6 +25,7 @@ export default function AdminApplicationsPage() {
   const [search, setSearch] = useState("");
   const [programFilter, setProgramFilter] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
+  const [referralFilter, setReferralFilter] = useState<"all" | "referred" | "direct">("all");
   const [currentPage, setCurrentPage] = useState(1);
   const [statusUpdateLoading, setStatusUpdateLoading] = useState<string | null>(null);
 
@@ -42,6 +43,7 @@ export default function AdminApplicationsPage() {
         search: search || undefined,
         programId: programFilter || undefined,
         status: statusFilter || undefined,
+        referred: referralFilter,
         sortBy: "created_at",
         sortDir: "desc",
       });
@@ -61,7 +63,7 @@ export default function AdminApplicationsPage() {
     } finally {
       setLoading(false);
     }
-  }, [accessToken, search, programFilter, statusFilter]);
+  }, [accessToken, search, programFilter, statusFilter, referralFilter]);
 
   useEffect(() => {
     loadApplications(1);
@@ -95,6 +97,10 @@ export default function AdminApplicationsPage() {
     return counts;
   }, [applications]);
 
+  const referredCount = useMemo(() => {
+    return (applications || []).filter((a) => a?.referral_code).length;
+  }, [applications]);
+
   if (isLoading || loading) {
     return <LoadingState />;
   }
@@ -118,6 +124,7 @@ export default function AdminApplicationsPage() {
           <StatCard title="Pending" value={statusCounts["pending"] ?? 0} />
           <StatCard title="Under Review" value={statusCounts["under_review"] ?? 0} />
           <StatCard title="Accepted" value={statusCounts["accepted"] ?? 0} />
+          <StatCard title="Referred" value={referredCount} />
         </div>
 
         {/* Error state with retry */}
@@ -161,6 +168,16 @@ export default function AdminApplicationsPage() {
                 <option value="waitlisted">Waitlisted</option>
               </Select>
             </Field>
+            <Field label="Referral type">
+              <Select
+                value={referralFilter}
+                onChange={(e) => setReferralFilter(e.currentTarget.value as "all" | "referred" | "direct")}
+              >
+                <option value="all">All applications</option>
+                <option value="referred">Referred applications</option>
+                <option value="direct">Direct applications</option>
+              </Select>
+            </Field>
             <div className="flex items-end">
               <Button
                 onClick={() => void loadApplications(1)}
@@ -188,6 +205,8 @@ export default function AdminApplicationsPage() {
                     <th className="px-4 py-3 text-[0.8125rem] font-semibold text-ink-muted">Applicant</th>
                     <th className="px-4 py-3 text-[0.8125rem] font-semibold text-ink-muted">Email</th>
                     <th className="px-4 py-3 text-[0.8125rem] font-semibold text-ink-muted">Program</th>
+                    <th className="px-4 py-3 text-[0.8125rem] font-semibold text-ink-muted">Referred by ambassador</th>
+                    <th className="px-4 py-3 text-[0.8125rem] font-semibold text-ink-muted">Referral code</th>
                     <th className="px-4 py-3 text-[0.8125rem] font-semibold text-ink-muted">Status</th>
                     <th className="px-4 py-3 text-[0.8125rem] font-semibold text-ink-muted">Submitted</th>
                     <th className="px-4 py-3 text-[0.8125rem] font-semibold text-ink-muted text-right">Action</th>
@@ -210,6 +229,12 @@ export default function AdminApplicationsPage() {
                       </td>
                       <td className="px-4 py-3 text-sm text-ink-muted">
                         {app?.programs?.name || "—"}
+                      </td>
+                      <td className="px-4 py-3 text-sm text-ink-muted">
+                        {app?.referred_by_ambassador_name || "—"}
+                      </td>
+                      <td className="px-4 py-3 text-sm text-ink-muted font-mono">
+                        {app?.referral_code || "—"}
                       </td>
                       <td className="px-4 py-3 text-sm text-ink">
                         <AdminStatusBadge status={app?.application_status || "pending"} />

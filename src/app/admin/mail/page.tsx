@@ -22,6 +22,7 @@ import { EmailTemplates } from "@/components/admin/emails/email-templates";
 import { EmailLogs } from "@/components/admin/emails/email-logs";
 import { FailedEmails } from "@/components/admin/emails/failed-emails";
 import { EmailConfig } from "@/components/admin/emails/email-config";
+import { type Recipient } from "@/lib/api/types";
 import { cn } from "@/lib/utils";
 
 type TabKey =
@@ -56,7 +57,7 @@ export default function AdminMailCenterPage() {
   const searchParams = useSearchParams();
 
   const [activeTab, setActiveTab] = useState<TabKey>("overview");
-  const [composeRecipients, setComposeRecipients] = useState<string[]>([]);
+  const [composeRecipients, setComposeRecipients] = useState<Recipient[]>([]);
 
   // Deep link into a tab (?tab=compose etc.) from the recipient directory or
   // direct URLs.
@@ -79,8 +80,8 @@ export default function AdminMailCenterPage() {
   );
 
   const handleEmailSelected = useCallback(
-    (emails: string[]) => {
-      setComposeRecipients(emails);
+    (recipients: Recipient[]) => {
+      setComposeRecipients(recipients);
       selectTab("compose");
     },
     [selectTab]

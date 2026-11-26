@@ -55,6 +55,12 @@ export const EMAIL_TEMPLATES: Array<{
     description:
       "Broadcast announcement email sent to community members.",
   },
+  {
+    id: "ambassador-invitation",
+    name: "Code Yaar Ambassador Invitation",
+    description:
+      "Campaign email inviting a suitable candidate to become a Code Yaar ambassador and refer qualified applicants to The First 100.",
+  },
 ] as const;
 
 /**
@@ -97,6 +103,11 @@ export const EMAIL_TEMPLATE_PREVIEWS: Record<string, { subject: string; body: st
     subject: "Community announcement — Code Yaar Founding Community",
     body:
       "Hello from the Code Yaar team. Here is the latest community announcement. Keep building, keep sharing, and keep evolving together.",
+  },
+  "ambassador-invitation": {
+    subject: "Join Code Yaar as an ambassador",
+    body:
+      "Hi <recipientName>,<br/><br/>The Code Yaar team invites you to become a Code Yaar ambassador and help grow the founding community — The First 100. As an ambassador, you would introduce Code Yaar to relevant communities, share the official application form, and encourage suitable people to apply. We'd encourage you to bring five qualified applicants through your referral; applicants must name the ambassador who referred them when they apply.<br/><br/>Apply to the Ambassador Programme",
   },
 };
 

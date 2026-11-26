@@ -19,6 +19,7 @@ import type {
   ReferralRecord,
   ReferralRegistration,
   ReferralRegisterRequest,
+  ReferralLookupResponse,
   SubmitApplicationRequest,
   SubmitApplicationResponse,
   TaskRecord,
@@ -212,6 +213,14 @@ export class CommunityApiClient {
     return this.request<T>(path, { method: "PATCH", body, authToken, timeoutMs });
   }
 
+  async delete<T>(
+    path: string,
+    authToken?: string,
+    timeoutMs?: number
+  ): Promise<ApiResult<T>> {
+    return this.request<T>(path, { method: "DELETE", authToken, timeoutMs });
+  }
+
   // ------------------------------------------------------------------
   // Domain-specific methods
   // ------------------------------------------------------------------
@@ -270,6 +279,18 @@ export class CommunityApiClient {
     return this.post<ReferralRecord>("/api/v1/referrals/register", request);
   }
 
+  /**
+   * Public lookup of a referral code to validate it and resolve the owning
+   * ambassador's name before an application is submitted. No auth required.
+   */
+  async getReferralLookup(
+    code: string
+  ): Promise<ApiResult<ReferralLookupResponse>> {
+    return this.get<ReferralLookupResponse>(
+      `/api/v1/referrals/lookup?code=${encodeURIComponent(code)}`
+    );
+  }
+
   async getAnnouncements(
     authToken: string,
     targetProgramId?: string
@@ -295,6 +316,7 @@ export class CommunityApiClient {
       search?: string;
       programId?: string;
       status?: string;
+      referred?: "all" | "referred" | "direct";
       sortBy?: string;
       sortDir?: "asc" | "desc";
     }
@@ -305,6 +327,7 @@ export class CommunityApiClient {
     if (params?.search) searchParams.set("search", params.search);
     if (params?.programId) searchParams.set("programId", params.programId);
     if (params?.status) searchParams.set("status", params.status);
+    if (params?.referred && params.referred !== "all") searchParams.set("referred", params.referred);
     if (params?.sortBy) searchParams.set("sortBy", params.sortBy);
     if (params?.sortDir) searchParams.set("sortDir", params.sortDir);
 
@@ -392,6 +415,87 @@ export class CommunityApiClient {
     return this.post<TaskRecord>("/api/v1/admin/tasks", body, authToken);
   }
 
+  async getAdminPrograms(
+    authToken: string
+  ): Promise<ApiResult<Array<{ id: string; name: string; slug: string; program_type?: string; status?: string }>>> {
+    return this.get<Array<{ id: string; name: string; slug: string; program_type?: string; status?: string }>>(
+      "/api/v1/admin/programs",
+      authToken
+    );
+  }
+
+  async getAdminTasks(
+    authToken: string,
+    params?: {
+      page?: number;
+      pageSize?: number;
+      search?: string;
+      programId?: string;
+      status?: string;
+      sortBy?: string;
+      sortDir?: "asc" | "desc";
+    }
+  ): Promise<ApiResult<PaginatedResponse<TaskRecord>>> {
+    const searchParams = new URLSearchParams();
+    if (params?.page) searchParams.set("page", String(params.page));
+    if (params?.pageSize) searchParams.set("pageSize", String(params.pageSize));
+    if (params?.search) searchParams.set("search", params.search);
+    if (params?.programId) searchParams.set("programId", params.programId);
+    if (params?.status) searchParams.set("status", params.status);
+    if (params?.sortBy) searchParams.set("sortBy", params.sortBy);
+    if (params?.sortDir) searchParams.set("sortDir", params.sortDir);
+
+    const path = `/api/v1/admin/tasks${searchParams.toString() ? `?${searchParams.toString()}` : ""}`;
+    return this.get<PaginatedResponse<TaskRecord>>(path, authToken);
+  }
+
+  async getAdminTask(
+    authToken: string,
+    id: string
+  ): Promise<ApiResult<TaskRecord>> {
+    return this.get<TaskRecord>(`/api/v1/admin/tasks/${encodeURIComponent(id)}`, authToken);
+  }
+
+  async updateAdminTask(
+    authToken: string,
+    id: string,
+    body: {
+      title?: string;
+      description?: string;
+      program_id?: string;
+      assigned_to?: string;
+      due_date?: string | null;
+      status?: string;
+    }
+  ): Promise<ApiResult<TaskRecord>> {
+    return this.patch<TaskRecord>(
+      `/api/v1/admin/tasks/${encodeURIComponent(id)}`,
+      body,
+      authToken
+    );
+  }
+
+  async completeAdminTask(
+    authToken: string,
+    id: string
+  ): Promise<ApiResult<TaskRecord>> {
+    return this.post<TaskRecord>(
+      `/api/v1/admin/tasks/${encodeURIComponent(id)}/complete`,
+      {},
+      authToken
+    );
+  }
+
+  async deleteAdminTask(
+    authToken: string,
+    id: string
+  ): Promise<ApiResult<null>> {
+    return this.delete<null>(
+      `/api/v1/admin/tasks/${encodeURIComponent(id)}`,
+      authToken
+    );
+  }
+
   async getAdminStats(
     authToken: string
   ): Promise<ApiResult<{ applications: number; participants: number | null }>> {
@@ -465,16 +569,49 @@ export class CommunityApiClient {
   // ------------------------------------------------------------------
   // Email management methods (Community API — Founding Community API repo)
   //
-  // NOTE: None of these endpoints exist in the deployed backend yet; every one
-  // returns 404 "Route not found". They are implemented here as the frontend
-  // contract and must be implemented in the backend before email management is
-  // functional in production. See the implementation report for details.
+  // All paths match the backend router (registered under /api/v1/admin/email).
+  // Backend rows use snake_case; they are transformed to the camelCase client
+  // types here so components consume a stable shape.
   // ------------------------------------------------------------------
 
+  private mapEmailListItem(row: any): EmailListItem {
+    return {
+      id: row.id,
+      recipient: row.recipient,
+      type: row.template_name ?? 'custom',
+      subject: row.subject,
+      status: row.status,
+      provider: 'resend',
+      messageId: row.provider_message_id ?? null,
+      sentAt: row.sent_at,
+    };
+  }
+
+  private mapEmailDetail(row: any): EmailDetail {
+    return {
+      id: row.id,
+      recipient: row.recipient,
+      type: row.template_name ?? 'custom',
+      subject: row.subject,
+      status: row.status,
+      provider: 'resend',
+      messageId: row.provider_message_id ?? null,
+      createdAt: row.sent_at,
+      acceptedAt: row.status === 'accepted' ? row.sent_at : null,
+      deliveredAt: row.status === 'delivered' ? row.sent_at : null,
+      failureReason: row.error ?? null,
+    };
+  }
+
   async getAdminEmailStats(
-    authToken: string
+    authToken: string,
+    params?: { from?: string; to?: string }
   ): Promise<ApiResult<EmailStats>> {
-    return this.get<EmailStats>("/api/v1/admin/emails/stats", authToken);
+    const searchParams = new URLSearchParams();
+    if (params?.from) searchParams.set('from', params.from);
+    if (params?.to) searchParams.set('to', params.to);
+    const path = `/api/v1/admin/email/stats${searchParams.toString() ? `?${searchParams.toString()}` : ''}`;
+    return this.get<EmailStats>(path, authToken);
   }
 
   async getAdminEmails(
@@ -502,25 +639,35 @@ export class CommunityApiClient {
     if (params?.sortBy) searchParams.set("sortBy", params.sortBy);
     if (params?.sortDir) searchParams.set("sortDir", params.sortDir);
 
-    const path = `/api/v1/admin/emails${searchParams.toString() ? `?${searchParams.toString()}` : ""}`;
-    return this.get<PaginatedResponse<EmailListItem>>(path, authToken);
+    const path = `/api/v1/admin/email/history${searchParams.toString() ? `?${searchParams.toString()}` : ""}`;
+    const res = await this.get<{ items: any[]; meta: PaginatedResponse<EmailListItem>["meta"] }>(path, authToken);
+    if (!res.ok) return res as ApiResult<PaginatedResponse<EmailListItem>>;
+    return {
+      ok: true,
+      data: {
+        items: (res.data.items ?? []).map((row) => this.mapEmailListItem(row)),
+        meta: res.data.meta,
+      },
+    };
   }
 
   async getAdminEmail(
     authToken: string,
     id: string
   ): Promise<ApiResult<EmailDetail>> {
-    return this.get<EmailDetail>(
-      `/api/v1/admin/emails/${encodeURIComponent(id)}`,
+    const res = await this.get<EmailDetail>(
+      `/api/v1/admin/email/history/${encodeURIComponent(id)}`,
       authToken
     );
+    if (!res.ok) return res as ApiResult<EmailDetail>;
+    return { ok: true, data: this.mapEmailDetail(res.data) };
   }
 
   async postAdminEmailTest(
     authToken: string,
     request: TestEmailRequest
   ): Promise<ApiResult<TestEmailResponse>> {
-    return this.post<TestEmailResponse>("/api/v1/admin/emails/test", request, authToken);
+    return this.post<TestEmailResponse>("/api/v1/admin/email/test", request, authToken);
   }
 
   async postAdminEmailRetry(
@@ -528,7 +675,7 @@ export class CommunityApiClient {
     id: string
   ): Promise<ApiResult<{ success: boolean; messageId: string | null }>> {
     return this.post<{ success: boolean; messageId: string | null }>(
-      `/api/v1/admin/emails/${encodeURIComponent(id)}/retry`,
+      `/api/v1/admin/email/failed/${encodeURIComponent(id)}/retry`,
       {},
       authToken
     );
@@ -537,13 +684,39 @@ export class CommunityApiClient {
   async getAdminEmailTemplates(
     authToken: string
   ): Promise<ApiResult<EmailTemplate[]>> {
-    return this.get<EmailTemplate[]>("/api/v1/admin/email-templates", authToken);
+    const res = await this.get<any[]>("/api/v1/admin/email/templates", authToken);
+    if (!res.ok) return res as ApiResult<EmailTemplate[]>;
+    return {
+      ok: true,
+      data: (res.data ?? []).map((row: any) => ({
+        id: row.id,
+        name: row.name,
+        updatedAt: row.updated_at,
+      } as unknown as EmailTemplate)),
+    };
   }
 
   async getAdminEmailConfig(
     authToken: string
   ): Promise<ApiResult<EmailConfig>> {
-    return this.get<EmailConfig>("/api/v1/admin/email-config", authToken);
+    const res = await this.get<{
+      resend_configured: boolean;
+      from_email: string;
+      from_name: string;
+      webhook_configured: boolean;
+    }>("/api/v1/admin/email/settings", authToken);
+    if (!res.ok) return res as ApiResult<EmailConfig>;
+    const data = res.data;
+    return {
+      ok: true,
+      data: {
+        provider: "resend",
+        senderAddress: data.from_email ?? "noreply@contact.codeyaar.tech",
+        senderName: data.from_name ?? "Code Yaar Founding Community",
+        status: data.resend_configured ? "configured" : "not-configured",
+        lastTestedAt: null,
+      },
+    };
   }
 
   async postAdminEmailSend(
@@ -551,13 +724,19 @@ export class CommunityApiClient {
     request: SendEmailRequest,
     idempotencyKey?: string
   ): Promise<ApiResult<SendEmailResponse>> {
-    return this.post<SendEmailResponse>(
-      "/api/v1/admin/emails/send",
-      request,
-      authToken,
-      undefined,
-      idempotencyKey ? { "Idempotency-Key": idempotencyKey } : undefined
-    );
+    // Map frontend field names to backend schema field names:
+    // recipients -> to, body -> html. The idempotency key is sent in the body
+    // as `idempotency_key` to match the backend validator; sending it only as a
+    // header would be ignored and the backend would fall back to a
+    // recipient+subject-derived key, which can suppress legitimate re-sends.
+    const payload = {
+      to: request.recipients,
+      subject: request.subject,
+      html: request.body,
+      template_id: request.templateId ?? undefined,
+      idempotency_key: idempotencyKey ?? crypto.randomUUID(),
+    };
+    return this.post<SendEmailResponse>("/api/v1/admin/email/send", payload, authToken);
   }
 }
 

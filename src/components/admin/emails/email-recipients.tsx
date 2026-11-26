@@ -10,7 +10,7 @@ import { Field, Input } from "@/components/ui/field";
 import { SectionHeading } from "@/components/ui/section-heading";
 import { EmptyState, ErrorState } from "@/components/admin/shared";
 import { Badge } from "@/components/ui/badge";
-import { type EmailListItem, type PaginatedResponse } from "@/lib/api/types";
+import { type EmailListItem, type PaginatedResponse, type Recipient } from "@/lib/api/types";
 import { cn } from "@/lib/utils";
 import { Mail, User, Send, RotateCw } from "lucide-react";
 
@@ -27,8 +27,9 @@ interface EmailRecipientRow {
 }
 
 interface EmailRecipientsProps {
-  /** Called when the admin chooses to email the currently selected recipients. */
-  onEmailSelected?: (emails: string[]) => void;
+  /** Called when the admin chooses to email the currently selected recipients.
+   * Recipients are resolved from registered members / applicants (name + email). */
+  onEmailSelected?: (recipients: Recipient[]) => void;
 }
 
 function formatDateTime(value: string | null): string {
@@ -139,8 +140,8 @@ export function EmailRecipients({ onEmailSelected }: EmailRecipientsProps) {
     loadRows(1);
   }, [loadRows]);
 
-  const selectedEmails = useMemo(
-    () => rows.filter((row) => selectedIds.has(row.id)).map((row) => row.email),
+  const selectedRecipients = useMemo<Recipient[]>(
+    () => rows.filter((row) => selectedIds.has(row.id)).map((row) => ({ email: row.email, name: row.name })),
     [rows, selectedIds]
   );
 
@@ -176,9 +177,9 @@ export function EmailRecipients({ onEmailSelected }: EmailRecipientsProps) {
   }, [rows, selectedIds]);
 
   const handleEmailSelected = useCallback(() => {
-    if (selectedEmails.length === 0) return;
-    onEmailSelected?.([...new Set(selectedEmails)]);
-  }, [selectedEmails, onEmailSelected]);
+    if (selectedRecipients.length === 0) return;
+    onEmailSelected?.([...selectedRecipients]);
+  }, [selectedRecipients, onEmailSelected]);
 
   if (!accessToken) {
     return <ErrorState message="Authentication session not available." />;
@@ -351,10 +352,10 @@ export function EmailRecipients({ onEmailSelected }: EmailRecipientsProps) {
       </div>
 
       {/* Selection summary */}
-      {selectedEmails.length > 0 && (
+      {selectedRecipients.length > 0 && (
         <div className="mt-4 flex items-center justify-between gap-3">
           <p className="text-[0.8125rem] text-ink-muted">
-            {selectedEmails.length} recipient{selectedEmails.length !== 1 ? "s" : ""} selected
+            {selectedRecipients.length} recipient{selectedRecipients.length !== 1 ? "s" : ""} selected
           </p>
           {onEmailSelected && (
             <Button
@@ -362,7 +363,7 @@ export function EmailRecipients({ onEmailSelected }: EmailRecipientsProps) {
               disabled={loading}
             >
               <Send className="size-4 shrink-0 mr-2" />
-              Email {selectedEmails.length} selected
+              Email {selectedRecipients.length} selected
             </Button>
           )}
         </div>

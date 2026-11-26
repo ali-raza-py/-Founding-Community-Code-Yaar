@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { Mail, Eye, RotateCw, Code } from "lucide-react";
+import { Mail, Eye, RotateCw } from "lucide-react";
 
 import { useAuth } from "@/lib/api/auth";
 import { communityApi } from "@/lib/api/client";
@@ -9,7 +9,9 @@ import { Button } from "@/components/ui/button";
 import { SectionHeading } from "@/components/ui/section-heading";
 import { EmptyState } from "@/components/admin/shared";
 import { Badge } from "@/components/ui/badge";
+import { BrandedEmailPreview, type BrandedEmailPreviewProps } from "./email-preview";
 import { type EmailTemplate } from "@/lib/api/types";
+import { FROM_NAME, FROM_EMAIL } from "@/lib/email-templates";
 import {
   EMAIL_TEMPLATES,
   EMAIL_TEMPLATE_PREVIEWS,
@@ -238,7 +240,83 @@ function TemplatePreviewDialog({
   if (!open || !templateId) return null;
 
   const local = EMAIL_TEMPLATES.find((t) => t.id === templateId);
-  const preview = local ? PREVIEW_CONTENT[templatePreviewKey(templateId)] : null;
+  const preview = EMAIL_TEMPLATE_PREVIEWS[templateId as keyof typeof EMAIL_TEMPLATE_PREVIEWS];
+
+  // Map the catalogue template id to the branded preview template key, with
+  // illustrative placeholder data so the admin reviews a realistic email.
+  const templateKeyMap: Record<
+    string,
+    { key: BrandedEmailPreviewProps["templateKey"]; data: Record<string, string> } | null
+  > = {
+    "application-received": {
+      key: "applicationReceived",
+      data: {
+        applicantName: "Alex Rivera",
+        programName: "Founding Cohort 2026–27",
+        applicationId: "app-0001",
+      },
+    },
+    "application-approved": {
+      key: "applicationApproved",
+      data: {
+        applicantName: "Alex Rivera",
+        programName: "Founding Cohort 2026–27",
+        applicationId: "app-0001",
+      },
+    },
+    "application-rejected": {
+      key: "applicationRejected",
+      data: {
+        applicantName: "Alex Rivera",
+        programName: "Founding Cohort 2026–27",
+        applicationId: "app-0001",
+      },
+    },
+    "new-application-admin-notification": {
+      key: "applicationSubmittedAdmin",
+      data: {
+        adminName: "Administrator",
+        applicantName: "Alex Rivera",
+        applicantEmail: "alex@example.com",
+        programName: "Founding Cohort 2026–27",
+        applicationId: "app-0001",
+      },
+    },
+    "participant-invitation": {
+      key: "participantInvited",
+      data: {
+        inviteeName: "Alex Rivera",
+        programName: "Founding Cohort 2026–27",
+      },
+    },
+    welcome: {
+      key: "welcome",
+      data: {
+        recipientName: "Alex Rivera",
+        programName: "Founding Cohort 2026–27",
+      },
+    },
+    "community-announcement": {
+      key: "communityAnnouncement",
+      data: {
+        recipientName: "Community member",
+        programName: "Founding Cohort 2026–27",
+        announcementTitle: "Community announcement",
+        announcementBody: "Here is the latest update from the Code Yaar team.",
+        url: "https://contact.codeyaar.tech",
+      },
+    },
+    "ambassador-invitation": {
+      key: "ambassadorInvitation",
+      data: {
+        recipientName: "Alex Rivera",
+        ambassadorName: "Samir Khan",
+        applicationUrl: "https://contact.codeyaar.tech/ambassadors/apply",
+      },
+    },
+  }
+
+  const mapped = templateKeyMap[templateId]
 
   return (
     <>
@@ -251,7 +329,7 @@ function TemplatePreviewDialog({
         role="dialog"
         aria-modal="true"
         aria-label={`Preview: ${local?.name ?? ""}`}
-        className="fixed left-1/2 top-1/2 z-50 w-full max-w-2xl -translate-x-1/2 -translate-y-1/2 rounded-xl border border-line bg-surface shadow-lg"
+        className="fixed left-1/2 top-1/2 z-50 w-full max-w-[720px] -translate-x-1/2 -translate-y-1/2 rounded-xl border border-line bg-surface shadow-lg"
       >
         <div className="flex items-start justify-between p-6 sm:p-8">
           <div>
@@ -259,8 +337,8 @@ function TemplatePreviewDialog({
               Preview — {local?.name ?? templateId}
             </h2>
             <p className="type-caption text-ink-muted">
-              Illustrative preview content. Final copy is defined in the
-              backend templates.
+              Branded production rendering. Final copy is defined in the
+              backend templates and editable through the Templates section.
             </p>
           </div>
           <button
@@ -282,22 +360,31 @@ function TemplatePreviewDialog({
             <div className="rounded-lg border border-line bg-surface p-4">
               <p className="type-label mb-1">Sender</p>
               <p className="text-sm text-ink-muted font-mono">
-                Code Yaar Founding Community &lt;noreply@codeyaar.tech&gt;
+                {FROM_NAME} &lt;{FROM_EMAIL}&gt;
               </p>
             </div>
           </div>
-          <div className="mt-6 rounded-lg border border-line bg-surface p-4">
-            <div className="flex items-start gap-2 mb-2">
-              <Code className="size-4 text-ink-muted shrink-0 mt-0.5" />
-              <p className="type-label">Body Preview</p>
+          {mapped ? (
+            <div className="mt-6 rounded-xl border border-line bg-surface p-4 sm:p-6">
+              <div className="flex items-start gap-2 mb-3">
+                <Mail className="size-4 text-ink-muted shrink-0 mt-0.5" />
+                <p className="type-label">Branded email preview</p>
+              </div>
+              <div className="rounded-lg border border-line bg-surface p-3 max-h-[600px] overflow-y-auto text-sm leading-relaxed">
+                <BrandedEmailPreview templateKey={mapped.key} data={mapped.data} />
+              </div>
             </div>
-            <div className="prose-body max-w-none text-sm text-ink-muted leading-relaxed">
-              {preview?.body || "No preview content available."}
+          ) : (
+            <div className="mt-6 rounded-lg border border-line bg-surface p-4">
+              <p className="type-body text-ink-muted">
+                No branded preview available for custom emails. The composed
+                HTML body is used as-is when sending.
+              </p>
             </div>
-          </div>
+          )}
           <p className="mt-4 type-caption text-ink-muted">
-            Edit template copy is not supported in the frontend; template
-            management requires a secure backend template endpoint.
+            Edit template copy is managed in the backend templates table; the
+            frontend preview reflects the branded design system.
           </p>
         </div>
       </div>

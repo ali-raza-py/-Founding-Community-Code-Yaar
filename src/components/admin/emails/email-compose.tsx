@@ -5,6 +5,7 @@ import { z } from "zod";
 
 import { useAuth } from "@/lib/api/auth";
 import { communityApi } from "@/lib/api/client";
+import { type Recipient } from "@/lib/api/types";
 import { Button } from "@/components/ui/button";
 import { Field, Input, Select } from "@/components/ui/field";
 import { SectionHeading } from "@/components/ui/section-heading";
@@ -83,8 +84,8 @@ function sanitizeHtml(html: string): string {
 }
 
 interface EmailComposeProps {
-  initialRecipients?: string[];
-  onRecipientsChange?: (recipients: string[]) => void;
+  initialRecipients?: Recipient[];
+  onRecipientsChange?: (recipients: Recipient[]) => void;
   onBrowseRecipients?: () => void;
 }
 
@@ -101,11 +102,11 @@ export function EmailCompose({
     setEditorMounted(bodyRef.current !== null);
   }, []);
 
-  const [recipients, setRecipients] = useState<string[]>(() => {
+  const [recipients, setRecipients] = useState<Recipient[]>(() => {
     const seen = new Set<string>();
     return initialRecipients
-      .map(normalizeEmail)
-      .filter((email) => isValidEmail(email) && !seen.has(email) && seen.add(email));
+      .filter((r) => isValidEmail(normalizeEmail(r.email)) && !seen.has(normalizeEmail(r.email)) && seen.add(normalizeEmail(r.email)))
+      .map((r) => ({ email: normalizeEmail(r.email), name: r.name.trim() }));
   });
   const [recipientInput, setRecipientInput] = useState("");
   const [recipientError, setRecipientError] = useState<string | null>(null);
@@ -153,7 +154,7 @@ export function EmailCompose({
       setRecipientError("Enter a valid email address such as you@example.com.");
       return;
     }
-    if (recipients.includes(email)) {
+    if (recipients.some((r) => r.email === email)) {
       setRecipientError("This recipient is already in the list.");
       return;
     }
@@ -161,7 +162,7 @@ export function EmailCompose({
       setRecipientError(`Recipient lists are limited to ${MAX_RECIPIENTS} addresses.`);
       return;
     }
-    const next = [...recipients, email];
+    const next = [...recipients, { email, name: "" }];
     setRecipients(next);
     onRecipientsChange?.(next);
     setRecipientInput("");
@@ -169,7 +170,7 @@ export function EmailCompose({
 
   const removeRecipient = useCallback((email: string) => {
     setRecipients((prev) => {
-      const next = prev.filter((item) => item !== email);
+      const next = prev.filter((item) => item.email !== email);
       onRecipientsChange?.(next);
       return next;
     });
@@ -283,17 +284,34 @@ export function EmailCompose({
     if (!accessToken) return;
     setConfirmSendOpen(false);
     setSending(true);
+    // Normal send and test email results are independent; do not clear the
+    // test result when a normal send runs (and vice versa). Clear only the
+    // send result so stale errors from a previous attempt do not linger.
     setSendResult(null);
 
     const idempotencyKey = crypto.randomUUID();
     const res = await communityApi.postAdminEmailSend(
       accessToken,
-      { recipients, subject, body, templateId: templateId || undefined },
+      {
+        recipients: recipients.map((r) => r.email),
+        subject,
+        body,
+        templateId: templateId || undefined,
+      },
       idempotencyKey
     );
 
     setSending(false);
-    if (res.ok) {
+    if (!res.ok) {
+      // Never display success for a failed request. Network errors are
+      // distinguished from HTTP errors by sendErrorMessage.
+      setSendResult({
+        success: false,
+        message: sendErrorMessage(res.error),
+      });
+      return;
+    }
+    if (res.data.accepted > 0) {
       setSendResult({
         success: true,
         message: `Email queued for ${res.data.accepted} recipient(s)${res.data.failed > 0 ? ` (${res.data.failed} failed)` : ""}.${res.data.messageId ? ` Provider message ID: ${res.data.messageId}` : ""}`,
@@ -306,7 +324,7 @@ export function EmailCompose({
     } else {
       setSendResult({
         success: false,
-        message: sendErrorMessage(res.error),
+        message: `Failed to send to all ${res.data.failed} recipient(s).`,
       });
     }
   }, [accessToken, recipients, subject, body, templateId, onRecipientsChange]);
@@ -320,6 +338,8 @@ export function EmailCompose({
     }
     setConfirmTestOpen(false);
     setTestSending(true);
+    // Test email and normal send results are independent; clear only the test
+    // result so a stale test error does not linger after a fresh attempt.
     setTestResult(null);
     const res = await communityApi.postAdminEmailTest(accessToken, { recipient: email });
     setTestSending(false);
@@ -337,10 +357,6 @@ export function EmailCompose({
   if (!accessToken) {
     return <ErrorState message="Authentication session not available." />;
   }
-
-  const recipientChips = recipients.map((email) => ({
-    email,
-  }));
 
   const isFormValid =
     recipients.length > 0 &&
@@ -401,16 +417,19 @@ export function EmailCompose({
 
         {recipients.length > 0 && (
           <div className="mt-4 flex flex-wrap gap-2">
-            {recipientChips.map(({ email }) => (
+            {recipients.map((r) => (
               <span
-                key={email}
+                key={r.email}
                 className="inline-flex items-center gap-2 rounded-md border border-line bg-surface-raised px-3 py-1.5 text-sm"
               >
-                <span className="text-ink font-medium">{email}</span>
+                <span className="text-ink font-medium">{escapeHtml(r.name || r.email)}</span>
+                {r.name && (
+                  <span className="text-[0.75rem] text-ink-muted font-mono">{`&lt;${escapeHtml(r.email)}&gt;`}</span>
+                )}
                 <button
-                  onClick={() => removeRecipient(email)}
+                  onClick={() => removeRecipient(r.email)}
                   className="rounded-md p-1 text-ink-muted hover:bg-surface hover:text-danger transition-colors"
-                  aria-label={`Remove ${email}`}
+                  aria-label={`Remove ${r.email}`}
                 >
                   <X className="size-3.5" />
                 </button>
@@ -626,9 +645,9 @@ export function EmailCompose({
             </p>
             {recipients.length > 0 && (
               <div className="rounded-md border border-line bg-surface p-3 text-xs text-ink-muted max-h-40 overflow-y-auto">
-                {recipients.map((email) => (
-                  <div key={email} className="truncate">
-                    {email}
+                {recipients.map((r) => (
+                  <div key={r.email} className="truncate">
+                    {r.name || r.email}
                   </div>
                 ))}
               </div>
@@ -692,10 +711,10 @@ export function EmailCompose({
             <p className="type-caption mt-1 text-ink-muted">
               Recipients, subject and body are validated in the browser and
               again by the backend. Each send attempt uses an idempotency key so
-              a repeated request is not delivered twice. The backend records
-              The backend records every attempt and the provider response, then reports the real
-              delivery status — an email is only marked delivered once the
-              provider confirms it, not merely because the request was accepted.
+              a repeated request is not delivered twice. The backend records every
+              attempt and the provider response, then reports the real delivery
+              status — an email is only marked delivered once the provider
+              confirms it, not merely because the request was accepted.
             </p>
           </div>
         </div>

@@ -85,6 +85,15 @@ export interface ReferralRegisterRequest {
   turnstile_token: string;
 }
 
+/** Public referral-code lookup response (GET /api/v1/referrals/lookup). */
+export interface ReferralLookupResponse {
+  valid: boolean;
+  ambassador?: {
+    id: string;
+    name: string;
+  };
+}
+
 /** Referral record (GET /api/v1/referrals/me). */
 export interface ReferralRecord {
   id: string;
@@ -93,6 +102,8 @@ export interface ReferralRecord {
   total_registrations: number;
   verified_registrations: number;
   created_at: string;
+  ambassador_name: string | null;
+  ambassador_email: string | null;
   registrations?: Array<{
     id: string;
     registered_email: string;
@@ -148,6 +159,7 @@ export interface AdminApplicationItem {
   application_answers: Record<string, unknown>;
   application_status: string;
   referral_code: string | null;
+  referred_by_ambassador_name: string | null;
   created_at: string;
   updated_at: string;
   reviewed_at: string | null;
@@ -224,12 +236,11 @@ export interface AdminTaskItem {
 /**
  * Email management types.
  *
- * NOTE: The Founding Community API (separate repository) does not yet expose
- * email management endpoints. These types describe the expected backend
- * contract and must be confirmed against the real API before the endpoints are
- * wired to production. All paths below return 404 "Route not found" today.
- * See the Email Management section of the implementation report for the full
- * list of missing backend endpoints.
+ * These types describe the backend contract exposed by the Code Yaar Community
+ * API (Cloudflare Worker) under /api/v1/admin/email. The routes are registered
+ * and operational: settings, templates, send, test, history, failed, retry,
+ * stats and recipients. Backend rows use snake_case; they are transformed to
+ * the camelCase client types here so components consume a stable shape.
  */
 
 /** Email delivery status values, matching Resend's lifecycle. */
@@ -237,6 +248,12 @@ export type EmailStatus = "accepted" | "delivered" | "failed" | "pending";
 
 /** Email provider values. */
 export type EmailProvider = "resend";
+
+/** A named email recipient for campaign sends. */
+export interface Recipient {
+  email: string;
+  name: string;
+}
 
 /** Summary statistics for the email dashboard. */
 export interface EmailStats {
