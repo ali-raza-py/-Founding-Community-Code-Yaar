@@ -715,8 +715,8 @@ export class CommunityApiClient {
       ok: true,
       data: {
         provider: "resend",
-        senderAddress: data.from_email ?? "noreply@contact.codeyaar.tech",
-        senderName: data.from_name ?? "Code Yaar Founding Community",
+        senderAddress: data.from_email ?? "hello@contact.codeyaar.tech",
+        senderName: data.from_name ?? "Code Yaar",
         status: data.resend_configured ? "configured" : "not-configured",
         lastTestedAt: null,
       },

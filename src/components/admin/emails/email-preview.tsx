@@ -25,8 +25,8 @@ import { cn } from "@/lib/utils";
 const BRAND_COLOR = '#10b981'
 const BASE_URL = 'https://contact.codeyaar.tech'
 const LOGO_URL = `${BASE_URL}/code-yaar-logo.png`
-const FROM_NAME = 'Code Yaar Founding Community'
-const FROM_EMAIL = 'noreply@contact.codeyaar.tech'
+const FROM_NAME = 'Code Yaar'
+const FROM_EMAIL = 'hello@contact.codeyaar.tech'
 const UNSUBSCRIBE_URL = `${BASE_URL}/admin/email/unsubscribe`
 const PRIVACY_URL = `${BASE_URL}/privacy`
 // Brand positioning.

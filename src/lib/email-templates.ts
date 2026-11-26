@@ -19,8 +19,8 @@
  * images, no gradients/neon/emoji-heavy design.
  */
 
-const FROM_NAME = 'Code Yaar Founding Community'
-const FROM_EMAIL = 'noreply@contact.codeyaar.tech'
+const FROM_NAME = 'Code Yaar'
+const FROM_EMAIL = 'hello@contact.codeyaar.tech'
 // Brand positioning.
 const BRAND_TAGLINE = 'Think. Build. Evolve.'
 // Emerald/teal brand accent (matches the backend branded shell).

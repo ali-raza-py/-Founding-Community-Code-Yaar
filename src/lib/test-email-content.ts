@@ -62,8 +62,8 @@ export function buildTestEmailText(recipient: string, subject: string): string {
     '',
     `Sent at: ${new Date(timestamp).toLocaleString()}`,
     '',
-    'Code Yaar Founding Community',
-    'noreply@contact.codeyaar.tech',
+    'Code Yaar',
+    'hello@contact.codeyaar.tech',
     'contact.codeyaar.tech',
   ].join('\n');
 }
