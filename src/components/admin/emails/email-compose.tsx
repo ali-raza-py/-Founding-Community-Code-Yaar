@@ -407,7 +407,7 @@ export function EmailCompose({
         <div className="mt-4 flex flex-col sm:flex-row sm:items-end gap-3">
           <Field label="Email address" error={recipientError ?? undefined} className="flex-1">
             <Input
-              value={recipientInput}
+              value={String(recipientInput ?? "")}
               onChange={(event) => setRecipientInput(event.currentTarget.value)}
               onKeyDown={handleRecipientKeyDown}
               placeholder="you@example.com"
@@ -459,7 +459,7 @@ export function EmailCompose({
         <div className="sm:col-span-4 lg:col-span-3">
           <Field label="Template" required>
             <Select
-              value={templateId}
+              value={String(templateId ?? "")}
               onChange={(event) => setTemplateId(event.currentTarget.value)}
               disabled={sending}
             >
@@ -475,7 +475,7 @@ export function EmailCompose({
         <div className="sm:col-span-8 lg:col-span-9">
           <Field label="Subject" required error={fieldErrors.subject?.[0]}>
             <Input
-              value={subject}
+              value={String(subject ?? "")}
               onChange={(event) => setSubject(event.currentTarget.value)}
               placeholder="Email subject line"
               disabled={sending}
@@ -548,7 +548,7 @@ export function EmailCompose({
             <textarea
               ref={bodyRef}
               className="flex w-full rounded-md border border-line bg-surface px-3 py-2 text-sm text-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald transition-colors"
-              value={body}
+              value={String(body ?? "")}
               onChange={(event) => setBody(event.currentTarget.value)}
               disabled={sending}
               rows={16}
@@ -679,7 +679,7 @@ export function EmailCompose({
             <Field label="Test recipient email address" required>
               <Input
                 type="email"
-                value={testRecipient}
+                value={String(testRecipient ?? "")}
                 onChange={(event) => setTestRecipient(event.currentTarget.value)}
                 placeholder="you@example.com"
                 autoFocus
