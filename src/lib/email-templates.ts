@@ -76,7 +76,7 @@ const shell = (params: {
             <table role="presentation" cellspacing="0" cellpadding="0" border="0">
               <tr>
                 <td align="center" style="border-radius:6px;">
-                  <a href="${escapeHtml(button.url)}" target="_blank" style="background:${BRAND_COLOR};color:#ffffff;border:none;border-radius:6px;padding:14px 30px;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;font-size:16px;font-weight:600;text-decoration:none;display:block;">
+                  <a href="${escapeHtml(button.url)}" target="_blank" style="background:${BRAND_COLOR};color:#ffffff;border:none;border-radius:6px;padding:14px 30px;font-family:'Times New Roman',Times,serif;font-size:16px;font-weight:600;text-decoration:none;display:block;">
                     ${escapeHtml(button.label)}
                   </a>
                 </td>
@@ -92,7 +92,7 @@ const shell = (params: {
     ? `
       <tr>
         <td align="center" style="padding:0 0 10px 0;">
-          <span style="display:inline-block;padding:4px 10px;border-radius:4px;background:${BRAND_COLOR};color:#ffffff;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;font-size:11px;font-weight:700;letter-spacing:0.6px;text-transform:uppercase;">
+          <span style="display:inline-block;padding:4px 10px;border-radius:4px;background:${BRAND_COLOR};color:#ffffff;font-family:'Times New Roman',Times,serif;font-size:11px;font-weight:700;letter-spacing:0.6px;text-transform:uppercase;">
             ${escapeHtml(campaignLabel)}
           </span>
         </td>
@@ -121,7 +121,7 @@ const shell = (params: {
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>${escapeHtml(title)}</title>
   </head>
-  <body style="margin:0;padding:0;background:#ffffff;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;line-height:1.6;color:#0f172a;">
+  <body style="margin:0;padding:0;background:#ffffff;font-family:'Times New Roman',Times,serif;line-height:1.6;color:#0f172a;">
     <div style="display:none;max-height:0;overflow:hidden;mso-hide:all;font-size:1px;color:#ffffff;line-height:1px;">
       ${escapeHtml(preview)}
     </div>
@@ -146,7 +146,7 @@ const shell = (params: {
                         ${campaignLabelHtml}
                         <tr>
                           <td align="center" style="padding-top:6px;">
-                            <span style="font-size:12.5px;color:#94a3b8;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;letter-spacing:0.4px;text-transform:uppercase;">
+                            <span style="font-size:12.5px;color:#94a3b8;font-family:'Times New Roman',Times,serif;letter-spacing:0.4px;text-transform:uppercase;">
                               ${escapeHtml(BRAND_TAGLINE)}
                             </span>
                           </td>

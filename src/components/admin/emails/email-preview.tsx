@@ -133,7 +133,7 @@ export function EmailHeader({ campaignLabel }: EmailHeaderProps) {
                 background: BRAND_COLOR,
                 color: '#ffffff',
                 fontFamily:
-                  '-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif',
+                  '"Times New Roman",Times,serif',
                 fontSize: '11px',
                 fontWeight: '700',
                 letterSpacing: '0.6px',
@@ -150,7 +150,7 @@ export function EmailHeader({ campaignLabel }: EmailHeaderProps) {
               fontSize: '12.5px',
               color: '#94a3b8',
               fontFamily:
-                '-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif',
+                '"Times New Roman",Times,serif',
               letterSpacing: '0.4px',
               textTransform: 'uppercase',
             }}
@@ -224,7 +224,7 @@ export function EmailButton({ label, url }: EmailButtonProps) {
           borderRadius: '6px',
           padding: '14px 30px',
           fontFamily:
-            '-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif',
+            '"Times New Roman",Times,serif',
           fontSize: '16px',
           fontWeight: '600',
           textDecoration: 'none',
@@ -262,7 +262,7 @@ export function EmailCTASection({ heading, body, buttonLabel, buttonUrl }: Email
             borderRadius: '6px',
             padding: '14px 30px',
             fontFamily:
-              '-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif',
+              '"Times New Roman",Times,serif',
             fontSize: '16px',
             fontWeight: '600',
             textDecoration: 'none',
@@ -382,7 +382,7 @@ export function BrandedEmail({
   optOut = true,
 }: BrandedEmailProps) {
   return (
-    <div style={{ background: '#ffffff', fontFamily: '-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif', lineHeight: '1.6', color: '#0f172a', margin: 0, padding: 0 }}>
+    <div style={{ background: '#ffffff', fontFamily: '"Times New Roman",Times,serif', lineHeight: '1.6', color: '#0f172a', margin: 0, padding: 0 }}>
       <div style={{ display: 'none', maxHeight: 0, overflow: 'hidden', fontSize: '1px', color: '#ffffff', lineHeight: '1px' }} />
       <table role="presentation" cellSpacing={0} cellPadding={0} border={0} width="100%">
         <tr>
