@@ -89,11 +89,43 @@ export function EmailConfig({ refresh }: EmailConfigProps) {
     } else {
       setTestResult({
         success: false,
-        message: res.error.message || "Failed to send test email.",
+        message: formatTestError(res.error),
       });
     }
     setRecipient("");
   }, [accessToken, recipient, loadConfig]);
+
+  const formatTestError = (error: {
+    reason?: string;
+    code?: string;
+    message?: string | null;
+    status?: number;
+    details?: Record<string, string[]>;
+  }): string => {
+    switch (error.reason) {
+      case "network":
+        return "Network error. Please check your connection and try again.";
+      case "unauthorized":
+      case "forbidden":
+        return "You are not authorized to send test emails.";
+      case "validation": {
+        if (error.details) {
+          const first = Object.entries(error.details)[0]
+          if (first) {
+            const [field, messages] = first
+            if (Array.isArray(messages) && messages[0]) {
+              return `${field}: ${messages[0]}`
+            }
+          }
+        }
+        return error.message || "The test email request failed validation."
+      }
+      case "server":
+        return "The email service encountered an error. Please try again later."
+      default:
+        return error.message || "Failed to send test email."
+    }
+  }
 
   if (loading) {
     return (

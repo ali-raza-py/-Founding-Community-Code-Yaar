@@ -4,7 +4,8 @@ import type { ApiClientError, ApiErrorReason } from "./types";
 export function classifyError(
   status: number,
   code?: string,
-  message?: string
+  message?: string,
+  details?: Record<string, string[]>
 ): ApiClientError {
   let reason: ApiErrorReason = "unknown";
 
@@ -43,6 +44,7 @@ export function classifyError(
     status,
     code,
     message: message ?? `Request failed with HTTP ${status}`,
+    ...(details ? { details } : {}),
   };
 }
 

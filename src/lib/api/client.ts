@@ -31,7 +31,6 @@ import type {
 import { COMMUNITY_API_URL, API_TIMEOUT_MS, IS_API_CONFIGURED } from "./config";
 import {
   classifyError,
-  extractErrorMessage,
   notConfiguredError,
   networkError,
   timeoutError,
@@ -155,17 +154,22 @@ export class CommunityApiClient {
       } catch {
         body = null;
       }
-      const code =
+      const errorObj =
         body && typeof body === "object" && "error" in body
-          ? (body as { error?: { code?: unknown } }).error?.code
+          ? (body as { error?: { code?: unknown; message?: unknown; details?: unknown } }).error
           : undefined;
+      const code = errorObj && typeof errorObj.code === "string" ? errorObj.code : undefined;
       const message =
-        body && typeof body === "object" && "error" in body
-          ? extractErrorMessage(body)
+        errorObj && typeof errorObj.message === "string" && errorObj.message.trim()
+          ? errorObj.message.trim()
+          : undefined;
+      const details =
+        errorObj && typeof errorObj.details === "object" && errorObj.details !== null
+          ? (errorObj.details as Record<string, string[]>)
           : undefined;
       return {
         ok: false,
-        error: classifyError(response.status, code as string | undefined, message),
+        error: classifyError(response.status, code, message, details),
       };
     }
 

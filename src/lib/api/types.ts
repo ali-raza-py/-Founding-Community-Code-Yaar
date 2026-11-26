@@ -390,6 +390,7 @@ export interface ApiClientError {
   status?: number;
   code?: string;
   message: string;
+  details?: Record<string, string[]>;
 }
 
 /** Program configuration (configured via env since no GET /programs endpoint). */
