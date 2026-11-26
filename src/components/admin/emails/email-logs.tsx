@@ -153,14 +153,14 @@ export function EmailLogs({ refresh }: EmailLogsProps) {
         <div className="grid gap-4 sm:grid-cols-4 lg:grid-cols-6">
           <Field label="Search by recipient">
             <Input
-              value={search}
+              value={String(search ?? "")}
               onChange={handleSearchChange}
               placeholder="Recipient email address"
             />
           </Field>
           <Field label="Email type">
             <Select
-              value={typeFilter}
+              value={String(typeFilter ?? "")}
               onChange={(event) => {
                 setTypeFilter(event.currentTarget.value);
                 setCurrentPage(1);
@@ -175,7 +175,7 @@ export function EmailLogs({ refresh }: EmailLogsProps) {
           </Field>
           <Field label="Status">
             <Select
-              value={statusFilter}
+              value={String(statusFilter ?? "")}
               onChange={(event) => {
                 setStatusFilter(event.currentTarget.value);
                 setCurrentPage(1);
@@ -190,10 +190,10 @@ export function EmailLogs({ refresh }: EmailLogsProps) {
           </Field>
           <div className="flex items-end gap-2">
             <Field label="From">
-              <Input type="date" value={dateFrom} onChange={(e) => setDateFrom(e.currentTarget.value)} />
+              <Input type="date" value={String(dateFrom ?? "")} onChange={(e) => setDateFrom(e.currentTarget.value)} />
             </Field>
             <Field label="To">
-              <Input type="date" value={dateTo} onChange={(e) => setDateTo(e.currentTarget.value)} />
+              <Input type="date" value={String(dateTo ?? "")} onChange={(e) => setDateTo(e.currentTarget.value)} />
             </Field>
           </div>
           <div className="flex items-end gap-2">

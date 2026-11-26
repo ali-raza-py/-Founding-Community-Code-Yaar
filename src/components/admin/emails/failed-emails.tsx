@@ -182,7 +182,7 @@ export function FailedEmails({ refresh }: FailedEmailsProps) {
       <div className="rounded-xl border border-line bg-surface p-4 sm:p-5">
         <Field label="Search by recipient">
           <Input
-            value={search}
+            value={String(search ?? "")}
             onChange={(event) => {
               setSearch(event.currentTarget.value);
               setCurrentPage(1);
