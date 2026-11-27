@@ -458,7 +458,7 @@ export class CommunityApiClient {
       title: string;
       description: string;
       program_id: string;
-      assigned_to: string;
+      assigned_to: string | string[];
       due_date: string;
       status?: string;
     }

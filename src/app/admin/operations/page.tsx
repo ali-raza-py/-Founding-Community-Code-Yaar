@@ -1,10 +1,8 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import Link from "next/link";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
-  ArrowRight,
   Clock,
   ListChecks,
   Mail,
@@ -15,17 +13,24 @@ import {
 
 import { useAuth } from "@/lib/api/auth";
 import { communityApi } from "@/lib/api/client";
-import { getProgramConfig } from "@/lib/api/types";
 import { Button } from "@/components/ui/button";
 import { Field, Input, Select } from "@/components/ui/field";
 import { DashboardPageHeader } from "@/components/dashboard/page-header";
 import { StatisticCard } from "@/components/dashboard/statistic-card";
 import { StatusBadge } from "@/components/dashboard/status-badge";
-import { EmptyState, ErrorState, LoadingState } from "@/components/admin/shared";
+import { EmptyState, LoadingState } from "@/components/admin/shared";
 import { Dialog } from "@/components/dashboard/dialog";
 import { Badge } from "@/components/ui/badge";
-import { ResponsiveTable, TableBody, TableCell, TableCellHeader, TableHeader, TableHead, TableRow } from "@/components/dashboard/responsive-table";
-import { cn } from "@/lib/utils";
+import {
+  ResponsiveTable,
+  TableBody,
+  TableCell,
+  TableCellHeader,
+  TableHeader,
+  TableHead,
+  TableRow,
+} from "@/components/dashboard/responsive-table";
+import { ParticipantSelector } from "@/components/participant/participant-selector";
 
 type TaskStatus = "pending" | "in_progress" | "completed" | "overdue";
 
@@ -55,19 +60,14 @@ const STATUS_LABELS: Record<TaskStatus, string> = {
   overdue: "Overdue",
 };
 
-const STATUS_VARIANTS: Record<TaskStatus, "emerald" | "default" | "warning" | "error"> = {
-  pending: "emerald",
-  in_progress: "default",
-  completed: "emerald",
-  overdue: "error",
-};
-
 export default function AdminOperationsPage() {
   const { accessToken, isAuthenticated, isLoading, isAdmin } = useAuth();
   const router = useRouter();
   const [tasks, setTasks] = useState<TaskCard[]>([]);
   const [programs, setPrograms] = useState<Array<{ id: string; name: string }>>([]);
-  const [participants, setParticipants] = useState<Array<{ id: string; full_name: string | null; email: string | null; programme: string | null }>>([]);
+  const [participants, setParticipants] = useState<Array<any>>([]);
+  const [profiles, setProfiles] = useState<Array<{ id: string; full_name: string | null; email: string | null; role: string | null }>>([]);
+  const [profilesByUserId, setProfilesByUserId] = useState<Map<string, { full_name: string | null; email: string | null; role: string | null }>>(new Map());
   const [filterProgram, setFilterProgram] = useState<string>("");
   const [filterStatus, setFilterStatus] = useState<TaskStatus | "">("");
   const [search, setSearch] = useState("");
@@ -80,7 +80,7 @@ export default function AdminOperationsPage() {
   const [createTitle, setCreateTitle] = useState("");
   const [createDescription, setCreateDescription] = useState("");
   const [createProgram, setCreateProgram] = useState("");
-  const [createAssignedTo, setCreateAssignedTo] = useState("");
+  const [createAssignedTo, setCreateAssignedTo] = useState<string[]>([]);
   const [createDueDate, setCreateDueDate] = useState("");
   const [createError, setCreateError] = useState<string | null>(null);
 
@@ -99,21 +99,27 @@ export default function AdminOperationsPage() {
     setLoading(true);
     setError(null);
     try {
-      const [progRes, partRes, taskRes] = await Promise.all([
+      const [progRes, partRes, profRes, taskRes] = await Promise.all([
         communityApi.getAdminPrograms(accessToken),
         communityApi.getAdminParticipants(accessToken, { page: 1, pageSize: 200 }),
+        communityApi.getAdminProfiles(accessToken),
         communityApi.getAdminTasks(accessToken, { page: 1, pageSize: 200 }),
       ]);
       if (progRes.ok) setPrograms(progRes.data.map((p: any) => ({ id: p.id, name: p.name })));
       if (partRes.ok) {
-        setParticipants(
-          (partRes.data.items as any[]).map((p) => ({
-            id: p.user_id ?? p.id,
-            full_name: p.profiles?.full_name ?? null,
-            email: p.profiles?.email ?? null,
-            programme: p.programs?.name ?? null,
-          })),
-        );
+        setParticipants(partRes.data.items);
+      }
+      if (profRes.ok && profRes.data) {
+        const profileList = (profRes.data as Array<{ id: string; full_name: string | null; email: string | null; role: string | null }>).map((p) => ({
+          id: p.id,
+          full_name: p.full_name,
+          email: p.email,
+          role: p.role ?? null,
+        }));
+        setProfiles(profileList);
+        const map = new Map<string, { full_name: string | null; email: string | null; role: string | null }>();
+        for (const p of profileList) map.set(p.id, p);
+        setProfilesByUserId(map);
       }
       if (taskRes.ok) {
         setTasks((taskRes.data.items as any[]).map((t) => ({
@@ -178,7 +184,7 @@ export default function AdminOperationsPage() {
       setCreateTitle("");
       setCreateDescription("");
       setCreateProgram("");
-      setCreateAssignedTo("");
+      setCreateAssignedTo([]);
       setCreateDueDate("");
       void load();
     } else {
@@ -348,27 +354,23 @@ export default function AdminOperationsPage() {
               <Input type="date" value={createDueDate} onChange={(event) => setCreateDueDate(event.currentTarget.value)} />
             </Field>
           </div>
-          <Field label="Assign to participant">
-            <Select
+          <Field label="Assign to participant(s)" required>
+            <ParticipantSelector
+              participants={participants as any[]}
+              profilesByUserId={profilesByUserId}
               value={createAssignedTo}
-              onChange={(event) => setCreateAssignedTo(event.currentTarget.value)}
-              className="w-full"
-              disabled={!createProgram}
-            >
-              <option value="">Select participant</option>
-              {createProgram
-                ? participants
-                    .filter((p) => p.programme === programs.find((pr) => pr.id === createProgram)?.name)
-                    .map((p) => (
-                      <option key={p.id} value={p.id}>
-                        {p.full_name} — {p.email} ({p.programme})
-                      </option>
-                    ))
-                : []}
-            </Select>
-            {createProgram && !participants.find((p) => p.id === createAssignedTo && p.programme === programs.find((pr) => pr.id === createProgram)?.name) && createAssignedTo && (
+              onChange={(ids) => setCreateAssignedTo(ids)}
+              programFilter={createProgram || undefined}
+              disabled={!createProgram || loading}
+            />
+            {!createProgram && (
               <p className="type-caption mt-1 text-ink-secondary">
-                Select a participant from the dropdown above.
+                Select a programme first to see eligible participants.
+              </p>
+            )}
+            {createProgram && createAssignedTo.length === 0 && !loading && (
+              <p className="type-caption mt-1 text-ink-secondary">
+                No participants found for this programme.
               </p>
             )}
           </Field>

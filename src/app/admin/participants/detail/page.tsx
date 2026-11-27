@@ -30,6 +30,7 @@ export default function AdminParticipantDetailPage() {
   const participantId = searchParams.get("id") ?? "";
 
   const [participant, setParticipant] = useState<any>(null);
+  const [profiles, setProfiles] = useState<Array<{ full_name: string | null; email: string | null; role: string | null }>>([]);
   const [memberships, setMemberships] = useState<MembershipCard[]>([]);
   const [referral, setReferral] = useState<any>(null);
   const [referralRegistrations, setReferralRegistrations] = useState<any[]>([]);
@@ -43,12 +44,14 @@ export default function AdminParticipantDetailPage() {
     setLoading(true);
     setError(null);
     try {
-      const [partRes, allPartsRes, refsRes, tasksRes] = await Promise.all([
-        communityApi.getAdminParticipant(accessToken, participantId),
-        communityApi.getAdminParticipants(accessToken, { page: 1, pageSize: 100 }),
-        communityApi.getAdminReferrals(accessToken, { page: 1, pageSize: 100 }),
-        communityApi.getAdminTasks(accessToken, { page: 1, pageSize: 50, assignedTo: participantId }),
-      ]);
+      const [partRes, profilesRes, allPartsRes, refsRes, tasksRes] =
+        await Promise.all([
+          communityApi.getAdminParticipant(accessToken, participantId),
+          communityApi.getAdminProfiles(accessToken),
+          communityApi.getAdminParticipants(accessToken, { page: 1, pageSize: 100 }),
+          communityApi.getAdminReferrals(accessToken, { page: 1, pageSize: 100 }),
+          communityApi.getAdminTasks(accessToken, { page: 1, pageSize: 50, assignedTo: participantId }),
+        ]);
 
       if (partRes.ok) {
         setParticipant(partRes.data);
@@ -58,6 +61,18 @@ export default function AdminParticipantDetailPage() {
         }
       } else {
         setError(partRes.error.message);
+      }
+
+      if (profilesRes.ok && profilesRes.data) {
+        setProfiles(
+          (profilesRes.data as Array<{ full_name: string | null; email: string | null; role: string | null }>).map(
+            (p) => ({
+              full_name: p.full_name ?? null,
+              email: p.email ?? null,
+              role: p.role ?? null,
+            }),
+          ),
+        );
       }
 
       if (allPartsRes.ok && allPartsRes.data) {
@@ -116,7 +131,27 @@ export default function AdminParticipantDetailPage() {
     return <ErrorState message={error || "Participant not found."} />;
   }
 
-  const np = normalizeParticipant(participant);
+  const profilesByUserId = useMemo(() => {
+    const map = new Map<string, { full_name: string | null; email: string | null; role: string | null }>();
+    for (const p of profiles) {
+      if (p.email) map.set(p.email, p);
+    }
+    return map;
+  }, [profiles]);
+
+  const np = normalizeParticipant(
+    {
+      ...participant,
+      full_name: participant.full_name ?? undefined,
+      email: participant.email ?? undefined,
+      profiles: participant.profiles ?? undefined,
+      programs: participant.programs
+        ? { name: participant.programs.name ?? null, slug: participant.programs.slug ?? null }
+        : null,
+    },
+    profilesByUserId,
+  );
+
   const primaryMembership = memberships.find((m) => m.program === np.programme);
   const otherMemberships = memberships.filter((m) => m.program !== np.programme);
 
@@ -147,18 +182,18 @@ export default function AdminParticipantDetailPage() {
       <section className="rounded-xl border border-line bg-surface p-6 sm:p-8">
         <div className="mb-6">
           <p className="type-label">Personal information</p>
-          <h2 className="text-xl font-semibold text-ink">{np.displayName || "Not provided"}</h2>
-          {np.email && (
+          <h1 className="text-2xl font-semibold text-ink leading-none">{np.displayName}</h1>
+          {np.email && np.email !== "Not provided" && (
             <p className="type-caption mt-1 text-ink-secondary">{np.email}</p>
           )}
         </div>
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           <div className="rounded-lg border border-line bg-surface p-4">
             <p className="type-label mb-1">Email</p>
-            <p className="text-sm text-ink">{participantValue(np.email)}</p>
+            <p className="text-sm text-ink break-all">{participantValue(np.email)}</p>
           </div>
           <div className="rounded-lg border border-line bg-surface p-4">
-            <p className="type-label mb-1">Role</p>
+            <p className="type-label mb-1">Account role</p>
             <p className="text-sm text-ink">{participantValue(np.role)}</p>
           </div>
           <div className="rounded-lg border border-line bg-surface p-4">

@@ -48,7 +48,7 @@ export default function AdminParticipantsPage() {
   // Pending (unconfirmed) status per participant row so the select reverts on cancel.
   const [pendingParticipantStatus, setPendingParticipantStatus] = useState<Record<string, string>>({});
 
-  const profileByUserId = useMemo(() => {
+  const profilesByUserId = useMemo(() => {
     const map = new Map<string, {
       full_name: string | null;
       email: string | null;
@@ -355,7 +355,7 @@ export default function AdminParticipantsPage() {
             </TableHead>
             <TableBody>
               {participants.map((p: any) => {
-                const np = normalizeParticipant(p, profileByUserId);
+                const np = normalizeParticipant(p, profilesByUserId);
                 return (
                     <TableRow
                       key={p.id}
