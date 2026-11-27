@@ -364,12 +364,14 @@ export default function AdminParticipantsPage() {
                        onClick={() => void openDetail(p)}
                      >
                        <td className="px-4 py-3 text-sm text-ink">
-                         {profileByUserId.get(p.user_id)?.full_name ??
+                         {p.full_name ??
+                           profileByUserId.get(p.user_id)?.full_name ??
                            p.profiles?.full_name ??
                            "Not provided"}
                        </td>
                        <td className="px-4 py-3 text-sm text-ink-muted">
-                         {profileByUserId.get(p.user_id)?.email ??
+                         {p.email ??
+                           profileByUserId.get(p.user_id)?.email ??
                            p.profiles?.email ??
                            "Not provided"}
                        </td>
@@ -449,14 +451,16 @@ export default function AdminParticipantsPage() {
               <div className="mt-4 space-y-2 text-sm">
                 <p>
                   <span className="font-semibold">Name:</span>{" "}
-                  {profileByUserId.get(selected.user_id)?.full_name ??
+                  {selected.full_name ??
+                    profileByUserId.get(selected.user_id)?.full_name ??
                     selected.profiles?.full_name ??
                     selectedApplication?.applicant_name ??
                     "Not provided"}
                 </p>
                 <p>
                   <span className="font-semibold">Email:</span>{" "}
-                  {profileByUserId.get(selected.user_id)?.email ??
+                  {selected.email ??
+                    profileByUserId.get(selected.user_id)?.email ??
                     selected.profiles?.email ??
                     selectedApplication?.email ??
                     "Not provided"}
