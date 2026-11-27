@@ -2,7 +2,6 @@
 
 import { X } from "lucide-react";
 import { useCallback, useEffect } from "react";
-import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 
 interface DialogProps {
@@ -16,6 +15,8 @@ interface DialogProps {
   variant?: "default" | "danger";
   cancelLabel?: string;
   showCloseButton?: boolean;
+  /** Replaces the default dialog actions with an explicit footer. */
+  footer?: React.ReactNode;
   children: React.ReactNode;
 }
 
@@ -30,6 +31,7 @@ export function Dialog({
   variant = "default",
   cancelLabel = "Cancel",
   showCloseButton = true,
+  footer,
   children,
 }: DialogProps) {
   const handleKeyDown = useCallback(
@@ -59,12 +61,13 @@ export function Dialog({
         role="dialog"
         aria-modal="true"
         aria-label={title}
-        className="fixed left-1/2 top-1/2 z-50 w-full max-w-[520px] -translate-x-1/2 -translate-y-1/2 rounded-xl border border-line bg-surface shadow-lg flex flex-col"
+        className="fixed left-1/2 top-1/2 z-50 flex max-h-[calc(100dvh-2rem)] w-[calc(100%-2rem)] max-w-[520px] -translate-x-1/2 -translate-y-1/2 flex-col overflow-hidden rounded-xl border border-line bg-surface shadow-lg"
       >
         <div className="flex items-start justify-between p-6 sm:p-8">
           <h2 className="text-base font-semibold text-ink">{title}</h2>
           {showCloseButton && (
             <button
+              type="button"
               onClick={onClose}
               className="rounded-md p-2 text-ink-muted hover:bg-surface-raised transition-colors"
               aria-label="Close"
@@ -73,14 +76,20 @@ export function Dialog({
             </button>
           )}
         </div>
-        <div className="border-t border-line p-6 sm:p-8 space-y-4">
+        <div className="min-h-0 flex-1 overflow-y-auto border-t border-line p-6 sm:p-8 space-y-4">
           {error && (
             <div className="rounded-md border border-danger-soft bg-danger-soft p-3">
               <p className="text-sm text-danger">{error}</p>
             </div>
           )}
           {children}
-          <div className="flex justify-end gap-2 pt-4 border-t border-line/50">
+        </div>
+        {footer ? (
+          <div className="shrink-0 border-t border-line bg-surface p-4 sm:px-8">
+            {footer}
+          </div>
+        ) : (
+          <div className="flex shrink-0 justify-end gap-2 border-t border-line/50 bg-surface p-4 sm:px-8">
             <Button
               type="button"
               onClick={onClose}
@@ -102,7 +111,7 @@ export function Dialog({
               </Button>
             )}
           </div>
-        </div>
+        )}
       </div>
     </>
   );

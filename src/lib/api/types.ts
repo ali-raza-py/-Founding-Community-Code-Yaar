@@ -130,6 +130,9 @@ export interface ParticipantRecord {
   created_at: string;
   programs?: { name: string; slug: string } | null;
   profiles?: { full_name: string; email: string; role: string } | null;
+  /** Admin participant lists also include the authoritative profile fields. */
+  full_name?: string | null;
+  email?: string | null;
 }
 
 /** Task (GET /api/v1/tasks/mine). */
@@ -214,6 +217,8 @@ export interface AdminParticipantItem {
   created_at: string;
   profiles?: { full_name: string; email: string; role: string } | null;
   programs?: { name: string; slug: string } | null;
+  full_name?: string | null;
+  email?: string | null;
 }
 
 /** Admin referral list item (GET /api/v1/admin/referrals). */

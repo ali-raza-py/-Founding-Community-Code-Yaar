@@ -54,7 +54,6 @@ export function normalizeParticipant(
 ): NormalizedParticipant {
   const embedded = item.profiles ?? null;
   const lookup = lookups?.get(item.user_id) ?? null;
-  const profiles = embedded ?? lookup;
 
   return {
     id: item.id,

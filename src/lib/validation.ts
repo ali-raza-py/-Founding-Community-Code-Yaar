@@ -302,7 +302,7 @@ export const ambassadorSchema = ambassadorPersonalSchema
 /* ========================================================================
    Task management validation schemas
    Matches the backend contract for POST /api/v1/admin/tasks:
-   { title, description, program_id, assigned_to: string | string[], due_date, status? }
+   { title, description, program_id, assigned_to: string[], due_date, status? }
    ======================================================================== */
 
 export const taskCreationSchema = z.object({
@@ -320,23 +320,24 @@ export const taskCreationSchema = z.object({
     .string()
     .trim()
     .min(1, "Select a programme.")
-    .max(200, "Invalid programme selection."),
+    .uuid("The selected programme is invalid."),
   assigned_to: z
-    .string()
-    .uuid('Invalid participant selection.'),
+    .array(z.string().uuid('Invalid participant selection.'))
+    .min(1, "Select at least one eligible participant."),
   due_date: z
     .string()
     .trim()
     .min(1, "Select a deadline.")
     .max(10, "Enter a valid deadline date.")
     .refine(
-      (value) => /^\d{4}-\d{2}-\d{2}$/.test(value) && !Number.isNaN(Date.parse(value)),
+      (value) => {
+        if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) return false;
+        const date = new Date(`${value}T00:00:00.000Z`);
+        return !Number.isNaN(date.getTime()) && date.toISOString().slice(0, 10) === value;
+      },
       "Enter a valid deadline date (YYYY-MM-DD).",
     ),
-  status: z
-    .enum(["pending", "in_progress", "completed", "overdue"] as const)
-    .default("pending")
-    .optional(),
+  status: z.enum(["assigned", "in_progress", "submitted", "under_review", "approved", "revision_required", "completed", "pending", "overdue"] as const).optional(),
 });
 
 export type TaskCreationInput = z.infer<typeof taskCreationSchema>;

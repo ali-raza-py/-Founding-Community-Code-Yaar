@@ -20,7 +20,6 @@ import { StatisticCard } from "@/components/dashboard/statistic-card";
 import { StatusBadge } from "@/components/dashboard/status-badge";
 import { EmptyState, LoadingState } from "@/components/admin/shared";
 import { Dialog } from "@/components/dashboard/dialog";
-import { Badge } from "@/components/ui/badge";
 import {
   ResponsiveTable,
   TableBody,
@@ -31,6 +30,8 @@ import {
   TableRow,
 } from "@/components/dashboard/responsive-table";
 import { ParticipantSelector } from "@/components/participant/participant-selector";
+import { taskCreationSchema } from "@/lib/validation";
+import type { ApiClientError, AdminParticipantItem } from "@/lib/api/types";
 
 type TaskStatus = "pending" | "in_progress" | "completed" | "overdue";
 
@@ -65,8 +66,7 @@ export default function AdminOperationsPage() {
   const router = useRouter();
   const [tasks, setTasks] = useState<TaskCard[]>([]);
   const [programs, setPrograms] = useState<Array<{ id: string; name: string }>>([]);
-  const [participants, setParticipants] = useState<Array<any>>([]);
-  const [profiles, setProfiles] = useState<Array<{ id: string; full_name: string | null; email: string | null; role: string | null }>>([]);
+  const [participants, setParticipants] = useState<AdminParticipantItem[]>([]);
   const [profilesByUserId, setProfilesByUserId] = useState<Map<string, { full_name: string | null; email: string | null; role: string | null }>>(new Map());
   const [filterProgram, setFilterProgram] = useState<string>("");
   const [filterStatus, setFilterStatus] = useState<TaskStatus | "">("");
@@ -83,6 +83,7 @@ export default function AdminOperationsPage() {
   const [createAssignedTo, setCreateAssignedTo] = useState<string[]>([]);
   const [createDueDate, setCreateDueDate] = useState("");
   const [createError, setCreateError] = useState<string | null>(null);
+  const [createErrors, setCreateErrors] = useState<Record<string, string>>({});
 
   const filteredTasks = useMemo(() => {
     return tasks.filter((t) => {
@@ -105,7 +106,7 @@ export default function AdminOperationsPage() {
         communityApi.getAdminProfiles(accessToken),
         communityApi.getAdminTasks(accessToken, { page: 1, pageSize: 200 }),
       ]);
-      if (progRes.ok) setPrograms(progRes.data.map((p: any) => ({ id: p.id, name: p.name })));
+      if (progRes.ok) setPrograms(progRes.data.map((p) => ({ id: p.id, name: p.name })));
       if (partRes.ok) {
         setParticipants(partRes.data.items);
       }
@@ -116,19 +117,18 @@ export default function AdminOperationsPage() {
           email: p.email,
           role: p.role ?? null,
         }));
-        setProfiles(profileList);
         const map = new Map<string, { full_name: string | null; email: string | null; role: string | null }>();
         for (const p of profileList) map.set(p.id, p);
         setProfilesByUserId(map);
       }
       if (taskRes.ok) {
-        setTasks((taskRes.data.items as any[]).map((t) => ({
+        setTasks(taskRes.data.items.map((t) => ({
           id: t.id,
           title: t.title,
           description: t.description ?? null,
           program_name: t.program_name ?? null,
           program_id: t.program_id ?? null,
-          status: t.status,
+          status: t.status as TaskStatus,
           due_date: t.due_date ?? null,
           assigned_name: t.assigned_name ?? null,
           assigned_email: t.assigned_email ?? null,
@@ -147,7 +147,8 @@ export default function AdminOperationsPage() {
   }, [accessToken]);
 
   useEffect(() => {
-    load();
+    const timeoutId = window.setTimeout(() => void load(), 0);
+    return () => window.clearTimeout(timeoutId);
   }, [load]);
 
   if (isLoading || loading) {
@@ -169,14 +170,32 @@ export default function AdminOperationsPage() {
   const handleCreateTask = async (event: React.FormEvent) => {
     event.preventDefault();
     if (!accessToken) return;
-    setCreateLoading(true);
-    setCreateError(null);
-    const res = await communityApi.createAdminTask(accessToken, {
+
+    const parsed = taskCreationSchema.safeParse({
       title: createTitle,
       description: createDescription,
       program_id: createProgram,
       assigned_to: createAssignedTo,
       due_date: createDueDate,
+    });
+    if (!parsed.success) {
+      const fieldErrors = parsed.error.flatten().fieldErrors;
+      setCreateErrors(
+        Object.fromEntries(
+          Object.entries(fieldErrors).flatMap(([field, messages]) =>
+            messages?.[0] ? [[field, messages[0]]] : [],
+          ),
+        ),
+      );
+      setCreateError(null);
+      return;
+    }
+
+    setCreateLoading(true);
+    setCreateError(null);
+    setCreateErrors({});
+    const res = await communityApi.createAdminTask(accessToken, {
+      ...parsed.data,
     });
     setCreateLoading(false);
     if (res.ok) {
@@ -188,14 +207,22 @@ export default function AdminOperationsPage() {
       setCreateDueDate("");
       void load();
     } else {
-      setCreateError(res.error.message || "Failed to create task.");
+      const details = res.error.details ?? {};
+      const fieldErrors = Object.fromEntries(
+        Object.entries(details).flatMap(([field, messages]) =>
+          messages?.[0] ? [[field.replace(/\\.\\d+$/, ""), messages[0]]] : [],
+        ),
+      );
+      setCreateErrors(fieldErrors);
+      setCreateError(formatTaskCreateError(res.error, fieldErrors));
     }
   };
 
-  const handleCompleteTask = async (taskId: string) => {
-    if (!accessToken) return;
-    const res = await communityApi.completeAdminTask(accessToken, taskId);
-    if (res.ok) void load();
+  const closeCreateDialog = () => {
+    if (createLoading) return;
+    setCreateOpen(false);
+    setCreateError(null);
+    setCreateErrors({});
   };
 
   return (
@@ -210,6 +237,12 @@ export default function AdminOperationsPage() {
           </Button>
         }
       />
+
+      {error && (
+        <div className="rounded-md border border-danger-soft bg-danger-soft p-3 text-sm text-danger" role="alert">
+          {error}
+        </div>
+      )}
 
       {/* Stats */}
       <div className="grid gap-4 sm:grid-cols-4">
@@ -321,16 +354,30 @@ export default function AdminOperationsPage() {
       </div>
 
       {/* Create task dialog */}
-      <Dialog open={createOpen} onClose={() => setCreateOpen(false)} title="Create task" cancelLabel="Cancel">
-        <form onSubmit={handleCreateTask} className="space-y-5">
-          <Field label="Task title" required>
+      <Dialog
+        open={createOpen}
+        onClose={closeCreateDialog}
+        title="Create task"
+        footer={
+          <div className="flex items-center justify-end gap-3">
+            <Button type="button" variant="outline" onClick={closeCreateDialog} disabled={createLoading}>
+              Cancel
+            </Button>
+            <Button type="submit" form="create-task-form" disabled={createLoading}>
+              {createLoading ? "Creating…" : "Create task"}
+            </Button>
+          </div>
+        }
+      >
+        <form id="create-task-form" onSubmit={handleCreateTask} className="space-y-5">
+          <Field label="Task title" required error={createErrors.title}>
             <Input
               value={createTitle}
               onChange={(event) => setCreateTitle(event.currentTarget.value)}
               placeholder="e.g. Build a landing page"
             />
           </Field>
-          <Field label="Description / instructions">
+          <Field label="Description / instructions" required error={createErrors.description}>
             <TextareaField
               value={createDescription}
               onValueChange={(v) => setCreateDescription(v)}
@@ -338,10 +385,13 @@ export default function AdminOperationsPage() {
             />
           </Field>
           <div className="grid gap-4 sm:grid-cols-2">
-            <Field label="Programme">
+            <Field label="Programme" required error={createErrors.program_id}>
               <Select
                 value={createProgram}
-                onChange={(event) => setCreateProgram(event.currentTarget.value)}
+                onChange={(event) => {
+                  setCreateProgram(event.currentTarget.value);
+                  setCreateAssignedTo([]);
+                }}
                 className="w-full"
               >
                 <option value="">Select programme</option>
@@ -350,16 +400,16 @@ export default function AdminOperationsPage() {
                 ))}
               </Select>
             </Field>
-            <Field label="Due date">
+            <Field label="Due date" required error={createErrors.due_date}>
               <Input type="date" value={createDueDate} onChange={(event) => setCreateDueDate(event.currentTarget.value)} />
             </Field>
           </div>
-          <Field label="Assign to participant(s)" required>
+          <Field label="Assign to participant(s)" required error={createErrors.assigned_to}>
             <ParticipantSelector
-              participants={participants as any[]}
+              participants={participants}
               profilesByUserId={profilesByUserId}
               value={createAssignedTo}
-              onChange={(ids) => setCreateAssignedTo(ids)}
+              onChange={setCreateAssignedTo}
               programFilter={createProgram || undefined}
               disabled={!createProgram || loading}
             />
@@ -368,25 +418,12 @@ export default function AdminOperationsPage() {
                 Select a programme first to see eligible participants.
               </p>
             )}
-            {createProgram && createAssignedTo.length === 0 && !loading && (
-              <p className="type-caption mt-1 text-ink-secondary">
-                No participants found for this programme.
-              </p>
-            )}
           </Field>
           {createError && (
             <div className="rounded-md border border-danger-soft bg-danger-soft p-3 text-danger text-sm">
               {createError}
             </div>
           )}
-          <div className="flex items-center justify-end gap-3 pt-4">
-            <Button type="button" variant="outline" onClick={() => setCreateOpen(false)}>
-              Cancel
-            </Button>
-            <Button type="submit" disabled={createLoading || !createTitle || !createProgram || !createAssignedTo || !createDueDate}>
-              {createLoading ? "Creating…" : "Create task"}
-            </Button>
-          </div>
         </form>
       </Dialog>
 
@@ -404,4 +441,10 @@ function TextareaField({ value, onValueChange, placeholder }: { value: string; o
       rows={4}
     />
   );
+}
+
+function formatTaskCreateError(error: ApiClientError, fieldErrors: Record<string, string>): string | null {
+  if (Object.keys(fieldErrors).length > 0) return "Please correct the highlighted fields.";
+  if (error.message && error.message !== "Validation failed") return error.message;
+  return "The task could not be created. Please review the highlighted fields and try again.";
 }

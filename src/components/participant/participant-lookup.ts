@@ -1,18 +1,13 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import Link from "next/link";
-
 import { useAuth } from "@/lib/api/auth";
 import { communityApi } from "@/lib/api/client";
 import { type AdminParticipantItem } from "@/lib/api/types";
-import { normalizeParticipant, participantValue, type NormalizedParticipant } from "@/lib/participant";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/field";
-import { Search, User, Clock, Mail, ChevronDown, X, CheckCircle2 } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { normalizeParticipant, participantValue } from "@/lib/participant";
 
 export interface ParticipantLookupEntry {
+  id?: string;
   full_name: string | null;
   email: string | null;
   role: string | null;
@@ -60,6 +55,7 @@ export function useParticipantLookup(): UseParticipantLookupReturn {
       if (res.ok && Array.isArray(res.data)) {
         setProfiles(
           res.data.map((p) => ({
+            id: p.id,
             full_name: p.full_name ?? null,
             email: p.email ?? null,
             role: p.role ?? null,
@@ -76,13 +72,15 @@ export function useParticipantLookup(): UseParticipantLookupReturn {
   }, [accessToken, isAuthenticated, isAdmin]);
 
   useEffect(() => {
-    loadProfiles();
+    // Defer the asynchronous lookup until after this render commits.
+    const timeoutId = window.setTimeout(() => void loadProfiles(), 0);
+    return () => window.clearTimeout(timeoutId);
   }, [loadProfiles]);
 
   const profilesByUserId = useMemo(() => {
     const map = new Map<string, ParticipantLookupEntry>();
     for (const p of profiles) {
-      if (p.email) map.set(p.email, p);
+      if (p.id) map.set(p.id, p);
     }
     return map;
   }, [profiles]);
@@ -104,18 +102,21 @@ export function buildSelectorOptions(
   participants: AdminParticipantItem[],
   profilesByUserId: Map<string, ParticipantLookupEntry>,
 ): ParticipantSelectorOption[] {
-  const seen = new Set<string>();
+  const seenMemberships = new Set<string>();
   const options: ParticipantSelectorOption[] = [];
 
   for (const p of participants) {
-    if (seen.has(p.user_id)) continue;
-    seen.add(p.user_id);
+    // A person may legitimately be active in more than one programme. Keep
+    // each membership so filtering by programme never drops the matching row.
+    const membershipKey = `${p.program_id}|${p.user_id}`;
+    if (seenMemberships.has(membershipKey)) continue;
+    seenMemberships.add(membershipKey);
 
     const np = normalizeParticipant(
       {
         ...p,
-        full_name: (p as any).full_name ?? undefined,
-        email: (p as any).email ?? undefined,
+        full_name: p.full_name ?? undefined,
+        email: p.email ?? undefined,
         profiles: p.profiles ?? undefined,
         programs: p.programs
           ? { name: p.programs.name ?? null, slug: p.programs.slug ?? null }
@@ -125,7 +126,10 @@ export function buildSelectorOptions(
     );
 
     options.push({
-      id: p.id,
+      // Task assignments reference auth.users.id, not participants.id. The
+      // latter is only a programme-membership row and causes backend UUID
+      // validation/eligibility failures when submitted as assigned_to.
+      id: p.user_id,
       userId: p.user_id,
       name: np.displayName || "Not provided",
       email: np.email || "No email",

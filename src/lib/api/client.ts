@@ -417,7 +417,7 @@ export class CommunityApiClient {
       programId?: string;
       status?: string;
     }
-  ): Promise<ApiResult<PaginatedResponse<ParticipantRecord>>> {
+  ): Promise<ApiResult<PaginatedResponse<AdminParticipantItem>>> {
     const searchParams = new URLSearchParams();
     if (params?.page) searchParams.set("page", String(params.page));
     if (params?.pageSize) searchParams.set("pageSize", String(params.pageSize));
@@ -426,7 +426,7 @@ export class CommunityApiClient {
     if (params?.status) searchParams.set("status", params.status);
 
     const path = `/api/v1/admin/participants${searchParams.toString() ? `?${searchParams.toString()}` : ""}`;
-    return this.get<PaginatedResponse<ParticipantRecord>>(path, authToken);
+    return this.get<PaginatedResponse<AdminParticipantItem>>(path, authToken);
   }
 
   async getAdminReferrals(
@@ -458,12 +458,12 @@ export class CommunityApiClient {
       title: string;
       description: string;
       program_id: string;
-      assigned_to: string | string[];
+      assigned_to: string[];
       due_date: string;
       status?: string;
     }
-  ): Promise<ApiResult<TaskRecord>> {
-    return this.post<TaskRecord>("/api/v1/admin/tasks", body, authToken);
+  ): Promise<ApiResult<TaskRecord | TaskRecord[]>> {
+    return this.post<TaskRecord | TaskRecord[]>("/api/v1/admin/tasks", body, authToken);
   }
 
   async getAdminPrograms(

@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Search, X, ChevronDown, CheckCircle2 } from "lucide-react";
 
 import {
@@ -31,7 +31,6 @@ export function ParticipantSelector({
 }: ParticipantSelectorProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [search, setSearch] = useState("");
-  const [selectedIds, setSelectedIds] = useState<string[]>(value);
   const inputRef = useRef<HTMLInputElement>(null);
   const listRef = useRef<HTMLDivElement>(null);
 
@@ -43,6 +42,7 @@ export function ParticipantSelector({
     const q = search.toLowerCase().trim();
     return options.filter((opt) => {
       if (programFilter && opt.programId !== programFilter) return false;
+      if (opt.status !== "active") return false;
       if (!q) return true;
       return (
         opt.name.toLowerCase().includes(q) ||
@@ -53,9 +53,9 @@ export function ParticipantSelector({
   }, [options, search, programFilter]);
 
   const selectedOptions = useMemo(() => {
-    const selectedSet = new Set(selectedIds);
+    const selectedSet = new Set(value);
     return options.filter((opt) => selectedSet.has(opt.id));
-  }, [options, selectedIds]);
+  }, [options, value]);
 
   const handleToggle = () => {
     if (disabled) return;
@@ -63,18 +63,13 @@ export function ParticipantSelector({
   };
 
   const handleSelect = (id: string) => {
-    setSelectedIds((prev) => {
-      if (prev.includes(id)) {
-        return prev.filter((pid) => pid !== id);
-      }
-      return [...prev, id];
-    });
+    onChange(value.includes(id) ? value.filter((participantId) => participantId !== id) : [...value, id]);
     setIsOpen(false);
     if (inputRef.current) inputRef.current.focus();
   };
 
   const handleRemove = (id: string) => {
-    setSelectedIds((prev) => prev.filter((pid) => pid !== id));
+    onChange(value.filter((participantId) => participantId !== id));
   };
 
   const handleSearchChange = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -82,13 +77,9 @@ export function ParticipantSelector({
   };
 
   const handleClear = () => {
-    setSelectedIds([]);
+    onChange([]);
     setSearch("");
   };
-
-  useEffect(() => {
-    setSelectedIds(value);
-  }, [value]);
 
   // Close on outside click
   useEffect(() => {
@@ -106,21 +97,25 @@ export function ParticipantSelector({
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  useEffect(() => {
-    onChange(selectedIds);
-  }, [selectedIds, onChange]);
-
   const placeholderText = disabled
     ? "Select a programme first"
-    : selectedIds.length === 0
+    : value.length === 0
       ? "Select participants…"
-      : `${selectedIds.length} selected`;
+      : `${value.length} selected`;
 
   return (
     <div className={cn("relative w-full", className)}>
-      <button
+      <div
+        role="button"
+        tabIndex={disabled ? -1 : 0}
+        aria-disabled={disabled}
         onClick={handleToggle}
-        disabled={disabled}
+        onKeyDown={(event) => {
+          if ((event.key === "Enter" || event.key === " ") && !disabled) {
+            event.preventDefault();
+            handleToggle();
+          }
+        }}
         className={cn(
           "w-full flex items-center justify-between gap-2 rounded-lg border border-line bg-surface px-3 py-2.5 text-sm text-ink placeholder:text-ink-muted focus:outline-none focus:ring-2 focus:ring-emerald transition-colors",
           isOpen && "border-emerald bg-surface/50",
@@ -139,6 +134,7 @@ export function ParticipantSelector({
                 >
                   <span className="truncate max-w-[120px]">{opt.name}</span>
                   <button
+                    type="button"
                     onClick={(e) => {
                       e.stopPropagation();
                       handleRemove(opt.id);
@@ -150,9 +146,9 @@ export function ParticipantSelector({
                   </button>
                 </span>
               ))}
-              {selectedOptions.length < selectedIds.length && (
+              {selectedOptions.length < value.length && (
                 <span className="rounded-md border border-line bg-surface-raised px-2 py-1 text-xs text-ink-muted">
-                  +{selectedIds.length - selectedOptions.length} more
+                  +{value.length - selectedOptions.length} more
                 </span>
               )}
             </div>
@@ -166,7 +162,7 @@ export function ParticipantSelector({
             isOpen && "rotate-180",
           )}
         />
-      </button>
+      </div>
 
       {isOpen && (
         <div
@@ -187,6 +183,7 @@ export function ParticipantSelector({
             />
             {search && (
               <button
+                type="button"
                 onClick={() => setSearch("")}
                 className="rounded-md hover:bg-surface-raised p-1 text-ink-muted"
               >
@@ -205,7 +202,7 @@ export function ParticipantSelector({
               role="listbox"
             >
               {filteredOptions.map((opt) => {
-                const isSelected = selectedIds.includes(opt.id);
+                const isSelected = value.includes(opt.id);
                 return (
                   <li
                     key={opt.id}
@@ -261,10 +258,11 @@ export function ParticipantSelector({
           )}
           <div className="border-t border-line bg-surface-raised p-2 text-right">
             <Button
+              type="button"
               variant="outline"
               size="sm"
               onClick={handleClear}
-              disabled={selectedIds.length === 0}
+              disabled={value.length === 0}
             >
               Clear all
             </Button>
