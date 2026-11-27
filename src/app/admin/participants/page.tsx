@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 
 import { useAuth } from "@/lib/api/auth";
@@ -38,15 +38,6 @@ export default function AdminParticipantsPage() {
   const pageRef = useRef(1);
   const [updateLoading, setUpdateLoading] = useState<string | null>(null);
   const [participantStatus, setParticipantStatus] = useState<"active" | "inactive" | "suspended" | "graduated">("active");
-
-  // Resolve participant names/emails from the separately-fetched profiles list,
-  // keyed by user_id, so the directory always shows member information even when
-  // the participants endpoint does not join profile data onto each row.
-  const profileByUserId = useMemo(() => {
-    const map = new Map<string, { full_name: string | null; email: string | null }>();
-    for (const pr of profiles) map.set(pr.id, pr);
-    return map;
-  }, [profiles]);
 
   const loadParticipants = useCallback(async (page = 1) => {
     if (!accessToken) return;
@@ -356,10 +347,10 @@ export default function AdminParticipantsPage() {
                        onClick={() => void openDetail(p)}
                      >
                       <td className="px-4 py-3 text-sm text-ink">
-                        {(profileByUserId.get(p.user_id)?.full_name ?? p.profiles?.full_name) || "—"}
+                        {p.full_name || p.profiles?.full_name || "—"}
                       </td>
                       <td className="px-4 py-3 text-sm text-ink-muted">
-                        {(profileByUserId.get(p.user_id)?.email ?? p.profiles?.email) || "—"}
+                        {p.email || p.profiles?.email || "—"}
                       </td>
                       <td className="px-4 py-3 text-sm text-ink-muted">
                         {p.programs?.name || "—"}
