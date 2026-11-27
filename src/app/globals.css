@@ -74,11 +74,47 @@
   --admin-sidebar-emerald: #07865b;
   --admin-sidebar-shadow: 0 24px 48px -12px rgba(0, 0, 0, 0.5);
 
+  /* Sidebar scrollbar */
+  --admin-sidebar-scrollbar-track: rgba(255, 255, 255, 0.04);
+  --admin-sidebar-scrollbar-thumb: rgba(255, 255, 255, 0.16);
+  --admin-sidebar-scrollbar-thumb-hover: rgba(255, 255, 255, 0.28);
+  --admin-sidebar-scrollbar-width: 6px;
+
   /* Spacing */
   --space-section: 6rem;
   --spacing-home-section: clamp(3.5rem, 5.6vw, 5rem);
   --container-page: 72rem;
   --dashboard-content-padding: 1.5rem;
+}
+
+/* Sidebar scrollbar */
+.sidebar-scrollable {
+  scrollbar-width: thin;
+  scrollbar-color: var(--admin-sidebar-scrollbar-thumb)
+    var(--admin-sidebar-scrollbar-track);
+}
+
+.sidebar-scrollable::-webkit-scrollbar {
+  width: var(--admin-sidebar-scrollbar-width);
+}
+
+.sidebar-scrollable::-webkit-scrollbar-track {
+  background: var(--admin-sidebar-scrollbar-track);
+  border-radius: var(--radius-pill);
+}
+
+.sidebar-scrollable::-webkit-scrollbar-thumb {
+  background: var(--admin-sidebar-scrollbar-thumb);
+  border-radius: var(--radius-pill);
+  border: 2px solid var(--admin-sidebar-bg);
+}
+
+.sidebar-scrollable::-webkit-scrollbar-thumb:hover {
+  background: var(--admin-sidebar-scrollbar-thumb-hover);
+}
+
+.sidebar-scrollable::-webkit-scrollbar-thumb:active {
+  background: var(--admin-sidebar-emerald);
 }
 
 /* ============ DARK THEME TOKENS ============ */

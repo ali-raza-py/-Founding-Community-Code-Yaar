@@ -314,6 +314,7 @@ export const taskCreationSchema = z.object({
   description: z
     .string()
     .trim()
+    .min(1, "Task description is required.")
     .max(2000, "Please keep the description under 2,000 characters."),
   program_id: z
     .string()
@@ -321,9 +322,8 @@ export const taskCreationSchema = z.object({
     .min(1, "Select a programme.")
     .max(200, "Invalid programme selection."),
   assigned_to: z
-    .array(z.string().trim().min(1, "Invalid participant selection."))
-    .min(1, "Select at least one eligible participant.")
-    .max(100, "Too many participants selected."),
+    .string()
+    .uuid('Invalid participant selection.'),
   due_date: z
     .string()
     .trim()

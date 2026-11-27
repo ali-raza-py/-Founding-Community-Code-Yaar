@@ -458,7 +458,7 @@ export class CommunityApiClient {
       title: string;
       description: string;
       program_id: string;
-      assigned_to: string | string[];
+      assigned_to: string;
       due_date: string;
       status?: string;
     }
@@ -516,7 +516,7 @@ export class CommunityApiClient {
       title?: string;
       description?: string;
       program_id?: string;
-      assigned_to?: string | string[];
+      assigned_to?: string;
       due_date?: string | null;
       status?: string;
     }

@@ -14,7 +14,6 @@ import { EmptyState } from "@/components/dashboard/empty-state";
 import { Dialog } from "@/components/dashboard/dialog";
 import { ConfirmationDialog } from "@/components/dashboard/confirmation-dialog";
 import { LoadingState } from "@/components/admin/shared";
-import { ParticipantPicker } from "@/components/admin/participant-picker";
 import {
   taskCreationSchema,
   type TaskCreationInput,
@@ -82,19 +81,19 @@ function isSuccess(result: { success: boolean }): result is { success: true } {
   return result.success === true;
 }
 
-/** Validate that every selected assignee is an active participant in the
- * chosen programme. Sending a stale or cross-programme participant ID would be
- * rejected by the backend as an invalid participant / foreign-key violation,
- * surfacing as a generic task-creation error. */
+/** Validate that the selected assignee is an active participant in the
+ * chosen programme. The database stores a single `assigned_to` user_id per
+ * task, so the form must send one user_id (never an array, never a participant
+ * record id). */
 function assignedToError(
-  assigned_to: string[],
+  assigned_to: string | undefined,
   eligible: ParticipantOption[],
 ): string | null {
-  const invalid = assigned_to.filter(
-    (id) => !eligible.some((p) => p.id === id),
-  );
-  if (invalid.length > 0) {
-    return "Select only eligible participants in the chosen programme.";
+  if (!assigned_to) {
+    return "Select at least one eligible participant.";
+  }
+  if (!eligible.some((p) => p.userId === assigned_to)) {
+    return "Select only an active participant in the chosen programme.";
   }
   return null;
 }
@@ -144,7 +143,7 @@ export default function AdminTasksPage() {
     title: "",
     description: "",
     program_id: "",
-    assigned_to: [],
+    assigned_to: "",
     due_date: "",
     status: "pending",
   };
@@ -629,7 +628,9 @@ export default function AdminTasksPage() {
                                   title: task.title,
                                   description: task.description,
                                   program_id: task.program_id,
-                                  assigned_to: normalizeAssignees(task.assigned_to),
+                                  assigned_to: Array.isArray(task.assigned_to)
+                                    ? task.assigned_to[0] ?? ""
+                                    : task.assigned_to,
                                   due_date: task.due_date ?? "",
                                   status: statusKey,
                                 });
@@ -758,7 +759,7 @@ export default function AdminTasksPage() {
                     setCreateValues({
                       ...createValues,
                       program_id: e.currentTarget.value,
-                      assigned_to: [],
+                      assigned_to: "",
                     });
                   }}
                   required
@@ -770,26 +771,29 @@ export default function AdminTasksPage() {
                 </Select>
               </Field>
               <div className="sm:col-span-2">
-                <ParticipantPicker
-                  label="Assign to"
-                  required
-                  hint="Select one or more active participants in the chosen programme"
-                  error={createErrors.assigned_to}
-                  options={eligibleParticipants}
-                  value={createValues.assigned_to}
-                  onChange={(ids) =>
-                    setCreateValues({ ...createValues, assigned_to: ids })
-                  }
-                  placeholder="Search participants by name or email…"
-                />
+                <Field label="Assign to" required error={createErrors.assigned_to} hint="Select one active participant in the chosen programme">
+                  <Select
+                    value={createValues.assigned_to}
+                    onChange={(e) =>
+                      setCreateValues({ ...createValues, assigned_to: e.currentTarget.value })
+                    }
+                    required
+                  >
+                    <option value="">Select a participant</option>
+                    {eligibleParticipants.map((p) => (
+                      <option key={p.userId} value={p.userId}>
+                        {p.name} — {p.email}
+                      </option>
+                    ))}
+                  </Select>
+                </Field>
                 {createErrors.assigned_to && (
                   <p className="mt-1 text-[0.8125rem] text-danger font-medium" role="alert">
                     {createErrors.assigned_to}
                   </p>
                 )}
                 <p className="type-caption mt-2 text-ink-secondary">
-                  {eligibleParticipants.length} eligible active participant{eligibleParticipants.length !== 1 ? "s" : ""} in this programme ·{" "}
-                  {createValues.assigned_to.length} selected
+                  {eligibleParticipants.length} eligible active participant{eligibleParticipants.length !== 1 ? "s" : ""} in this programme
                 </p>
               </div>
             </div>
@@ -929,7 +933,7 @@ export default function AdminTasksPage() {
                 setEditValues({
                   ...editValues!,
                   program_id: e.currentTarget.value,
-                  assigned_to: [],
+                  assigned_to: "",
                 })
               }
               required
@@ -940,17 +944,22 @@ export default function AdminTasksPage() {
               ))}
             </Select>
           </Field>
-          <ParticipantPicker
-            label="Reassign to"
-            required
-            hint="Select one or more active participants in the chosen programme"
-            error={editErrors.assigned_to}
-            options={eligibleParticipants}
-            value={editValues?.assigned_to ?? []}
-            onChange={(ids) =>
-              setEditValues({ ...editValues!, assigned_to: ids })
-            }
-          />
+          <Field label="Reassign to" required error={editErrors.assigned_to} hint="Select one active participant in the chosen programme">
+            <Select
+              value={editValues?.assigned_to ?? ""}
+              onChange={(e) =>
+                setEditValues({ ...editValues!, assigned_to: e.currentTarget.value })
+              }
+              required
+            >
+              <option value="">Select a participant</option>
+              {eligibleParticipants.map((p) => (
+                <option key={p.userId} value={p.userId}>
+                  {p.name} — {p.email}
+                </option>
+              ))}
+            </Select>
+          </Field>
           <Field label="Deadline" required error={editErrors.due_date}>
             <Input
               type="date"
