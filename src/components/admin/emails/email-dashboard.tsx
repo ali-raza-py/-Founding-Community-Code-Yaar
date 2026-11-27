@@ -5,9 +5,9 @@ import { Activity, Mail, Percent, TrendingUp, AlertCircle } from "lucide-react";
 
 import { useAuth } from "@/lib/api/auth";
 import { communityApi } from "@/lib/api/client";
-import { Button } from "@/components/ui/button";
 import { SectionHeading } from "@/components/ui/section-heading";
 import { StatCard } from "@/components/admin/shared";
+import { ErrorState } from "@/components/admin/shared";
 import { type EmailStats } from "@/lib/api/types";
 import { Skeleton, SkeletonText } from "./skeleton";
 
@@ -187,11 +187,7 @@ export function EmailDashboard({ refresh }: EmailDashboardProps) {
     );
   }
 
-  // The email backend endpoints do not exist yet. Be honest about it instead
-  // of rendering made-up statistics.
   if (error) {
-    const unavailable =
-      error.reason === "not-configured" || error.reason === "not-found";
     return (
       <div className="rounded-xl border border-line bg-surface p-6 sm:p-8">
         <SectionHeading
@@ -200,26 +196,10 @@ export function EmailDashboard({ refresh }: EmailDashboardProps) {
           description="Summary metrics from the email provider."
           tag="h2"
         />
-        <div className="mt-8 rounded-xl border border-destructive bg-danger-soft p-6">
-          <div className="flex gap-3">
-            <AlertCircle className="size-5 text-danger shrink-0" />
-            <div>
-              <p className="font-semibold text-danger">Email statistics unavailable</p>
-              <p className="type-caption mt-1 text-ink-muted">
-                {unavailable
-                  ? "The email management endpoints have not been implemented in the Founding Community API yet. Statistics will appear here once the backend email endpoints are deployed."
-                  : error.message}
-              </p>
-            </div>
-          </div>
-        </div>
-        {unavailable && refresh && (
-          <div className="mt-6">
-            <Button onClick={refresh} size="sm">
-              Refresh statistics
-            </Button>
-          </div>
-        )}
+        <ErrorState
+          message={error.message || "Failed to load email statistics."}
+          onRetry={() => void loadStats()}
+        />
       </div>
     );
   }

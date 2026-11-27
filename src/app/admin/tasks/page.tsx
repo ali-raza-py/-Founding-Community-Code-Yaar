@@ -13,7 +13,8 @@ import { cn } from "@/lib/utils";
 
 type ParticipantOption = {
   id: string;
-  participantRecordId?: string;
+  participantRecordId: string;
+  userId: string;
   name: string;
   email: string;
   programId: string;
@@ -50,12 +51,39 @@ export default function AdminTasksPage() {
   const [filterStatus, setFilterStatus] = useState("");
   const [search, setSearch] = useState("");
 
-  // Resolve each task's assigned_to (participant id) to a readable name/email.
+  // Resolve each task's assigned_to (participant record id) to readable
+  // names/emails. Tasks may be assigned to one or several participants.
   const participantById = useMemo(() => {
     const map = new Map<string, ParticipantOption>();
     for (const p of participants) map.set(p.id, p);
     return map;
   }, [participants]);
+
+  // Fallback lookup by auth user_id, in case the backend returns user ids
+  // instead of participant record ids on existing task rows.
+  const participantByUserId = useMemo(() => {
+    const map = new Map<string, ParticipantOption>();
+    for (const p of participants) map.set(p.userId, p);
+    return map;
+  }, [participants]);
+
+  function normalizeAssignees(assigned_to: string | string[] | undefined): string[] {
+    if (!assigned_to) return [];
+    return Array.isArray(assigned_to) ? assigned_to : [assigned_to];
+  }
+
+  function resolveAssignees(assigned_to: string | string[] | undefined): Array<{
+    name: string;
+    email: string;
+  }> {
+    const ids = Array.isArray(assigned_to) ? assigned_to : assigned_to ? [assigned_to] : [];
+    const resolved: Array<{ name: string; email: string }> = [];
+    for (const id of ids) {
+      const p = participantById.get(id) ?? participantByUserId.get(id);
+      if (p) resolved.push({ name: p.name, email: p.email });
+    }
+    return resolved;
+  }
 
   const load = useCallback(async () => {
     if (!accessToken) return;
@@ -71,24 +99,26 @@ export default function AdminTasksPage() {
           const list = r.data.items as Array<{
             id: string; user_id: string; program_id: string; participant_status?: string;
           }>;
-          // Profiles are fetched separately to resolve names without assuming
-          // the participants endpoint joins them.
+          setParticipants(list.map((p) => ({
+            id: p.id,
+            participantRecordId: p.id,
+            userId: p.user_id,
+            name: "Unknown participant",
+            email: "",
+            programId: p.program_id,
+            status: p.participant_status,
+          })));
+          // Overlay profile names/emails when available (non-blocking).
           return communityApi.getAdminProfiles(accessToken).then((pr) => {
             if (!pr.ok || !pr.data) return;
             const profiles = pr.data as AdminProfile[];
             const profileByUserId = new Map(profiles.map((prf) => [prf.id, prf]));
-           const options = list.map((p) => {
-             const profile = profileByUserId.get(p.user_id);
-             return {
-               id: p.user_id,
-               participantRecordId: p.id,
-               name: profile?.full_name ?? "Unknown participant",
-               email: profile?.email ?? "",
-               programId: p.program_id,
-               status: p.participant_status,
-             };
-           });
-            setParticipants(options);
+            setParticipants((prev) => prev.map((p) => {
+              const profile = profileByUserId.get(p.userId);
+              return profile
+                ? { ...p, name: profile.full_name ?? p.name, email: profile.email ?? p.email }
+                : p;
+            }));
           });
         }),
         communityApi.getAdminTasks(accessToken, {
@@ -118,7 +148,7 @@ export default function AdminTasksPage() {
     title: "",
     description: "",
     program_id: "",
-    assigned_to: "",
+    assigned_to: [] as string[],
     due_date: "",
   } as const;
 
@@ -127,7 +157,7 @@ export default function AdminTasksPage() {
     title: string;
     description: string;
     program_id: string;
-    assigned_to: string;
+    assigned_to: string[];
     due_date: string;
   }>(EMPTY_CREATE);
   const [createError, setCreateError] = useState("");
@@ -146,7 +176,7 @@ export default function AdminTasksPage() {
     title: string;
     description: string;
     program_id: string;
-    assigned_to: string;
+    assigned_to: string[];
     due_date: string;
     status?: TaskStatus;
   } | undefined>(undefined);
@@ -192,12 +222,25 @@ export default function AdminTasksPage() {
     title: string;
     description: string;
     program_id: string;
-    assigned_to: string;
+    assigned_to: string[];
     due_date: string;
   }) => {
     if (!accessToken) return;
+    const fieldErrors: Record<string, string> = {};
+    if (!values.title.trim()) fieldErrors.title = "Title is required.";
+    if (!values.program_id) fieldErrors.program_id = "Select a program.";
+    if (!values.assigned_to || values.assigned_to.length === 0)
+      fieldErrors.assigned_to = "Select at least one participant.";
+    if (!values.due_date) fieldErrors.due_date = "Select a due date.";
+    if (Object.keys(fieldErrors).length > 0) {
+      setCreateError(
+        Object.values(fieldErrors).join(" "),
+      );
+      return;
+    }
+    setCreateError("");
     const res = await communityApi.createAdminTask(accessToken, {
-      title: values.title,
+      title: values.title.trim(),
       description: values.description,
       program_id: values.program_id,
       assigned_to: values.assigned_to,
@@ -218,11 +261,21 @@ export default function AdminTasksPage() {
     description: string;
     due_date: string | null;
     status: TaskStatus;
-    assigned_to: string;
+    assigned_to: string[];
   }) => {
     if (!accessToken) return;
+    const fieldErrors: Record<string, string> = {};
+    if (!values.title.trim()) fieldErrors.title = "Title is required.";
+    if (!values.due_date) fieldErrors.due_date = "Select a due date.";
+    if (!values.assigned_to || values.assigned_to.length === 0)
+      fieldErrors.assigned_to = "Select at least one participant.";
+    if (Object.keys(fieldErrors).length > 0) {
+      setEditError(Object.values(fieldErrors).join(" "));
+      return;
+    }
+    setEditError("");
     const res = await communityApi.updateAdminTask(accessToken, id, {
-      title: values.title,
+      title: values.title.trim(),
       description: values.description,
       due_date: values.due_date,
       status: values.status,
@@ -336,7 +389,7 @@ export default function AdminTasksPage() {
             </thead>
             <tbody>
               {tasks.map((task) => {
-                const assignee = participantById.get(task.assigned_to);
+                const assignees = resolveAssignees(task.assigned_to);
                 const statusKey = (task.status as TaskStatus) ?? "pending";
                 return (
                   <tr key={task.id} className="border-b border-line/50 hover:bg-surface-raised/50 transition-colors">
@@ -347,11 +400,17 @@ export default function AdminTasksPage() {
                       )}
                     </td>
                     <td className="p-4">
-                      {assignee ? (
-                        <>
-                          <div className="font-medium text-ink">{escapeHtml(assignee.name)}</div>
-                          <div className="text-xs text-ink-muted font-mono">{escapeHtml(assignee.email)}</div>
-                        </>
+                      {assignees.length > 0 ? (
+                        <div className="space-y-1">
+                          {assignees.map((a, idx) => (
+                            <div key={idx} className="font-medium text-ink">
+                              {escapeHtml(a.name)}
+                            </div>
+                          ))}
+                          <div className="text-xs text-ink-muted font-mono">
+                            {assignees.map((a) => escapeHtml(a.email)).join(", ")}
+                          </div>
+                        </div>
                       ) : (
                         <div className="text-xs text-ink-muted">Unknown participant</div>
                       )}
@@ -378,7 +437,11 @@ export default function AdminTasksPage() {
                             title: task.title,
                             description: task.description,
                             program_id: task.program_id,
-                            assigned_to: task.assigned_to,
+                            assigned_to: Array.isArray(task.assigned_to)
+                              ? task.assigned_to
+                              : task.assigned_to
+                                ? [task.assigned_to]
+                                : [],
                             due_date: task.due_date ?? "",
                           });
                           setEditError("");
@@ -453,33 +516,41 @@ export default function AdminTasksPage() {
             />
           </Field>
           <Field label="Program" required>
-            <Select
-              value={createValues.program_id}
-              onChange={(e) => {
-                setCreateValues({ ...createValues, program_id: e.currentTarget.value, assigned_to: "" });
-              }}
-              required
-            >
+              <Select
+                value={createValues.program_id}
+                onChange={(e) => {
+                  setCreateValues({ ...createValues, program_id: e.currentTarget.value, assigned_to: [] });
+                }}
+                required
+              >
               <option value="">Select a program</option>
               {programs.map((p) => (
                 <option key={p.id} value={p.id}>{p.name}</option>
               ))}
             </Select>
           </Field>
-          <Field label="Assign to" required hint="Search by name or email within the selected program">
+          <Field label="Assign to" required hint="Select one or more active participants in the selected program">
             <Select
+              multiple
               value={createValues.assigned_to}
-              onChange={(e) => setCreateValues({ ...createValues, assigned_to: e.currentTarget.value })}
+              onChange={(e) => {
+                setCreateValues({
+                  ...createValues,
+                  assigned_to: Array.from(e.currentTarget.selectedOptions, (o) => o.value),
+                });
+              }}
               required
             >
-              <option value="">Select a participant</option>
+              <option value="">Select participants</option>
               {eligibleParticipants.map((p) => (
                 <option key={p.id} value={p.id}>
                   {p.name} — {p.email}
                 </option>
               ))}
               {eligibleParticipants.length === 0 && createValues.program_id && (
-                <option value="" disabled>No eligible participants in this program</option>
+                <option value="" disabled>
+                  No eligible participants in this program
+                </option>
               )}
             </Select>
           </Field>
@@ -543,11 +614,17 @@ export default function AdminTasksPage() {
           </Field>
           <Field label="Reassign to">
             <Select
-              value={editValues?.assigned_to ?? taskForEdit?.assigned_to ?? ""}
-              onChange={(e) => setEditValues({ ...editValues!, assigned_to: e.currentTarget.value })}
+              multiple
+              value={editValues?.assigned_to ?? (taskForEdit ? normalizeAssignees(taskForEdit.assigned_to) : [])}
+              onChange={(e) => {
+                setEditValues({
+                  ...editValues!,
+                  assigned_to: Array.from(e.currentTarget.selectedOptions, (o) => o.value),
+                });
+              }}
             >
               <option value="">Keep current</option>
-              {participants.map((p) => (
+              {eligibleParticipants.map((p) => (
                 <option key={p.id} value={p.id}>{p.name} — {p.email}</option>
               ))}
             </Select>

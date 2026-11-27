@@ -33,6 +33,7 @@ export default function AdminParticipantsPage() {
   const [selectedProgramId, setSelectedProgramId] = useState("");
   const [selectedApplicationId, setSelectedApplicationId] = useState("");
   const [selected, setSelected] = useState<any | null>(null);
+  const [selectedApplication, setSelectedApplication] = useState<any | null>(null);
   const [detailLoading, setDetailLoading] = useState(false);
   const [detailTasks, setDetailTasks] = useState<Array<any>>([]);
   const pageRef = useRef(1);
@@ -105,11 +106,18 @@ export default function AdminParticipantsPage() {
 
   const openDetail = useCallback(async (p: any) => {
     setSelected(p);
+    setSelectedApplication(null);
     setDetailLoading(true);
     setDetailTasks([]);
     try {
-      const res = await communityApi.getAdminTasks(accessToken!, { assignedTo: p.user_id, pageSize: 50 });
-      if (res.ok && res.data) setDetailTasks(res.data.items);
+      const [taskRes, appRes] = await Promise.all([
+        communityApi.getAdminTasks(accessToken!, { assignedTo: p.id, pageSize: 50 }),
+        p.application_id
+          ? communityApi.getAdminApplication(accessToken!, p.application_id)
+          : Promise.resolve({ ok: true, data: null } as any),
+      ]);
+      if (taskRes.ok && taskRes.data) setDetailTasks(taskRes.data.items);
+      if (appRes.ok) setSelectedApplication(appRes.data ?? null);
     } finally {
       setDetailLoading(false);
     }
@@ -148,6 +156,7 @@ export default function AdminParticipantsPage() {
 
   const handleCreateParticipant = useCallback(async (event: React.FormEvent) => {
     event.preventDefault();
+    setError(null);
     if (!selectedUserId || !selectedApplicationId || !selectedProgramId) {
       setError("Please select a user, application, and programme.");
       return;
@@ -354,12 +363,16 @@ export default function AdminParticipantsPage() {
                        className="border-b border-line hover:bg-surface-raised transition-colors cursor-pointer"
                        onClick={() => void openDetail(p)}
                      >
-                      <td className="px-4 py-3 text-sm text-ink">
-                        {p.full_name || p.profiles?.full_name || "—"}
-                      </td>
-                      <td className="px-4 py-3 text-sm text-ink-muted">
-                        {p.email || p.profiles?.email || "—"}
-                      </td>
+                       <td className="px-4 py-3 text-sm text-ink">
+                         {profileByUserId.get(p.user_id)?.full_name ??
+                           p.profiles?.full_name ??
+                           "Not provided"}
+                       </td>
+                       <td className="px-4 py-3 text-sm text-ink-muted">
+                         {profileByUserId.get(p.user_id)?.email ??
+                           p.profiles?.email ??
+                           "Not provided"}
+                       </td>
                       <td className="px-4 py-3 text-sm text-ink-muted">
                         {p.programs?.name || "—"}
                       </td>
@@ -434,11 +447,74 @@ export default function AdminParticipantsPage() {
                 <button onClick={() => setSelected(null)} className="text-ink-muted">✕</button>
               </div>
               <div className="mt-4 space-y-2 text-sm">
-                <p><span className="font-semibold">Name:</span> {selected.full_name ?? profileByUserId.get(selected.user_id)?.full_name ?? selected.profiles?.full_name ?? "—"}</p>
-                <p><span className="font-semibold">Email:</span> {selected.email ?? profileByUserId.get(selected.user_id)?.email ?? selected.profiles?.email ?? "—"}</p>
-                <p><span className="font-semibold">Programme:</span> {selected.program_name ?? selected.programs?.name ?? "—"}</p>
-                <p><span className="font-semibold">Status:</span> {selected.participant_status}</p>
-                <p><span className="font-semibold">Joined:</span> {selected.joined_at ? new Date(selected.joined_at).toLocaleDateString() : "—"}</p>
+                <p>
+                  <span className="font-semibold">Name:</span>{" "}
+                  {profileByUserId.get(selected.user_id)?.full_name ??
+                    selected.profiles?.full_name ??
+                    selectedApplication?.applicant_name ??
+                    "Not provided"}
+                </p>
+                <p>
+                  <span className="font-semibold">Email:</span>{" "}
+                  {profileByUserId.get(selected.user_id)?.email ??
+                    selected.profiles?.email ??
+                    selectedApplication?.email ??
+                    "Not provided"}
+                </p>
+                <p>
+                  <span className="font-semibold">Phone:</span>{" "}
+                  {selectedApplication?.phone ?? "Not provided"}
+                </p>
+                <p>
+                  <span className="font-semibold">Institution:</span>{" "}
+                  {selectedApplication?.institution ?? "Not provided"}
+                </p>
+                <p>
+                  <span className="font-semibold">Country:</span>{" "}
+                  {(selectedApplication?.application_answers as any)?.country ??
+                    "Not provided"}
+                </p>
+                <p>
+                  <span className="font-semibold">City:</span>{" "}
+                  {selectedApplication?.city ?? "Not provided"}
+                </p>
+                <p>
+                  <span className="font-semibold">Education level:</span>{" "}
+                  {(selectedApplication?.application_answers as any)
+                    ?.educationLevel ?? "Not provided"}
+                </p>
+                <p>
+                  <span className="font-semibold">Programme:</span>{" "}
+                  {selected.program_name ?? selected.programs?.name ??
+                    "Not provided"}
+                </p>
+                <p>
+                  <span className="font-semibold">Application status:</span>{" "}
+                  {selectedApplication?.application_status ?? "Not provided"}
+                </p>
+                <p>
+                  <span className="font-semibold">Membership status:</span>{" "}
+                  {selected.participant_status}
+                </p>
+                <p>
+                  <span className="font-semibold">Applied:</span>{" "}
+                  {selectedApplication?.created_at
+                    ? new Date(selectedApplication.created_at).toLocaleDateString()
+                    : "Not provided"}
+                </p>
+                <p>
+                  <span className="font-semibold">Joined:</span>{" "}
+                  {selected.joined_at
+                    ? new Date(selected.joined_at).toLocaleDateString()
+                    : "Not provided"}
+                </p>
+                {selectedApplication?.referral_code && (
+                  <p>
+                    <span className="font-semibold">Referred by:</span>{" "}
+                    {selectedApplication.referred_by_ambassador_name ??
+                    selectedApplication.referral_code}
+                  </p>
+                )}
               </div>
               <div className="mt-4 flex flex-wrap gap-2">
                 {(["active", "inactive", "suspended", "graduated"] as const).map((s) => (

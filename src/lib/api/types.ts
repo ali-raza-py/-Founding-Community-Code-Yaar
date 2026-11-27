@@ -138,7 +138,7 @@ export interface TaskRecord {
   title: string;
   description: string;
   program_id: string;
-  assigned_to: string;
+  assigned_to: string | string[];
   due_date: string | null;
   status: string;
   created_at: string;
@@ -246,7 +246,7 @@ export interface AdminTaskItem {
   title: string;
   description: string;
   program_id: string;
-  assigned_to: string;
+  assigned_to: string | string[];
   due_date: string | null;
   status: string;
   created_at: string;

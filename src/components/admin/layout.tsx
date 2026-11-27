@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useMemo, useState } from "react";
@@ -49,11 +50,7 @@ const MANAGEMENT_NAV: NavItem[] = [
     icon: BarChart3,
     roles: ["super_admin"],
   },
-  {
-    href: "/admin/mail",
-    label: "Mail",
-    icon: Mail,
-  },
+  { href: "/admin/mail", label: "Mail", icon: Mail },
 ] as const;
 
 const SYSTEM_NAV: NavItem[] = [
@@ -81,12 +78,9 @@ export function AdminLayout({ children }: AdminLayoutProps) {
       return item.roles.includes("super_admin") ? isSuperAdmin : true;
     };
     return [
-      { section: "MAIN", items: MAIN_NAV.filter(visible) },
-      {
-        section: "MANAGEMENT",
-        items: MANAGEMENT_NAV.filter(visible),
-      },
-      { section: "SYSTEM", items: SYSTEM_NAV.filter(visible) },
+      { section: "Main", items: MAIN_NAV.filter(visible) },
+      { section: "Management", items: MANAGEMENT_NAV.filter(visible) },
+      { section: "System", items: SYSTEM_NAV.filter(visible) },
     ];
   }, [isAdmin, isSuperAdmin]);
 
@@ -113,30 +107,38 @@ export function AdminLayout({ children }: AdminLayoutProps) {
   }
 
   return (
-    <div className="flex h-screen bg-surface">
+    <div className="flex h-screen bg-canvas">
       {/* Mobile overlay */}
       {!sidebarCollapsed && isSidebarOpen && (
-        <div className="lg:hidden fixed inset-0 z-40 bg-ink/60 backdrop-blur-sm" onClick={() => setSidebarCollapsed(true)} />
+        <div className="lg:hidden fixed inset-0 z-40 bg-ink/50 backdrop-blur-sm" onClick={() => setSidebarCollapsed(true)} />
       )}
 
-      {/* Sidebar */}
+      {/* Glass sidebar */}
       <aside
         className={cn(
-          "fixed left-0 top-0 h-screen z-30 flex-col border-r border-line transition-all duration-300",
-          sidebarCollapsed || !isSidebarOpen
-            ? "w-20 -translate-x-full lg:translate-x-0"
-            : "w-72",
+          "fixed inset-y-0 left-0 z-30 w-72 flex-col border-r border-line transition-all duration-300 bg-surface/80 backdrop-blur-md",
+          sidebarCollapsed || !isSidebarOpen ? "-translate-x-full lg:translate-x-0" : "",
         )}
       >
-        <div className="flex items-center justify-between h-12 px-4 border-b border-line bg-surface">
-          <div className="flex items-center gap-2">
-            <div className="h-6 w-6 rounded-md bg-emerald flex items-center justify-center">
-              <span className="text-[10px] font-bold text-white">CY</span>
-            </div>
+        {/* Brand header */}
+        <div className="flex items-center justify-between h-16 px-4 border-b border-line bg-surface/60">
+          <Link
+            href="/admin"
+            className="flex items-center gap-2.5 group"
+          >
+            <Image
+              src="/brand/logo-mark.png"
+              alt=""
+              width={20}
+              height={20}
+              className="size-5 group-hover:scale-110 transition-transform duration-200"
+            />
             {!sidebarCollapsed && isSidebarOpen && (
-              <span className="font-semibold text-ink text-sm whitespace-nowrap">Code Yaar</span>
+              <span className="font-semibold text-ink text-sm tracking-tight whitespace-nowrap group-hover:text-emerald transition-colors">
+                Code Yaar Admin
+              </span>
             )}
-          </div>
+          </Link>
           <button
             onClick={() => setSidebarCollapsed((prev) => !prev)}
             className="p-2 text-ink-muted hover:text-emerald hover:bg-surface-raised rounded-md transition-colors"
@@ -150,9 +152,10 @@ export function AdminLayout({ children }: AdminLayoutProps) {
           </button>
         </div>
 
+        {/* Navigation */}
         <nav className="flex-1 overflow-y-auto p-3 space-y-1">
           {allNavItems.map((section) => (
-            <div key={section.section} className="mb-4">
+            <div key={section.section} className="mb-3">
               <h3 className="px-3 py-2 text-[0.7rem] font-semibold text-ink-muted tracking-wider uppercase">
                 {section.section}
               </h3>
@@ -168,9 +171,9 @@ export function AdminLayout({ children }: AdminLayoutProps) {
                       if (!isSidebarOpen) setSidebarCollapsed(true);
                     }}
                     className={cn(
-                      "flex items-center gap-3 rounded-md px-3 py-2.5 text-sm font-medium transition-colors whitespace-nowrap",
+                      "flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-colors whitespace-nowrap",
                       isActive
-                        ? "bg-emerald-soft text-emerald border-r-2 border-emerald"
+                        ? "bg-emerald-soft text-emerald shadow-sm"
                         : "text-ink-muted hover:bg-surface-raised hover:text-emerald",
                     )}
                   >
@@ -185,7 +188,8 @@ export function AdminLayout({ children }: AdminLayoutProps) {
           ))}
         </nav>
 
-        <div className="p-3 border-t border-line">
+        {/* Footer - sign out */}
+        <div className="p-3 border-t border-line bg-surface/60">
           <Button
             onClick={signOut}
             variant="outline"
@@ -199,16 +203,25 @@ export function AdminLayout({ children }: AdminLayoutProps) {
       </aside>
 
       {/* Main content */}
-      <div className={cn("flex-1 overflow-y-auto bg-surface transition-all duration-300", sidebarCollapsed || !isSidebarOpen ? "lg:pl-0" : "lg:pl-72")}>
-        {/* Compact header */}
-        <header className="sticky top-0 z-20 h-12 border-b border-line bg-surface/95 backdrop-blur-md flex items-center justify-between px-6 lg:px-8">
+      <div className={cn("flex-1 overflow-y-auto bg-canvas transition-all duration-300", sidebarCollapsed || !isSidebarOpen ? "lg:pl-0" : "lg:pl-72")}>
+        {/* Header */}
+        <header className="sticky top-0 z-20 h-16 border-b border-line bg-surface/80 backdrop-blur-md flex items-center justify-between px-6 lg:px-8">
           <div className="flex items-center gap-3">
-            <div className="h-6 w-6 rounded-md bg-emerald flex items-center justify-center">
-              <span className="text-[10px] font-bold text-white">CY</span>
-            </div>
-            <h1 className="font-semibold text-ink text-sm whitespace-nowrap">
-              {activeItem?.label ?? "Admin"}
-            </h1>
+            <Link
+              href="/admin"
+              className="flex items-center gap-2"
+            >
+              <Image
+                src="/brand/logo-mark.png"
+                alt=""
+                width={18}
+                height={18}
+                className="size-4"
+              />
+              <h1 className="font-semibold text-ink text-sm whitespace-nowrap">
+                {activeItem?.label ?? "Admin"}
+              </h1>
+            </Link>
           </div>
           <div className="flex items-center gap-3">
             <span className="hidden lg:inline whitespace-nowrap text-[0.75rem] text-ink-muted">
@@ -216,7 +229,7 @@ export function AdminLayout({ children }: AdminLayoutProps) {
             </span>
             <span
               className={cn(
-                "inline-flex items-center rounded-full border px-2 py-1 text-xs font-semibold shadow-sm transition-colors",
+                "inline-flex items-center rounded-full border px-2.5 py-1 text-xs font-semibold shadow-sm transition-colors",
                 isSuperAdmin
                   ? "border-emerald bg-emerald text-white"
                   : "border-line bg-surface-raised text-ink-muted",

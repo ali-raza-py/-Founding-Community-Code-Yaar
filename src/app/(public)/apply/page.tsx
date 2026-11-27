@@ -14,6 +14,7 @@ import { Button } from "@/components/ui/button";
 import { Field, Input, Select, Textarea } from "@/components/ui/field";
 import { Section, SectionInner } from "@/components/ui/section";
 import { cn } from "@/lib/utils";
+import { TurnstileWidget } from "@/components/TurnstileWidget";
 
 const STEP_SCHEMAS = {
   1: personalInformationSchema,
@@ -49,10 +50,7 @@ export default function ApplyPage() {
 
   const submissionIdRef = useRef<string>(crypto.randomUUID());
   const saveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const turnstileWidgetRef = useRef<number | null>(null);
-  const [turnstileContainer, setTurnstileContainer] = useState<HTMLDivElement | null>(null);
   const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
-  const [turnstileReady, setTurnstileReady] = useState(false);
   const [saveStatus, setSaveStatus] = useState<"idle" | "saving" | "saved" | "error">("idle");
 
   const programId = typeof window !== "undefined"
@@ -62,62 +60,20 @@ export default function ApplyPage() {
     ? (process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY ?? "")
     : "";
 
-  // Load Turnstile script on mount.
-  useEffect(() => {
-    if (!turnstileSiteKey || typeof window === "undefined") return;
-    const scriptId = "codeyaar-turnstile";
-    const existing = document.getElementById(scriptId);
-    if (existing) {
-      setTimeout(() => setTurnstileReady(true), 0);
-      return;
-    }
-    const script = document.createElement("script");
-    script.id = scriptId;
-    script.src = "https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit";
-    script.async = true;
-    script.defer = true;
-    script.onload = () => setTurnstileReady(true);
-    script.onerror = () => setTurnstileReady(false);
-    document.head.appendChild(script);
-  }, [turnstileSiteKey]);
-
-  // Render Turnstile widget when ready.
-  useEffect(() => {
-    if (!turnstileContainer || !turnstileReady || !turnstileSiteKey || typeof window === "undefined") return;
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const turnstile = (window as any).turnstile;
-    if (!turnstile) return;
-    const widgetId = turnstile.render(turnstileContainer, {
-      sitekey: turnstileSiteKey,
-      callback: (token: string) => {
-        setTurnstileToken(token);
-      },
-      "expired-callback": () => {
-        setTurnstileToken(null);
-      },
-    });
-    turnstileWidgetRef.current = widgetId;
-    return () => {
-      try {
-        turnstile.remove(widgetId);
-      } catch {
-        // Ignore cleanup errors
-      }
-    };
-  }, [turnstileContainer, turnstileReady, turnstileSiteKey]);
-
   // Reset the Turnstile widget and clear any held token so the next attempt
   // requires a fresh challenge (Turnstile tokens are single-use and expire).
   const resetTurnstile = useCallback(() => {
-    const turnstile = (window as any).turnstile;
-    if (turnstile && turnstileWidgetRef.current != null) {
-      try {
-        turnstile.reset(turnstileWidgetRef.current);
-      } catch {
-        // Ignore reset failures; the token is cleared regardless.
-      }
-    }
     setTurnstileToken(null);
+  }, []);
+
+  const handleTurnstileVerify = useCallback((token: string) => {
+    setTurnstileToken(token);
+    setSubmitError(null);
+  }, []);
+
+  const handleTurnstileError = useCallback((message: string) => {
+    setTurnstileToken(null);
+    setSubmitError(message);
   }, []);
 
   // Load saved draft on mount so applicants can resume where they left off.
@@ -354,8 +310,17 @@ export default function ApplyPage() {
             } else if (err.reason === "bot-verification") {
               message = err.message;
             } else if (err.reason === "validation") {
-              message =
-                `Validation error: ${err.message}. Please check your entries and try again.`;
+              if (err.details) {
+                const fieldMessages = Object.entries(err.details)
+                  .map(([field, msgs]) => `${field}: ${msgs.join(", ")}`)
+                  .join("; ");
+                message = fieldMessages
+                  ? `Validation error: ${fieldMessages}`
+                  : `Validation error: ${err.message}. Please check your entries.`;
+              } else {
+                message =
+                  `Validation error: ${err.message}. Please check your entries and try again.`;
+              }
             } else if (err.reason === "rate-limited") {
               message =
                 "Too many submission attempts. Please wait a moment and try again.";
@@ -376,6 +341,11 @@ export default function ApplyPage() {
                   : "rejected";
             setStatus({ state: "error", reason: legacyReason, status: err.status });
           }
+      } else {
+        setSubmitError(
+          "Application submission is not configured — please contact the Code Yaar team.",
+        );
+        setStatus({ state: "error", reason: "not-configured" });
       }
     },
     [
@@ -851,12 +821,12 @@ export default function ApplyPage() {
                       environment and redeploy.
                     </p>
                   </div>
-                ) : turnstileReady ? (
+                ) : (
                   <>
-                    <div
-                      ref={setTurnstileContainer}
-                      className="mb-4"
-                      aria-label="Turnstile bot protection"
+                    <TurnstileWidget
+                      onVerify={handleTurnstileVerify}
+                      onError={handleTurnstileError}
+                      disabled={!turnstileSiteKey}
                     />
                     {!turnstileToken && (
                       <p className="mb-2 type-caption text-ink-muted">
@@ -865,11 +835,6 @@ export default function ApplyPage() {
                       </p>
                     )}
                   </>
-                ) : (
-                  <p className="mb-2 type-caption text-ink-muted">
-                    Security verification is loading. Please wait before
-                    submitting.
-                  </p>
                 )}
                 <button
                   type="submit"
