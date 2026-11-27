@@ -2,17 +2,16 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 
 import { useAuth } from "@/lib/api/auth";
 import { communityApi } from "@/lib/api/client";
 import { Button } from "@/components/ui/button";
 import { Field, Input, Select } from "@/components/ui/field";
 import { DashboardPageHeader } from "@/components/dashboard/page-header";
-import { Breadcrumb } from "@/components/dashboard/page-header";
 import { StatisticCard } from "@/components/dashboard/statistic-card";
 import { StatusBadge } from "@/components/dashboard/status-badge";
 import { EmptyState } from "@/components/dashboard/empty-state";
-import { ConfirmationDialog } from "@/components/dashboard/confirmation-dialog";
 import {
   ErrorState,
   LoadingState,
@@ -23,6 +22,7 @@ import { normalizeParticipant, participantValue } from "@/lib/participant";
 
 export default function AdminParticipantsPage() {
   const { accessToken, isAuthenticated, isLoading, isAdmin } = useAuth();
+  const router = useRouter();
   const [participants, setParticipants] = useState<Array<any>>([]);
   const [meta, setMeta] = useState<any>(null);
   const [loading, setLoading] = useState(true);
@@ -36,10 +36,6 @@ export default function AdminParticipantsPage() {
   const [selectedUserId, setSelectedUserId] = useState("");
   const [selectedProgramId, setSelectedProgramId] = useState("");
   const [selectedApplicationId, setSelectedApplicationId] = useState("");
-  const [selected, setSelected] = useState<any | null>(null);
-  const [selectedApplication, setSelectedApplication] = useState<any | null>(null);
-  const [detailLoading, setDetailLoading] = useState(false);
-  const [detailTasks, setDetailTasks] = useState<Array<any>>([]);
   const pageRef = useRef(1);
   const [updateLoading, setUpdateLoading] = useState<string | null>(null);
   const [participantStatus, setParticipantStatus] = useState<"active" | "inactive" | "suspended" | "graduated">("active");
@@ -118,11 +114,10 @@ export default function AdminParticipantsPage() {
       setParticipants((prev) =>
         prev.map((p) => (p.id === id ? { ...p, participant_status: status } : p)),
       );
-      if (selected?.id === id) setSelected((prev: any) => ({ ...prev, participant_status: status }));
     } else {
       setError(res.error.message);
     }
-  }, [accessToken, selected]);
+  }, [accessToken]);
 
   const requestStatusChange = useCallback((id: string, status: "active" | "inactive" | "suspended" | "graduated") => {
     setPendingParticipantStatus((prev) => ({ ...prev, [id]: status }));
@@ -130,25 +125,6 @@ export default function AdminParticipantsPage() {
     setConfirmStatus(status);
     setConfirmOpen(true);
   }, []);
-
-  const openDetail = useCallback(async (p: any) => {
-    setSelected(p);
-    setSelectedApplication(null);
-    setDetailLoading(true);
-    setDetailTasks([]);
-    try {
-      const [taskRes, appRes] = await Promise.all([
-        communityApi.getAdminTasks(accessToken!, { assignedTo: p.id, pageSize: 50 }),
-        p.application_id
-          ? communityApi.getAdminApplication(accessToken!, p.application_id)
-          : Promise.resolve({ ok: true, data: null } as any),
-      ]);
-      if (taskRes.ok && taskRes.data) setDetailTasks(taskRes.data.items);
-      if (appRes.ok) setSelectedApplication(appRes.data ?? null);
-    } finally {
-      setDetailLoading(false);
-    }
-  }, [accessToken]);
 
   useEffect(() => {
     if (!accessToken || !selectedProgramId) {
@@ -381,11 +357,11 @@ export default function AdminParticipantsPage() {
               {participants.map((p: any) => {
                 const np = normalizeParticipant(p, profileByUserId);
                 return (
-                  <TableRow
-                    key={p.id}
-                    className="cursor-pointer"
-                    onClick={() => void openDetail(p)}
-                  >
+                    <TableRow
+                      key={p.id}
+                      className="cursor-pointer"
+                      onClick={() => void router.push(`/admin/participants/detail?id=${p.id}`)}
+                    >
                     <TableCell>
                       {participantValue(np.displayName)}
                     </TableCell>
@@ -454,125 +430,6 @@ export default function AdminParticipantsPage() {
             >
               Next
             </Button>
-          </div>
-        </div>
-      )}
-
-      {selected && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-ink/40 p-4" onClick={() => setSelected(null)}>
-          <div className="max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-xl border border-line bg-surface p-6" onClick={(e) => e.stopPropagation()}>
-            <div className="flex items-start justify-between">
-              <h3 className="text-base font-semibold text-ink">Participant Profile</h3>
-              <button onClick={() => setSelected(null)} className="text-ink-muted">✕</button>
-            </div>
-            <div className="mt-4 space-y-2 text-sm">
-              {(() => {
-                const snp = normalizeParticipant(selected, profileByUserId);
-                return (
-                  <>
-                  <p>
-                    <span className="font-semibold">Name:</span>{" "}
-                    {snp.displayName || selectedApplication?.applicant_name || "Not provided"}
-                  </p>
-                  <p>
-                    <span className="font-semibold">Email:</span>{" "}
-                    {snp.email || selectedApplication?.email || "Not provided"}
-                  </p>
-                  <p>
-                    <span className="font-semibold">Phone:</span>{" "}
-                    {selectedApplication?.phone ?? "Not provided"}
-                  </p>
-                  <p>
-                    <span className="font-semibold">Institution:</span>{" "}
-                    {selectedApplication?.institution ?? "Not provided"}
-                  </p>
-                  <p>
-                    <span className="font-semibold">Country:</span>{" "}
-                    {(selectedApplication?.application_answers as any)?.country ??
-                      "Not provided"}
-                  </p>
-                  <p>
-                    <span className="font-semibold">City:</span>{" "}
-                    {selectedApplication?.city ?? "Not provided"}
-                  </p>
-                  <p>
-                    <span className="font-semibold">Education level:</span>{" "}
-                    {(selectedApplication?.application_answers as any)
-                      ?.educationLevel ?? "Not provided"}
-                  </p>
-                  <p>
-                    <span className="font-semibold">Programme:</span>{" "}
-                    {snp.programme || "Not provided"}
-                  </p>
-                  <p>
-                    <span className="font-semibold">Application status:</span>{" "}
-                    {selectedApplication?.application_status ?? "Not provided"}
-                  </p>
-                  <p>
-                    <span className="font-semibold">Membership status:</span>{" "}
-                    {snp.status ?? "Not provided"}
-                  </p>
-                  <p>
-                    <span className="font-semibold">Applied:</span>{" "}
-                    {selectedApplication?.created_at
-                      ? new Date(selectedApplication.created_at).toLocaleDateString()
-                      : "Not provided"}
-                  </p>
-                  <p>
-                    <span className="font-semibold">Joined:</span>{" "}
-                    {snp.joinedAt ? new Date(snp.joinedAt).toLocaleDateString() : "Not provided"}
-                  </p>
-                  </>
-                );
-              })()}
-              {selectedApplication?.referral_code && (
-                <p>
-                  <span className="font-semibold">Referred by:</span>{" "}
-                  {selectedApplication.referred_by_ambassador_name ??
-                  selectedApplication.referral_code}
-                </p>
-              )}
-            </div>
-            <div className="mt-4 flex flex-wrap gap-2">
-              {(["active", "inactive", "suspended", "graduated"] as const).map((s) => (
-                <Button key={s} size="sm" onClick={() => requestStatusChange(selected.id, s)} disabled={updateLoading === selected.id}>
-                  {s}
-                </Button>
-              ))}
-              <ConfirmationDialog
-                open={confirmOpen && confirmId === selected.id}
-                onClose={() => {
-                  setConfirmOpen(false);
-                  setPendingParticipantStatus((prev) => {
-                    const { [confirmId]: _removed, ...rest } = prev;
-                    return rest;
-                  });
-                }}
-                title="Change membership status"
-                description={`Change the participant's status to ${confirmStatus.charAt(0).toUpperCase() + confirmStatus.slice(1)}?`}
-                confirmLabel={confirmStatus.charAt(0).toUpperCase() + confirmStatus.slice(1)}
-                onConfirm={() => void handleStatusUpdate(confirmId, confirmStatus)}
-                loading={updateLoading === confirmId}
-              />
-            </div>
-            <div className="mt-6">
-              <h4 className="text-sm font-semibold text-ink mb-2">Assigned tasks</h4>
-              {detailLoading ? (
-                <p className="text-sm text-ink-secondary">Loading…</p>
-              ) : detailTasks.length === 0 ? (
-                <p className="text-sm text-ink-secondary">No tasks assigned.</p>
-              ) : (
-                <ul className="space-y-2">
-                  {detailTasks.map((t: any) => (
-                    <li key={t.id} className="rounded-md border border-line p-3 text-sm">
-                      <div className="font-medium text-ink">{t.title}</div>
-                      <div className="text-xs text-ink-secondary">Status: {t.status} {t.due_date ? `· Due ${new Date(t.due_date).toLocaleDateString()}` : ""}</div>
-                      {t.feedback && <div className="mt-1 text-xs text-ink-secondary">Feedback: {t.feedback}</div>}
-                    </li>
-                  ))}
-                </ul>
-              )}
-            </div>
           </div>
         </div>
       )}

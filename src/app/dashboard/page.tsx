@@ -4,7 +4,6 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 
-import { SiteHeader } from "@/components/layout/site-header";
 import { useAuth } from "@/lib/api/auth";
 import { communityApi } from "@/lib/api/client";
 import { Button } from "@/components/ui/button";
@@ -13,6 +12,7 @@ import { Section, SectionInner } from "@/components/ui/section";
 import { SectionHeading } from "@/components/ui/section-heading";
 import { StatisticCard } from "@/components/dashboard/statistic-card";
 import { StatusBadge } from "@/components/dashboard/status-badge";
+import { ParticipantLayout } from "@/components/participant/participant-layout";
 
 type StatusVariant = "pending" | "accepted" | "rejected" | "under_review" | "shortlisted" | "waitlisted";
 
@@ -27,7 +27,7 @@ function statusBadge(status: string | null | undefined) {
     waitlisted: "default",
   };
   return <Badge variant={variants[s] ?? "default"}>
-    {s.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase())}
+    {s.replace(/_/g, " ").replace(/\b\w/g, (c: string) => c.toUpperCase())}
   </Badge>;
 }
 
@@ -39,7 +39,6 @@ export default function DashboardPage() {
     isLoading,
     isAdmin,
     isSuperAdmin,
-    isAmbassador,
     backendUnavailable,
     signOut,
   } = useAuth();
@@ -66,7 +65,7 @@ export default function DashboardPage() {
       const [appRes, participantRes, referralRes, taskRes, announcementRes] =
         await Promise.all([
           communityApi.getMyApplications(accessToken),
-          communityApi.getMyParticipant(accessToken),
+          communityApi.getMyParticipants(accessToken),
           communityApi.getMyReferrals(accessToken),
           communityApi.getMyTasks(accessToken),
           communityApi.getAnnouncements(accessToken),
@@ -75,7 +74,10 @@ export default function DashboardPage() {
       if (!mounted.current) return;
 
       if (appRes.ok) setApplications(appRes.data ?? []);
-      if (participantRes.ok) setParticipant(participantRes.data ?? null);
+      if (participantRes.ok) {
+        const data = participantRes.data;
+        setParticipant(Array.isArray(data) ? data[0] ?? null : data ?? null);
+      }
       if (referralRes.ok) setReferrals(referralRes.data ?? null);
       if (taskRes.ok) setTasks(taskRes.data ?? []);
       if (announcementRes.ok) setAnnouncements(announcementRes.data ?? []);
@@ -107,10 +109,6 @@ export default function DashboardPage() {
       void router.push("/admin");
       return;
     }
-    if (isAmbassador) {
-      void router.push("/ambassador/dashboard");
-      return;
-    }
 
     return () => {
       mounted.current = false;
@@ -135,8 +133,12 @@ export default function DashboardPage() {
     participant?.profiles?.full_name ?? user?.email?.split("@")[0] ?? "Member";
 
   return (
-    <>
-      <SiteHeader />
+    <ParticipantLayout
+      header={{
+        title: "Dashboard",
+        breadcrumb: [{ label: "Dashboard", href: "/dashboard" }],
+      }}
+    >
       {backendUnavailable && (
         <Section padded className="mb-6">
           <SectionInner>
@@ -291,14 +293,14 @@ export default function DashboardPage() {
                         className="flex-1 truncate font-mono text-sm text-ink-muted bg-surface-raised rounded-md px-3 py-2 border border-line"
                       >
                         {typeof window !== "undefined"
-                          ? `${window.location.origin}/cohort/apply?ref=${referrals.referral_code}`
+                          ? `${window.location.origin}/apply?ref=${referrals.referral_code}`
                           : ""}
                       </span>
                       <Button
                         onClick={() => {
                           navigator.clipboard.writeText(
                             typeof window !== "undefined"
-                              ? `${window.location.origin}/cohort/apply?ref=${referrals.referral_code}`
+                              ? `${window.location.origin}/apply?ref=${referrals.referral_code}`
                               : "",
                           );
                         }}
@@ -340,8 +342,16 @@ export default function DashboardPage() {
                                   : "—"}
                               </p>
                             </div>
-                            <Badge variant={reg.verification_status === "verified" ? "emerald" : "default"}>
-                              {reg.verification_status?.replace(/_/g, " ") || "—"}
+                            <Badge
+                              variant={
+                                reg.verification_status === "verified"
+                                  ? "emerald"
+                                  : "default"
+                              }
+                            >
+                              {reg.verification_status
+                                ?.replace(/_/g, " ")
+                                || "—"}
                             </Badge>
                           </div>
                         ))}
@@ -433,6 +443,6 @@ export default function DashboardPage() {
           </SectionInner>
         </Section>
       )}
-    </>
+    </ParticipantLayout>
   );
 }

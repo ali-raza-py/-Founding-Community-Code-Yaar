@@ -70,42 +70,25 @@ export const ADMIN_SECTIONS: AdminNavSection[] = [
   {
     label: "OPERATIONS",
     items: [
-      { href: "/admin/tasks", label: "Tasks", icon: ListChecks },
-      { href: "/admin/referrals", label: "Referrals", icon: Mail },
-      {
-        href: "/admin/announcements",
-        label: "Announcements",
-        icon: BarChart3,
-        roles: ["super_admin"],
-      },
+      { href: "/admin/operations", label: "Operations", icon: ListChecks },
     ],
   },
   {
     label: "COMMUNICATION",
     items: [
-      { href: "/admin/mail", label: "Email Overview", icon: Inbox },
-      {
-        href: "/admin/mail?tab=compose",
-        label: "Email Composer",
-        icon: Mail,
-      },
-      {
-        href: "/admin/mail?tab=templates",
-        label: "Email Templates",
-        icon: BarChart3,
-      },
-      {
-        href: "/admin/mail?tab=configuration",
-        label: "Settings",
-        icon: Settings,
-      },
+      { href: "/admin/email", label: "Email", icon: Mail },
     ],
   },
   {
     label: "SYSTEM",
     items: [
       {
-        href: "/admin/users",
+        href: "/admin/settings",
+        label: "Settings",
+        icon: Settings,
+      },
+      {
+        href: "/admin/administration",
         label: "Administration",
         icon: ShieldAlert,
         roles: ["super_admin"],
@@ -212,7 +195,7 @@ export function AdminSidebar({
       {/* Mobile backdrop */}
       {!isDesktop && mobileOpen && (
         <div
-          className="fixed inset-0 z-40 bg-ink/60 backdrop-blur-sm"
+          className="fixed inset-0 z-40 bg-navy/70 backdrop-blur-sm"
           onClick={closeMobile}
           aria-hidden="true"
         />
@@ -232,7 +215,7 @@ export function AdminSidebar({
       >
         <div
           className={cn(
-            "flex flex-col border border-admin-sidebar-border bg-admin-sidebar-border/60 bg-admin-sidebar-bg shadow-admin-sidebar-shadow backdrop-blur-md",
+            "flex flex-col border border-admin-sidebar-border bg-admin-sidebar-bg shadow-admin-sidebar-shadow backdrop-blur-md",
             "rounded-[var(--sidebar-radius)] transition-all duration-300 ease-in-out",
             `width-[var(--sidebar-width)]`,
             collapsed ? `width-[var(--sidebar-width-collapsed)]` : "",
@@ -427,7 +410,7 @@ export function AdminSidebar({
         <button
           onClick={() => setMobileOpen((prev) => !prev)}
           className={cn(
-            "fixed left-4 top-4 z-50 flex items-center justify-center size-10 rounded-xl border border-line bg-surface text-ink shadow-sm transition-colors hover:bg-surface-raised",
+            "fixed left-4 top-4 z-50 flex items-center justify-center size-10 rounded-xl border border-line bg-surface text-ink shadow-sm transition-colors hover:bg-surface-raised hover:text-emerald hover:border-emerald",
             mobileOpen && "text-emerald border-emerald",
           )}
           aria-label={mobileOpen ? "Close navigation" : "Open navigation"}

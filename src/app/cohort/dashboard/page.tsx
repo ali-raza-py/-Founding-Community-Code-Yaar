@@ -1,10 +1,15 @@
 import CohortDashboard from "@/components/cohort/cohort-dashboard";
-import { CohortLayout } from "@/components/cohort/cohort-layout";
+import { ParticipantLayout } from "@/components/participant/participant-layout";
 
 export default function CohortDashboardPage() {
   return (
-    <CohortLayout>
+    <ParticipantLayout
+      header={{
+        title: "Dashboard",
+        breadcrumb: [{ label: "Founding Cohort", href: "/cohort/dashboard" }],
+      }}
+    >
       <CohortDashboard />
-    </CohortLayout>
+    </ParticipantLayout>
   );
 }
