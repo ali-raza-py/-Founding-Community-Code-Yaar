@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 
 import { useAuth } from "@/lib/api/auth";
@@ -38,6 +38,14 @@ export default function AdminParticipantsPage() {
   const pageRef = useRef(1);
   const [updateLoading, setUpdateLoading] = useState<string | null>(null);
   const [participantStatus, setParticipantStatus] = useState<"active" | "inactive" | "suspended" | "graduated">("active");
+
+  // Look up profile name/email by user_id as a fallback when the participant
+  // row itself does not carry merged profile fields.
+  const profileByUserId = useMemo(() => {
+    const map = new Map<string, { full_name: string | null; email: string | null }>();
+    for (const pr of profiles) map.set(pr.id, pr);
+    return map;
+  }, [profiles]);
 
   const loadParticipants = useCallback(async (page = 1) => {
     if (!accessToken) return;
@@ -426,8 +434,8 @@ export default function AdminParticipantsPage() {
                 <button onClick={() => setSelected(null)} className="text-ink-muted">✕</button>
               </div>
               <div className="mt-4 space-y-2 text-sm">
-                <p><span className="font-semibold">Name:</span> {selected.full_name ?? selected.profiles?.full_name ?? "—"}</p>
-                <p><span className="font-semibold">Email:</span> {selected.email ?? selected.profiles?.email ?? "—"}</p>
+                <p><span className="font-semibold">Name:</span> {selected.full_name ?? profileByUserId.get(selected.user_id)?.full_name ?? selected.profiles?.full_name ?? "—"}</p>
+                <p><span className="font-semibold">Email:</span> {selected.email ?? profileByUserId.get(selected.user_id)?.email ?? selected.profiles?.email ?? "—"}</p>
                 <p><span className="font-semibold">Programme:</span> {selected.program_name ?? selected.programs?.name ?? "—"}</p>
                 <p><span className="font-semibold">Status:</span> {selected.participant_status}</p>
                 <p><span className="font-semibold">Joined:</span> {selected.joined_at ? new Date(selected.joined_at).toLocaleDateString() : "—"}</p>
