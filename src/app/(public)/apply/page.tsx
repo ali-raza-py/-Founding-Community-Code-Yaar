@@ -14,7 +14,7 @@ import { Button } from "@/components/ui/button";
 import { Field, Input, Select, Textarea } from "@/components/ui/field";
 import { Section, SectionInner } from "@/components/ui/section";
 import { cn } from "@/lib/utils";
-import { TurnstileWidget } from "@/components/TurnstileWidget";
+import { TurnstileWidget, type TurnstileHandle } from "@/components/TurnstileWidget";
 
 const STEP_SCHEMAS = {
   1: personalInformationSchema,
@@ -50,6 +50,7 @@ export default function ApplyPage() {
 
   const submissionIdRef = useRef<string>(crypto.randomUUID());
   const saveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const turnstileRef = useRef<TurnstileHandle>(null);
   const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
   const [saveStatus, setSaveStatus] = useState<"idle" | "saving" | "saved" | "error">("idle");
 
@@ -62,8 +63,11 @@ export default function ApplyPage() {
 
   // Reset the Turnstile widget and clear any held token so the next attempt
   // requires a fresh challenge (Turnstile tokens are single-use and expire).
+  // The widget itself is reset too, so the Cloudflare challenge is cleared and
+  // the widget can re-verify instead of holding a stale/expired token.
   const resetTurnstile = useCallback(() => {
     setTurnstileToken(null);
+    turnstileRef.current?.reset();
   }, []);
 
   const handleTurnstileVerify = useCallback((token: string) => {
@@ -355,6 +359,8 @@ export default function ApplyPage() {
       referredByAmbassador,
       manualReferredByName,
       programId,
+      turnstileToken,
+      resetTurnstile,
     ]
   );
 
@@ -824,6 +830,7 @@ export default function ApplyPage() {
                 ) : (
                   <>
                     <TurnstileWidget
+                      ref={turnstileRef}
                       onVerify={handleTurnstileVerify}
                       onError={handleTurnstileError}
                       disabled={!turnstileSiteKey}

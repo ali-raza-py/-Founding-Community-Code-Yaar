@@ -298,3 +298,73 @@ export const ambassadorSchema = ambassadorPersonalSchema
   .merge(ambassadorMotivationSchema)
   .merge(ambassadorAvailabilitySchema)
   .merge(ambassadorAgreementSchema);
+
+/* ========================================================================
+   Task management validation schemas
+   Matches the backend contract for POST /api/v1/admin/tasks:
+   { title, description, program_id, assigned_to: string | string[], due_date, status? }
+   ======================================================================== */
+
+export const taskCreationSchema = z.object({
+  title: z
+    .string()
+    .trim()
+    .min(1, "Task title is required.")
+    .max(200, "Please keep the task title under 200 characters."),
+  description: z
+    .string()
+    .trim()
+    .max(2000, "Please keep the description under 2,000 characters."),
+  program_id: z
+    .string()
+    .trim()
+    .min(1, "Select a programme.")
+    .max(200, "Invalid programme selection."),
+  assigned_to: z
+    .array(z.string().trim().min(1, "Invalid participant selection."))
+    .min(1, "Select at least one eligible participant.")
+    .max(100, "Too many participants selected."),
+  due_date: z
+    .string()
+    .trim()
+    .min(1, "Select a deadline.")
+    .max(10, "Enter a valid deadline date.")
+    .refine(
+      (value) => /^\d{4}-\d{2}-\d{2}$/.test(value) && !Number.isNaN(Date.parse(value)),
+      "Enter a valid deadline date (YYYY-MM-DD).",
+    ),
+  status: z
+    .enum(["pending", "in_progress", "completed", "overdue"] as const)
+    .default("pending")
+    .optional(),
+});
+
+export type TaskCreationInput = z.infer<typeof taskCreationSchema>;
+
+/* ========================================================================
+   Announcement management validation schemas
+   Matches the backend contract for POST /api/v1/admin/announcements:
+   { title, content, target_program_id?, published? }
+   ======================================================================== */
+
+export const announcementCreationSchema = z.object({
+  title: z
+    .string()
+    .trim()
+    .min(1, "Announcement title is required.")
+    .max(200, "Please keep the title under 200 characters."),
+  content: z
+    .string()
+    .trim()
+    .min(1, "Announcement content cannot be empty.")
+    .max(10000, "Please keep the announcement under 10,000 characters."),
+  target_program_id: z
+    .string()
+    .trim()
+    .min(1, "Select a target programme.")
+    .optional()
+    .nullable(),
+  published: z.boolean().default(false).optional(),
+});
+
+export type AnnouncementCreationInput = z.infer<typeof announcementCreationSchema>;

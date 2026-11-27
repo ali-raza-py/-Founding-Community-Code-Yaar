@@ -61,6 +61,19 @@
   --sidebar-radius: 24px;
   --sidebar-item-radius: 12px;
 
+  /* Admin dark glass sidebar */
+  --admin-sidebar-bg: rgba(17, 28, 45, 0.72);
+  --admin-sidebar-border: rgba(255, 255, 255, 0.10);
+  --admin-sidebar-border-strong: rgba(255, 255, 255, 0.18);
+  --admin-sidebar-surface: rgba(255, 255, 255, 0.03);
+  --admin-sidebar-surface-hover: rgba(255, 255, 255, 0.06);
+  --admin-sidebar-active: rgba(7, 134, 91, 0.14);
+  --admin-sidebar-active-border: rgba(7, 134, 91, 0.30);
+  --admin-sidebar-text: #e8ece8;
+  --admin-sidebar-text-muted: #a8b8ae;
+  --admin-sidebar-emerald: #07865b;
+  --admin-sidebar-shadow: 0 24px 48px -12px rgba(0, 0, 0, 0.5);
+
   /* Spacing */
   --space-section: 6rem;
   --spacing-home-section: clamp(3.5rem, 5.6vw, 5rem);

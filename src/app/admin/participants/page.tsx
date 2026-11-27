@@ -19,6 +19,7 @@ import {
 } from "@/components/admin/shared";
 import { ResponsiveTable, TableBody, TableCell, TableCellHeader, TableHeader, TableHead, TableRow } from "@/components/dashboard/responsive-table";
 import { cn } from "@/lib/utils";
+import { normalizeParticipant, participantValue } from "@/lib/participant";
 
 export default function AdminParticipantsPage() {
   const { accessToken, isAuthenticated, isLoading, isAdmin } = useAuth();
@@ -30,7 +31,7 @@ export default function AdminParticipantsPage() {
   const [programFilter, setProgramFilter] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
   const [programs, setPrograms] = useState<Array<{ id: string; name: string }>>([]);
-  const [profiles, setProfiles] = useState<Array<{ id: string; full_name: string | null; email: string | null }>>([]);
+  const [profiles, setProfiles] = useState<Array<{ id: string; full_name: string | null; email: string | null; role: string | null }>>([]);
   const [programApplications, setProgramApplications] = useState<Array<{ id: string; applicant_name: string; email: string; program_id: string }>>([]);
   const [selectedUserId, setSelectedUserId] = useState("");
   const [selectedProgramId, setSelectedProgramId] = useState("");
@@ -52,7 +53,11 @@ export default function AdminParticipantsPage() {
   const [pendingParticipantStatus, setPendingParticipantStatus] = useState<Record<string, string>>({});
 
   const profileByUserId = useMemo(() => {
-    const map = new Map<string, { full_name: string | null; email: string | null }>();
+    const map = new Map<string, {
+      full_name: string | null;
+      email: string | null;
+      role: string | null;
+    }>();
     for (const pr of profiles) map.set(pr.id, pr);
     return map;
   }, [profiles]);
@@ -75,10 +80,11 @@ export default function AdminParticipantsPage() {
     if (progRes.ok && progRes.data) setPrograms(progRes.data.map((p: any) => ({ id: p.id, name: p.name })));
     if (profRes.ok && profRes.data) {
       setProfiles(
-        (profRes.data as Array<{ id: string; full_name: string | null; email: string | null }>).map((p) => ({
+        (profRes.data as Array<{ id: string; full_name: string | null; email: string | null; role: string | null }>).map((p) => ({
           id: p.id,
           full_name: p.full_name,
           email: p.email,
+          role: p.role ?? null,
         })),
       );
     }
@@ -372,54 +378,53 @@ export default function AdminParticipantsPage() {
               </TableHeader>
             </TableHead>
             <TableBody>
-              {participants.map((p: any) => (
-                <TableRow
-                  key={p.id}
-                  className="cursor-pointer"
-                  onClick={() => void openDetail(p)}
-                >
-                  <TableCell>
-                    {p.full_name ??
-                      profileByUserId.get(p.user_id)?.full_name ??
-                      p.profiles?.full_name ??
-                      "Not provided"}
-                  </TableCell>
-                  <TableCell className="text-ink-muted">
-                    {p.email ??
-                      profileByUserId.get(p.user_id)?.email ??
-                      p.profiles?.email ??
-                      "Not provided"}
-                  </TableCell>
-                  <TableCell className="text-ink-muted">{p.programs?.name || "—"}</TableCell>
-                  <TableCell>
-                    <select
-                      value={pendingParticipantStatus[p.id] ?? p.participant_status}
-                      onChange={(e) => {
-                        requestStatusChange(p.id, e.currentTarget.value as "active" | "inactive" | "suspended" | "graduated");
-                      }}
-                      disabled={updateLoading === p.id}
-                      className="text-xs bg-transparent border-none text-ink focus-visible:ring-0"
-                    >
-                      {["active", "inactive", "suspended", "graduated"].map(
-                        (status) => (
-                          <option key={status} value={status}>
-                            {status.charAt(0).toUpperCase() + status.slice(1)}
-                          </option>
-                        ),
+              {participants.map((p: any) => {
+                const np = normalizeParticipant(p, profileByUserId);
+                return (
+                  <TableRow
+                    key={p.id}
+                    className="cursor-pointer"
+                    onClick={() => void openDetail(p)}
+                  >
+                    <TableCell>
+                      {participantValue(np.displayName)}
+                    </TableCell>
+                    <TableCell className="text-ink-muted">
+                      {participantValue(np.email)}
+                    </TableCell>
+                    <TableCell className="text-ink-muted">
+                      {participantValue(np.programme)}
+                    </TableCell>
+                    <TableCell>
+                      <select
+                        value={pendingParticipantStatus[p.id] ?? p.participant_status}
+                        onChange={(e) => {
+                          requestStatusChange(p.id, e.currentTarget.value as "active" | "inactive" | "suspended" | "graduated");
+                        }}
+                        disabled={updateLoading === p.id}
+                        className="text-xs bg-transparent border-none text-ink focus-visible:ring-0"
+                      >
+                        {["active", "inactive", "suspended", "graduated"].map(
+                          (status) => (
+                            <option key={status} value={status}>
+                              {status.charAt(0).toUpperCase() + status.slice(1)}
+                            </option>
+                          ),
+                        )}
+                      </select>
+                      {updateLoading === p.id && (
+                        <span className="text-[0.75rem] text-ink-secondary">Updating…</span>
                       )}
-                    </select>
-                    {updateLoading === p.id && (
-                      <span className="text-[0.75rem] text-ink-secondary">Updating…</span>
-                    )}
-                  </TableCell>
-                  <TableCell className="text-ink-muted">
-                    {p.joined_at ? new Date(p.joined_at).toLocaleDateString() : "—"}
-                  </TableCell>
+                    </TableCell>
+                    <TableCell className="text-ink-muted">
+                      {np.joinedAt ? new Date(np.joinedAt).toLocaleDateString() : "—"}
+                    </TableCell>
                   <TableCell className="text-right">
                     <StatusBadge status={p.participant_status} />
-                  </TableCell>
-                </TableRow>
-              ))}
+                    </TableCell>
+                  </TableRow>
+                );
+              })}
             </TableBody>
           </ResponsiveTable>
         )}
@@ -461,69 +466,65 @@ export default function AdminParticipantsPage() {
               <button onClick={() => setSelected(null)} className="text-ink-muted">✕</button>
             </div>
             <div className="mt-4 space-y-2 text-sm">
-              <p>
-                <span className="font-semibold">Name:</span>{" "}
-                {selected.full_name ??
-                  profileByUserId.get(selected.user_id)?.full_name ??
-                  selected.profiles?.full_name ??
-                  selectedApplication?.applicant_name ??
-                  "Not provided"}
-              </p>
-              <p>
-                <span className="font-semibold">Email:</span>{" "}
-                {selected.email ??
-                  profileByUserId.get(selected.user_id)?.email ??
-                  selected.profiles?.email ??
-                  selectedApplication?.email ??
-                  "Not provided"}
-              </p>
-              <p>
-                <span className="font-semibold">Phone:</span>{" "}
-                {selectedApplication?.phone ?? "Not provided"}
-              </p>
-              <p>
-                <span className="font-semibold">Institution:</span>{" "}
-                {selectedApplication?.institution ?? "Not provided"}
-              </p>
-              <p>
-                <span className="font-semibold">Country:</span>{" "}
-                {(selectedApplication?.application_answers as any)?.country ??
-                  "Not provided"}
-              </p>
-              <p>
-                <span className="font-semibold">City:</span>{" "}
-                {selectedApplication?.city ?? "Not provided"}
-              </p>
-              <p>
-                <span className="font-semibold">Education level:</span>{" "}
-                {(selectedApplication?.application_answers as any)
-                  ?.educationLevel ?? "Not provided"}
-              </p>
-              <p>
-                <span className="font-semibold">Programme:</span>{" "}
-                {selected.program_name ?? selected.programs?.name ??
-                  "Not provided"}
-              </p>
-              <p>
-                <span className="font-semibold">Application status:</span>{" "}
-                {selectedApplication?.application_status ?? "Not provided"}
-              </p>
-              <p>
-                <span className="font-semibold">Membership status:</span>{" "}
-                {selected.participant_status}
-              </p>
-              <p>
-                <span className="font-semibold">Applied:</span>{" "}
-                {selectedApplication?.created_at
-                  ? new Date(selectedApplication.created_at).toLocaleDateString()
-                  : "Not provided"}
-              </p>
-              <p>
-                <span className="font-semibold">Joined:</span>{" "}
-                {selected.joined_at
-                  ? new Date(selected.joined_at).toLocaleDateString()
-                  : "Not provided"}
-              </p>
+              {(() => {
+                const snp = normalizeParticipant(selected, profileByUserId);
+                return (
+                  <>
+                  <p>
+                    <span className="font-semibold">Name:</span>{" "}
+                    {snp.displayName || selectedApplication?.applicant_name || "Not provided"}
+                  </p>
+                  <p>
+                    <span className="font-semibold">Email:</span>{" "}
+                    {snp.email || selectedApplication?.email || "Not provided"}
+                  </p>
+                  <p>
+                    <span className="font-semibold">Phone:</span>{" "}
+                    {selectedApplication?.phone ?? "Not provided"}
+                  </p>
+                  <p>
+                    <span className="font-semibold">Institution:</span>{" "}
+                    {selectedApplication?.institution ?? "Not provided"}
+                  </p>
+                  <p>
+                    <span className="font-semibold">Country:</span>{" "}
+                    {(selectedApplication?.application_answers as any)?.country ??
+                      "Not provided"}
+                  </p>
+                  <p>
+                    <span className="font-semibold">City:</span>{" "}
+                    {selectedApplication?.city ?? "Not provided"}
+                  </p>
+                  <p>
+                    <span className="font-semibold">Education level:</span>{" "}
+                    {(selectedApplication?.application_answers as any)
+                      ?.educationLevel ?? "Not provided"}
+                  </p>
+                  <p>
+                    <span className="font-semibold">Programme:</span>{" "}
+                    {snp.programme || "Not provided"}
+                  </p>
+                  <p>
+                    <span className="font-semibold">Application status:</span>{" "}
+                    {selectedApplication?.application_status ?? "Not provided"}
+                  </p>
+                  <p>
+                    <span className="font-semibold">Membership status:</span>{" "}
+                    {snp.status ?? "Not provided"}
+                  </p>
+                  <p>
+                    <span className="font-semibold">Applied:</span>{" "}
+                    {selectedApplication?.created_at
+                      ? new Date(selectedApplication.created_at).toLocaleDateString()
+                      : "Not provided"}
+                  </p>
+                  <p>
+                    <span className="font-semibold">Joined:</span>{" "}
+                    {snp.joinedAt ? new Date(snp.joinedAt).toLocaleDateString() : "Not provided"}
+                  </p>
+                  </>
+                );
+              })()}
               {selectedApplication?.referral_code && (
                 <p>
                   <span className="font-semibold">Referred by:</span>{" "}

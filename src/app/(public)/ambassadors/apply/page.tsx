@@ -31,7 +31,7 @@ import { Button } from "@/components/ui/button";
 import { Field, Input, Select, Textarea } from "@/components/ui/field";
 import { Section, SectionInner } from "@/components/ui/section";
 import { cn } from "@/lib/utils";
-import { TurnstileWidget } from "@/components/TurnstileWidget";
+import { TurnstileWidget, type TurnstileHandle } from "@/components/TurnstileWidget";
 
 type AmbassadorValues = {
   fullName: string;
@@ -125,6 +125,7 @@ export default function AmbassadorApplyPage() {
   const [status, setStatus] = useState<ReturnType<typeof emptyStatus>>(emptyStatus);
 
   const submissionIdRef = useRef<string>(crypto.randomUUID());
+  const turnstileRef = useRef<TurnstileHandle>(null);
   const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
 
   const programId = typeof window !== "undefined"
@@ -134,10 +135,11 @@ export default function AmbassadorApplyPage() {
     ? (process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY ?? "")
     : "";
 
-  // Reset the Turnstile token so the next attempt requires a fresh challenge
-  // (Turnstile tokens are single-use and expire).
+  // Reset the Turnstile token and widget so the next attempt requires a fresh
+  // challenge (Turnstile tokens are single-use and expire).
   const resetTurnstile = useCallback(() => {
     setTurnstileToken(null);
+    turnstileRef.current?.reset();
   }, []);
 
   const handleTurnstileVerify = useCallback((token: string) => {
@@ -912,6 +914,7 @@ export default function AmbassadorApplyPage() {
                 ) : (
                   <>
                     <TurnstileWidget
+                      ref={turnstileRef}
                       onVerify={handleTurnstileVerify}
                       onError={handleTurnstileError}
                       disabled={!turnstileSiteKey}

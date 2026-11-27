@@ -11,6 +11,8 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Section, SectionInner } from "@/components/ui/section";
 import { SectionHeading } from "@/components/ui/section-heading";
+import { StatisticCard } from "@/components/dashboard/statistic-card";
+import { StatusBadge } from "@/components/dashboard/status-badge";
 
 type StatusVariant = "pending" | "accepted" | "rejected" | "under_review" | "shortlisted" | "waitlisted";
 
@@ -91,17 +93,12 @@ export default function DashboardPage() {
     mounted.current = true;
     loadData();
 
-    // Do not navigate while the session is still being resolved: redirecting
-    // on the initial unauthenticated render would kick out an authenticated
-    // user whose session has not finished loading yet.
     if (isLoading) {
       return () => {
         mounted.current = false;
       };
     }
 
-    // Redirects must run in an effect, not during render, to avoid
-    // React warnings and navigation failures when auth state resolves.
     if (!isAuthenticated) {
       void router.push(`/auth/sign-in?redirectTo=${encodeURIComponent("/dashboard")}`);
       return;
@@ -120,7 +117,6 @@ export default function DashboardPage() {
     };
   }, [loadData, isAuthenticated, isAdmin, isSuperAdmin, isLoading, router]);
 
-  // While auth state is being resolved, show a neutral loading state.
   if (isLoading) {
     return (
       <Section padded>
@@ -131,16 +127,18 @@ export default function DashboardPage() {
     );
   }
 
-  // While redirects are pending, render null.
   if (!isAuthenticated || isAdmin || isSuperAdmin) {
     return null;
   }
+
+  const participantName =
+    participant?.profiles?.full_name ?? user?.email?.split("@")[0] ?? "Member";
 
   return (
     <>
       <SiteHeader />
       {backendUnavailable && (
-        <Section padded>
+        <Section padded className="mb-6">
           <SectionInner>
             <div className="rounded-lg border border-amber bg-amber-light p-4 mb-6">
               <p className="type-body text-amber">
@@ -157,11 +155,11 @@ export default function DashboardPage() {
         <SectionInner>
           <SectionHeading
             eyebrow="Participant Dashboard"
-            title={`Welcome back, ${user?.email?.split("@")[0] || "Member"}`}
+            title={`Welcome back, ${participantName}`}
             description="Your applications, referrals, tasks, and announcements."
           />
 
-          <div className="mt-10 flex flex-col sm:flex-row gap-3 justify-between items-end">
+          <div className="mt-8 flex flex-col sm:flex-row gap-3 justify-between items-end">
             <Link
               href="/apply"
               className="inline-flex items-center justify-center gap-2 rounded-md bg-emerald px-8 py-3 text-base font-medium text-white transition-colors hover:bg-emerald-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald"
@@ -175,60 +173,55 @@ export default function DashboardPage() {
         </SectionInner>
       </Section>
 
-      {/* Participant Profile */}
-      {participant && (
-        <Section padded className="bg-surface-raised">
-          <SectionInner>
-            <SectionHeading
-              eyebrow="Your Participation"
-              title="Participant Status"
-              description="Your current standing in the Code Yaar community."
-            />
-            <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-              <div className="rounded-lg border border-line bg-surface p-6">
-                <p className="type-label mb-1">Program</p>
-                <p className="text-sm font-semibold text-ink">
-                  {participant.programs?.name || "—"}
-                </p>
-              </div>
-              <div className="rounded-lg border border-line bg-surface p-6">
-                <p className="type-label mb-1">Status</p>
-                <p className="text-sm font-semibold text-ink">
-                  {participant.participant_status?.replace(/_/g, " ") || "—"}
-                </p>
-              </div>
-              <div className="rounded-lg border border-line bg-surface p-6">
-                <p className="type-label mb-1">Joined</p>
-                <p className="text-sm font-semibold text-ink">
-                  {participant.joined_at ? new Date(participant.joined_at).toLocaleDateString() : "—"}
-                </p>
-              </div>
-              <div className="rounded-lg border border-line bg-surface p-6">
-                <p className="type-label mb-1">Application</p>
-                <p className="text-sm font-semibold text-ink">
-                  {participant.application_id ? "Linked" : "Not linked"}
-                </p>
-              </div>
+      {/* Participation overview */}
+      <Section>
+        <SectionInner className="py-8 sm:py-10">
+          {participant && (
+            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4 mb-8">
+              <StatisticCard
+                title="Program"
+                value={participant.programs?.name || "—"}
+                icon={undefined}
+              />
+              <StatisticCard
+                title="Status"
+                value={participant.participant_status?.replace(/_/g, " ") || "—"}
+                icon={undefined}
+              />
+              <StatisticCard
+                title="Joined"
+                value={
+                  participant.joined_at
+                    ? new Date(participant.joined_at).toLocaleDateString()
+                    : "—"
+                }
+                icon={undefined}
+              />
+              <StatisticCard
+                title="Application"
+                value={participant.application_id ? "Linked" : "Not linked"}
+                icon={undefined}
+              />
             </div>
-          </SectionInner>
-        </Section>
-      )}
+          )}
+        </SectionInner>
+      </Section>
 
       {/* Applications */}
-      <Section padded className="bg-surface-raised">
-        <SectionInner>
+      <Section>
+        <SectionInner className="py-8 sm:py-10">
           <SectionHeading
             eyebrow="Your Applications"
             title="Application History"
             description="View the status of your applications to Code Yaar programmes."
           />
-          <div className="mt-8">
+          <div className="mt-6">
             {loading ? (
               <p className="type-body text-ink-muted">Loading applications…</p>
             ) : error ? (
               <p className="type-body text-danger">{error}</p>
             ) : applications.length === 0 ? (
-              <div className="rounded-lg border border-line bg-surface p-12 text-center">
+              <div className="rounded-lg border border-line bg-surface p-10 sm:p-12 text-center">
                 <p className="type-body text-ink-muted">No applications found.</p>
                 <p className="type-caption mt-2 text-ink-subtle">
                   Submit an application to The First 100 founding cohort or the
@@ -276,14 +269,14 @@ export default function DashboardPage() {
 
       {/* Referrals */}
       {referrals && (
-        <Section padded className="bg-surface-raised">
-          <SectionInner>
+        <Section>
+          <SectionInner className="py-8 sm:py-10">
             <SectionHeading
               eyebrow="Referrals"
               title="Your Referral Code"
               description="Share your referral link to help others apply to The First 100."
             />
-            <div className="mt-8 rounded-lg border border-line bg-surface p-6 sm:p-8">
+            <div className="mt-6 rounded-lg border border-line bg-surface p-6 sm:p-8">
               {referrals.referral_code ? (
                 <>
                   <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
@@ -317,18 +310,16 @@ export default function DashboardPage() {
                     </div>
                   </div>
                   <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-                    <div className="rounded-lg border border-line bg-surface p-6">
-                      <p className="type-label mb-1">Total registrations</p>
-                      <p className="text-2xl font-semibold text-ink">
-                        {referrals.total_registrations ?? 0}
-                      </p>
-                    </div>
-                    <div className="rounded-lg border border-line bg-surface p-6">
-                      <p className="type-label mb-1">Verified</p>
-                      <p className="text-2xl font-semibold text-emerald">
-                        {referrals.verified_registrations ?? 0}
-                      </p>
-                    </div>
+                    <StatisticCard
+                      title="Total registrations"
+                      value={referrals.total_registrations ?? 0}
+                      icon={undefined}
+                    />
+                    <StatisticCard
+                      title="Verified"
+                      value={referrals.verified_registrations ?? 0}
+                      icon={undefined}
+                    />
                   </div>
                   {referrals.registrations && referrals.registrations.length > 0 && (
                     <div className="mt-8">
@@ -359,7 +350,7 @@ export default function DashboardPage() {
                   )}
                 </>
               ) : (
-                <div className="rounded-lg border border-line bg-surface p-12 text-center">
+                <div className="rounded-lg border border-line bg-surface p-10 sm:p-12 text-center">
                   <p className="type-body text-ink-muted">
                     No referral code assigned yet.
                   </p>
@@ -376,29 +367,27 @@ export default function DashboardPage() {
 
       {/* Tasks */}
       {tasks.length > 0 && (
-        <Section padded className="bg-surface-raised">
-          <SectionInner>
+        <Section>
+          <SectionInner className="py-8 sm:py-10">
             <SectionHeading
               eyebrow="Your Tasks"
               title="Assigned Tasks"
               description="Tasks assigned to you by the Code Yaar team."
             />
-            <div className="mt-8 space-y-4">
+            <div className="mt-6 space-y-3">
               {tasks.map((task: any) => (
                 <div
                   key={task.id}
-                  className="rounded-lg border border-line bg-surface p-4 sm:p-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4"
+                  className="rounded-lg border border-line bg-surface p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-3"
                 >
                   <div>
                     <h4 className="font-semibold text-ink">{task.title}</h4>
-                    <p className="mt-1 text-sm text-ink-muted">
+                    <p className="mt-1 text-sm text-ink-muted line-clamp-1">
                       {task.description}
                     </p>
                   </div>
                   <div className="flex items-center gap-3">
-                    <Badge variant="default">
-                      {task.status?.replace(/_/g, " ") || "—"}
-                    </Badge>
+                    <StatusBadge status={task.status} />
                     {task.due_date && (
                       <span className="text-[0.8125rem] text-ink-muted">
                         Due {new Date(task.due_date).toLocaleDateString()}
@@ -414,23 +403,23 @@ export default function DashboardPage() {
 
       {/* Announcements */}
       {announcements.length > 0 && (
-        <Section padded className="bg-surface-raised">
-          <SectionInner>
+        <Section>
+          <SectionInner className="py-8 sm:py-10">
             <SectionHeading
               eyebrow="Announcements"
               title="Community Announcements"
               description="Latest updates from the Code Yaar team."
             />
-            <div className="mt-8 space-y-4">
+            <div className="mt-6 space-y-3">
               {announcements.map((announcement: any) => (
                 <article
                   key={announcement.id}
-                  className="rounded-lg border border-line bg-surface-raised p-4 sm:p-6"
+                  className="rounded-lg border border-line bg-surface-raised p-4 sm:p-5"
                 >
                   <h4 className="text-sm font-semibold text-ink">
                     {announcement.title}
                   </h4>
-                  <p className="mt-1 text-sm text-ink-muted">
+                  <p className="mt-1 text-sm text-ink-muted line-clamp-2">
                     {announcement.content}
                   </p>
                   <p className="mt-2 text-[0.75rem] text-ink-subtle">
