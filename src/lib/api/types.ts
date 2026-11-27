@@ -129,6 +129,7 @@ export interface ParticipantRecord {
   joined_at: string;
   created_at: string;
   programs?: { name: string; slug: string } | null;
+  profiles?: { full_name: string; email: string; role: string } | null;
 }
 
 /** Task (GET /api/v1/tasks/mine). */
