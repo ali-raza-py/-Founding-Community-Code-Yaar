@@ -25,6 +25,7 @@ export interface ParticipantSelectorOption {
   email: string;
   programme: string | null;
   programmeSlug: string | null;
+  programId: string | null;
   status: string | null;
 }
 
@@ -130,6 +131,7 @@ export function buildSelectorOptions(
       email: np.email || "No email",
       programme: np.programme,
       programmeSlug: np.programmeSlug,
+      programId: p.program_id ?? null,
       status: np.status,
     });
   }

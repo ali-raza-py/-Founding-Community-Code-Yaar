@@ -42,7 +42,7 @@ export function ParticipantSelector({
   const filteredOptions = useMemo(() => {
     const q = search.toLowerCase().trim();
     return options.filter((opt) => {
-      if (programFilter && opt.programme !== programFilter) return false;
+      if (programFilter && opt.programId !== programFilter) return false;
       if (!q) return true;
       return (
         opt.name.toLowerCase().includes(q) ||
