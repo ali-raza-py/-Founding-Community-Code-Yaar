@@ -13,26 +13,28 @@
   --font-display: var(--font-montserrat);
   --font-mono: var(--font-jetbrains-mono);
 
-  /* Brand scale — emerald identity */
+  /* Brand scale — emerald identity (Code Yaar palette) */
   --color-emerald-50: #f0fdf4;
   --color-emerald-100: #d1fae5;
-  --color-emerald-600: #059669;
+  --color-emerald-600: #07865b;
   --color-emerald-900: #064e3b;
 
   /* Semantic tokens — light theme */
-  --color-canvas: #f7f8f5;
+  --color-canvas: #f7f9f8;
   --color-surface: #ffffff;
   --color-surface-raised: #f2f5f3;
   --color-surface-selected: #d9e7dc;
-  --color-line: #e8ece8;
+  --color-line: #e7ece9;
   --color-line-strong: #d8dcd8;
 
-  --color-ink: #19231d;
+  --color-ink: #17211d;
   --color-ink-muted: #46534a;
+  --color-ink-secondary: #66736d;
   --color-ink-subtle: #6b7a70;
+  --color-navy: #101828;
 
-  --color-emerald: #087a52;
-  --color-emerald-hover: #176b47;
+  --color-emerald: #07865b;
+  --color-emerald-hover: #066b4b;
   --color-emerald-soft: #eaf3ee;
   --color-forest: #123d2b;
   --color-supporting-green: #26966a;
@@ -40,22 +42,30 @@
   /* Semantic states */
   --color-danger: #b91c1c;
   --color-danger-soft: #fef2f2;
-  --color-success: #087a52;
+  --color-success: #07865b;
   --color-success-soft: #ecfdf5;
 
   /* Focus ring */
-  --color-focus-ring: #087a52;
+  --color-focus-ring: #07865b;
 
   /* Radius */
   --radius-sm: 6px;
   --radius-md: 8px;
   --radius-lg: 12px;
+  --radius-xl: 16px;
   --radius-pill: 9999px;
+
+  /* Dashboard shell */
+  --sidebar-width: 264px;
+  --sidebar-width-collapsed: 72px;
+  --sidebar-radius: 24px;
+  --sidebar-item-radius: 12px;
 
   /* Spacing */
   --space-section: 6rem;
   --spacing-home-section: clamp(3.5rem, 5.6vw, 5rem);
   --container-page: 72rem;
+  --dashboard-content-padding: 1.5rem;
 }
 
 /* ============ DARK THEME TOKENS ============ */

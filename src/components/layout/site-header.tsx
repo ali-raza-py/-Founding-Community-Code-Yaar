@@ -61,12 +61,19 @@ export function SiteHeader() {
   const {
     isAuthenticated,
     isAdmin,
+    isAmbassador,
     isLoading,
     signOut,
   } = useAuth();
   const [open, setOpen] = useState(false);
   const headerRef = useRef<HTMLElement>(null);
   const menuTriggerRef = useRef<HTMLButtonElement>(null);
+
+  const dashboardHref = isAdmin
+    ? "/admin"
+    : isAmbassador
+      ? "/ambassador/dashboard"
+      : "/dashboard";
 
   useEffect(() => {
     if (!open) return;
@@ -138,8 +145,8 @@ export function SiteHeader() {
           ) : isAuthenticated ? (
             <>
               <Link
-                href="/dashboard"
-                aria-current={pathname === "/dashboard" ? "page" : undefined}
+                href={dashboardHref}
+                aria-current={pathname === dashboardHref ? "page" : undefined}
                 className={cn(
                   buttonVariants({ variant: "outline" }),
                   "h-11 gap-2 rounded-lg whitespace-nowrap px-3.5 sm:px-4 text-ink",
@@ -238,7 +245,7 @@ export function SiteHeader() {
         ) : isAuthenticated && (
           <li>
             <Link
-              href="/dashboard"
+              href={dashboardHref}
               onClick={() => setOpen(false)}
               className="flex min-h-11 items-center whitespace-nowrap rounded-md px-2.5 text-sm font-medium transition-colors xl:px-3"
             >

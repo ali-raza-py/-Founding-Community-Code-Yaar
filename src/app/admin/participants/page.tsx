@@ -7,15 +7,18 @@ import { useAuth } from "@/lib/api/auth";
 import { communityApi } from "@/lib/api/client";
 import { Button } from "@/components/ui/button";
 import { Field, Input, Select } from "@/components/ui/field";
-import { Section, SectionInner } from "@/components/ui/section";
-import { SectionHeading } from "@/components/ui/section-heading";
+import { DashboardPageHeader } from "@/components/dashboard/page-header";
+import { Breadcrumb } from "@/components/dashboard/page-header";
+import { StatisticCard } from "@/components/dashboard/statistic-card";
+import { StatusBadge } from "@/components/dashboard/status-badge";
+import { EmptyState } from "@/components/dashboard/empty-state";
+import { ConfirmationDialog } from "@/components/dashboard/confirmation-dialog";
 import {
-  StatCard,
-  EmptyState,
   ErrorState,
   LoadingState,
-  AdminStatusBadge,
 } from "@/components/admin/shared";
+import { ResponsiveTable, TableBody, TableCell, TableCellHeader, TableHeader, TableHead, TableRow } from "@/components/dashboard/responsive-table";
+import { cn } from "@/lib/utils";
 
 export default function AdminParticipantsPage() {
   const { accessToken, isAuthenticated, isLoading, isAdmin } = useAuth();
@@ -40,8 +43,14 @@ export default function AdminParticipantsPage() {
   const [updateLoading, setUpdateLoading] = useState<string | null>(null);
   const [participantStatus, setParticipantStatus] = useState<"active" | "inactive" | "suspended" | "graduated">("active");
 
-  // Look up profile name/email by user_id as a fallback when the participant
-  // row itself does not carry merged profile fields.
+  // Confirmation dialog state for status changes.
+  const [confirmOpen, setConfirmOpen] = useState(false);
+  const [confirmId, setConfirmId] = useState("");
+  const [confirmStatus, setConfirmStatus] = useState<"active" | "inactive" | "suspended" | "graduated">("active");
+
+  // Pending (unconfirmed) status per participant row so the select reverts on cancel.
+  const [pendingParticipantStatus, setPendingParticipantStatus] = useState<Record<string, string>>({});
+
   const profileByUserId = useMemo(() => {
     const map = new Map<string, { full_name: string | null; email: string | null }>();
     for (const pr of profiles) map.set(pr.id, pr);
@@ -88,13 +97,18 @@ export default function AdminParticipantsPage() {
   }, [loadParticipants]);
 
   const handleStatusUpdate = useCallback(async (id: string, status: "active" | "inactive" | "suspended" | "graduated") => {
-    if (!confirm(`Change participant status to ${status}?`)) return;
+    setConfirmOpen(false);
+    setConfirmId("");
     setUpdateLoading(id);
     const res = await communityApi.updateAdminParticipant(accessToken!, id, {
       participant_status: status,
     });
     setUpdateLoading(null);
     if (res.ok) {
+      setPendingParticipantStatus((prev) => {
+        const { [id]: _removed, ...rest } = prev;
+        return rest;
+      });
       setParticipants((prev) =>
         prev.map((p) => (p.id === id ? { ...p, participant_status: status } : p)),
       );
@@ -103,6 +117,13 @@ export default function AdminParticipantsPage() {
       setError(res.error.message);
     }
   }, [accessToken, selected]);
+
+  const requestStatusChange = useCallback((id: string, status: "active" | "inactive" | "suspended" | "graduated") => {
+    setPendingParticipantStatus((prev) => ({ ...prev, [id]: status }));
+    setConfirmId(id);
+    setConfirmStatus(status);
+    setConfirmOpen(true);
+  }, []);
 
   const openDetail = useCallback(async (p: any) => {
     setSelected(p);
@@ -123,8 +144,6 @@ export default function AdminParticipantsPage() {
     }
   }, [accessToken]);
 
-  // Load applications for the selected programme so admins pick by name/email,
-  // not by raw UUID.
   useEffect(() => {
     if (!accessToken || !selectedProgramId) {
       setProgramApplications([]);
@@ -194,362 +213,368 @@ export default function AdminParticipantsPage() {
   });
 
   return (
-    <Section padded>
-      <SectionInner>
-        <SectionHeading
-          eyebrow="Participant Management"
-          title="Participant Directory"
-          description="View, create, and manage community participants."
-        />
+    <div className="space-y-8">
+      <DashboardPageHeader
+        title="Participant Directory"
+        description="View, create, and manage community participants."
+        breadcrumb={[{ label: "Dashboard", href: "/admin" }, { label: "Participants", href: "/admin/participants" }]}
+      />
 
-        {/* Stats */}
-        <div className="mt-8 grid gap-4 sm:grid-cols-4">
-          <StatCard title="Total Participants" value={participants.length} />
-          <StatCard title="Active" value={statusCounts["active"] ?? 0} />
-          <StatCard title="Inactive" value={statusCounts["inactive"] ?? 0} />
-          <StatCard title="Suspended" value={statusCounts["suspended"] ?? 0} />
+      {/* Stats */}
+      <div className="grid gap-4 sm:grid-cols-4">
+        <StatisticCard title="Total Participants" value={participants.length} icon={<span className="size-5">👥</span>} />
+        <StatisticCard title="Active" value={statusCounts["active"] ?? 0} icon={<span className="size-5">✅</span>} />
+        <StatisticCard title="Inactive" value={statusCounts["inactive"] ?? 0} icon={<span className="size-5">⏸️</span>} />
+        <StatisticCard title="Suspended" value={statusCounts["suspended"] ?? 0} icon={<span className="size-5">🚫</span>} />
+      </div>
+
+      {/* Create participant */}
+      <div className="rounded-xl border border-line bg-surface p-5 sm:p-6">
+        <div className="flex items-start justify-between gap-3 mb-5">
+          <div>
+            <p className="type-label">Create Participant</p>
+            <p className="text-[0.8125rem] text-ink-secondary">Create a participant record by linking a user to an application and programme.</p>
+          </div>
         </div>
-
-        {/* Create participant */}
-        <div className="mt-8 rounded-xl border border-line bg-surface p-5 sm:p-6">
-          <SectionHeading
-            eyebrow="Create Participant"
-            title="Invite a New Participant"
-            description="Create a participant record by linking a user to an application and programme."
-            tag="h3"
-          />
-          <form onSubmit={handleCreateParticipant} className="mt-6 grid gap-4 sm:grid-cols-4">
-            <Field label="Programme" required>
-              <Select
-                value={selectedProgramId}
-                onChange={(e) => {
-                  setSelectedProgramId(e.currentTarget.value);
-                  setSelectedUserId("");
-                  setSelectedApplicationId("");
-                }}
-                required
-              >
-                <option value="">Select a programme</option>
-                {programs.map((p) => (
+        <form onSubmit={handleCreateParticipant} className="mt-4 grid gap-3 sm:grid-cols-4">
+          <Field label="Programme" required>
+            <Select
+              value={selectedProgramId}
+              onChange={(e) => {
+                setSelectedProgramId(e.currentTarget.value);
+                setSelectedUserId("");
+                setSelectedApplicationId("");
+              }}
+              required
+            >
+              <option value="">Select a programme</option>
+              {programs.map((p) => (
+                <option key={p.id} value={p.id}>{p.name}</option>
+              ))}
+            </Select>
+          </Field>
+          <Field label="User (search by name or email)" required>
+            <Select
+              value={selectedUserId}
+              onChange={(e) => setSelectedUserId(e.currentTarget.value)}
+              required
+              disabled={!selectedProgramId}
+            >
+              <option value="">Select a user</option>
+              {profiles
+                .filter((p) => p.email || p.full_name)
+                .map((p) => (
                   <option key={p.id} value={p.id}>
-                    {p.name}
+                    {p.full_name ?? "—"} — {p.email ?? "no email"}
                   </option>
                 ))}
-              </Select>
-            </Field>
-            <Field label="User (search by name or email)" required>
-              <Select
-                value={selectedUserId}
-                onChange={(e) => setSelectedUserId(e.currentTarget.value)}
-                required
-                disabled={!selectedProgramId}
-              >
-                <option value="">Select a user</option>
-                {profiles
-                  .filter((p) => p.email || p.full_name)
-                  .map((p) => (
-                    <option key={p.id} value={p.id}>
-                      {p.full_name ?? "—"} — {p.email ?? "no email"}
-                    </option>
-                  ))}
-              </Select>
-            </Field>
-            <Field label="Application" required hint="Applications already submitted to the selected programme.">
-              <Select
-                value={selectedApplicationId}
-                onChange={(e) => setSelectedApplicationId(e.currentTarget.value)}
-                required
-                disabled={!selectedProgramId || !selectedUserId}
-              >
-                <option value="">Select an application</option>
-                {programApplications.map((a) => (
-                  <option key={a.id} value={a.id}>
-                    {a.applicant_name} — {a.email}
-                  </option>
-                ))}
-                {programApplications.length === 0 && selectedProgramId && (
-                  <option value="" disabled>
-                    No applications found for this programme
-                  </option>
-                )}
-              </Select>
-            </Field>
-            <Field label="Status">
-              <Select
-                value={participantStatus}
-                onChange={(e) => setParticipantStatus(e.currentTarget.value as "active" | "inactive" | "suspended" | "graduated")}
-              >
-                <option value="active">Active</option>
-                <option value="inactive">Inactive</option>
-                <option value="suspended">Suspended</option>
-                <option value="graduated">Graduated</option>
-              </Select>
-            </Field>
-            <div className="flex items-end">
-              <Button type="submit" disabled={loading || !selectedUserId || !selectedApplicationId || !selectedProgramId}>
-                Create Participant
-              </Button>
-            </div>
-          </form>
-        </div>
-
-        {/* Filters */}
-        <div className="mt-8 rounded-xl border border-line bg-surface p-5 sm:p-6">
-          <div className="grid gap-4 sm:grid-cols-4 lg:grid-cols-6">
-            <Field label="Search by name or email">
-              <Input
-                value={search}
-                onChange={(e) => setSearch(e.currentTarget.value)}
-                placeholder="Name or email"
-              />
-            </Field>
-             <Field label="Programme">
-               <Select
-                 value={programFilter}
-                 onChange={(e) => setProgramFilter(e.currentTarget.value)}
-               >
-                 <option value="">All programmes</option>
-                 {programs.map((p) => (
-                   <option key={p.id} value={p.id}>{p.name}</option>
-                 ))}
-               </Select>
-             </Field>
-            <Field label="Status">
-              <Select
-                value={statusFilter}
-                onChange={(e) => setStatusFilter(e.currentTarget.value)}
-              >
-                <option value="">All statuses</option>
-                <option value="active">Active</option>
-                <option value="inactive">Inactive</option>
-                <option value="suspended">Suspended</option>
-                <option value="graduated">Graduated</option>
-              </Select>
-            </Field>
-            <div className="flex items-end">
-              <Button onClick={() => void loadParticipants(1)} disabled={loading} size="sm">
-                Apply filters
-              </Button>
-            </div>
+            </Select>
+          </Field>
+          <Field label="Application" required hint="Applications already submitted to the selected programme.">
+            <Select
+              value={selectedApplicationId}
+              onChange={(e) => setSelectedApplicationId(e.currentTarget.value)}
+              required
+              disabled={!selectedProgramId || !selectedUserId}
+            >
+              <option value="">Select an application</option>
+              {programApplications.map((a) => (
+                <option key={a.id} value={a.id}>
+                  {a.applicant_name} — {a.email}
+                </option>
+              ))}
+              {programApplications.length === 0 && selectedProgramId && (
+                <option value="" disabled>
+                  No applications found for this programme
+                </option>
+              )}
+            </Select>
+          </Field>
+          <Field label="Status">
+            <Select
+              value={participantStatus}
+              onChange={(e) => setParticipantStatus(e.currentTarget.value as "active" | "inactive" | "suspended" | "graduated")}
+            >
+              <option value="active">Active</option>
+              <option value="inactive">Inactive</option>
+              <option value="suspended">Suspended</option>
+              <option value="graduated">Graduated</option>
+            </Select>
+          </Field>
+          <div className="flex items-end col-span-4 sm:col-span-1">
+            <Button type="submit" disabled={loading || !selectedUserId || !selectedApplicationId || !selectedProgramId}>
+              Create Participant
+            </Button>
           </div>
-        </div>
+        </form>
+      </div>
 
-        {/* Participants table */}
-        <div className="mt-8 rounded-xl border border-line bg-surface overflow-hidden">
-          {error ? (
-            <ErrorState message={error} />
-          ) : participants.length === 0 ? (
-            <EmptyState
-              title="No participants found"
-              description="No participants match your current filters."
+      {/* Filters */}
+      <div className="rounded-xl border border-line bg-surface p-5 sm:p-6">
+        <div className="grid gap-3 sm:grid-cols-4 lg:grid-cols-6">
+          <Field label="Search by name or email">
+            <Input
+              value={search}
+              onChange={(e) => setSearch(e.currentTarget.value)}
+              placeholder="Name or email"
             />
-          ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full text-left border-collapse">
-                <thead>
-                  <tr className="border-b border-line bg-surface-raised">
-                    <th className="px-4 py-3 text-[0.8125rem] font-semibold text-ink-muted">Name</th>
-                    <th className="px-4 py-3 text-[0.8125rem] font-semibold text-ink-muted">Email</th>
-                    <th className="px-4 py-3 text-[0.8125rem] font-semibold text-ink-muted">Program</th>
-                    <th className="px-4 py-3 text-[0.8125rem] font-semibold text-ink-muted">Status</th>
-                    <th className="px-4 py-3 text-[0.8125rem] font-semibold text-ink-muted">Joined</th>
-                    <th className="px-4 py-3 text-[0.8125rem] font-semibold text-ink-muted text-right">Action</th>
-                  </tr>
-                </thead>
-                <tbody>
-                   {participants.map((p: any) => (
-                     <tr
-                       key={p.id}
-                       className="border-b border-line hover:bg-surface-raised transition-colors cursor-pointer"
-                       onClick={() => void openDetail(p)}
-                     >
-                       <td className="px-4 py-3 text-sm text-ink">
-                         {p.full_name ??
-                           profileByUserId.get(p.user_id)?.full_name ??
-                           p.profiles?.full_name ??
-                           "Not provided"}
-                       </td>
-                       <td className="px-4 py-3 text-sm text-ink-muted">
-                         {p.email ??
-                           profileByUserId.get(p.user_id)?.email ??
-                           p.profiles?.email ??
-                           "Not provided"}
-                       </td>
-                      <td className="px-4 py-3 text-sm text-ink-muted">
-                        {p.programs?.name || "—"}
-                      </td>
-                      <td className="px-4 py-3 text-sm text-ink">
-                        <select
-                          defaultValue={p.participant_status}
-                          onChange={(e) => {
-                            e.stopPropagation();
-                            void handleStatusUpdate(p.id, e.currentTarget.value as "active" | "inactive" | "suspended" | "graduated");
-                          }}
-                          disabled={updateLoading === p.id}
-                          className="text-xs bg-transparent border-none text-ink focus-visible:ring-0"
-                        >
-                          {["active", "inactive", "suspended", "graduated"].map(
-                            (status) => (
-                              <option key={status} value={status}>
-                                {status.charAt(0).toUpperCase() + status.slice(1)}
-                              </option>
-                            ),
-                          )}
-                        </select>
-                        {updateLoading === p.id && (
-                          <span className="text-[0.75rem] text-ink-muted">Updating…</span>
-                        )}
-                      </td>
-                      <td className="px-4 py-3 text-sm text-ink-muted">
-                        {p.joined_at ? new Date(p.joined_at).toLocaleDateString() : "—"}
-                      </td>
-                      <td className="px-4 py-3 text-sm text-right">
-                        <AdminStatusBadge status={p.participant_status} />
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
+          </Field>
+          <Field label="Programme">
+            <Select
+              value={programFilter}
+              onChange={(e) => setProgramFilter(e.currentTarget.value)}
+            >
+              <option value="">All programmes</option>
+              {programs.map((p) => (
+                <option key={p.id} value={p.id}>{p.name}</option>
+              ))}
+            </Select>
+          </Field>
+          <Field label="Status">
+            <Select
+              value={statusFilter}
+              onChange={(e) => setStatusFilter(e.currentTarget.value)}
+            >
+              <option value="">All statuses</option>
+              <option value="active">Active</option>
+              <option value="inactive">Inactive</option>
+              <option value="suspended">Suspended</option>
+              <option value="graduated">Graduated</option>
+            </Select>
+          </Field>
+          <div className="flex items-end col-span-4 sm:col-span-1">
+            <Button onClick={() => void loadParticipants(1)} disabled={loading} size="sm">
+              Apply filters
+            </Button>
+          </div>
         </div>
+      </div>
 
-        {meta && (
-          <div className="mt-6 flex items-center justify-between">
-            <p className="text-[0.8125rem] text-ink-muted">
-              {meta.total} participants &middot; Page {meta.page} of {meta.totalPages}
-            </p>
-            <div className="flex items-center gap-2">
-              <Button
-                onClick={() => {
-                  if (pageRef.current > 1) void loadParticipants(pageRef.current - 1);
+      {/* Participants table */}
+      <div className="rounded-xl border border-line bg-surface overflow-hidden">
+        {error ? (
+          <ErrorState message={error} />
+        ) : participants.length === 0 ? (
+          <EmptyState
+            title="No participants found"
+            description="No participants match your current filters."
+          />
+        ) : (
+          <ResponsiveTable caption="Participant directory">
+            <TableHead>
+              <TableHeader>
+                <TableCellHeader>Name</TableCellHeader>
+                <TableCellHeader>Email</TableCellHeader>
+                <TableCellHeader>Program</TableCellHeader>
+                <TableCellHeader>Status</TableCellHeader>
+                <TableCellHeader>Joined</TableCellHeader>
+                <TableCellHeader className="text-right">Action</TableCellHeader>
+              </TableHeader>
+            </TableHead>
+            <TableBody>
+              {participants.map((p: any) => (
+                <TableRow
+                  key={p.id}
+                  className="cursor-pointer"
+                  onClick={() => void openDetail(p)}
+                >
+                  <TableCell>
+                    {p.full_name ??
+                      profileByUserId.get(p.user_id)?.full_name ??
+                      p.profiles?.full_name ??
+                      "Not provided"}
+                  </TableCell>
+                  <TableCell className="text-ink-muted">
+                    {p.email ??
+                      profileByUserId.get(p.user_id)?.email ??
+                      p.profiles?.email ??
+                      "Not provided"}
+                  </TableCell>
+                  <TableCell className="text-ink-muted">{p.programs?.name || "—"}</TableCell>
+                  <TableCell>
+                    <select
+                      value={pendingParticipantStatus[p.id] ?? p.participant_status}
+                      onChange={(e) => {
+                        requestStatusChange(p.id, e.currentTarget.value as "active" | "inactive" | "suspended" | "graduated");
+                      }}
+                      disabled={updateLoading === p.id}
+                      className="text-xs bg-transparent border-none text-ink focus-visible:ring-0"
+                    >
+                      {["active", "inactive", "suspended", "graduated"].map(
+                        (status) => (
+                          <option key={status} value={status}>
+                            {status.charAt(0).toUpperCase() + status.slice(1)}
+                          </option>
+                        ),
+                      )}
+                    </select>
+                    {updateLoading === p.id && (
+                      <span className="text-[0.75rem] text-ink-secondary">Updating…</span>
+                    )}
+                  </TableCell>
+                  <TableCell className="text-ink-muted">
+                    {p.joined_at ? new Date(p.joined_at).toLocaleDateString() : "—"}
+                  </TableCell>
+                  <TableCell className="text-right">
+                    <StatusBadge status={p.participant_status} />
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </ResponsiveTable>
+        )}
+      </div>
+
+      {meta && (
+        <div className="mt-6 flex items-center justify-between">
+          <p className="text-[0.8125rem] text-ink-secondary">
+            {meta.total} participants &middot; Page {meta.page} of {meta.totalPages}
+          </p>
+          <div className="flex items-center gap-2">
+            <Button
+              onClick={() => {
+                if (pageRef.current > 1) void loadParticipants(pageRef.current - 1);
+              }}
+              disabled={pageRef.current <= 1 || loading}
+              size="sm"
+            >
+              Prev
+            </Button>
+            <Button
+              onClick={() => {
+                if (pageRef.current < meta.totalPages) void loadParticipants(pageRef.current + 1);
+              }}
+              disabled={pageRef.current >= meta.totalPages || loading}
+              size="sm"
+            >
+              Next
+            </Button>
+          </div>
+        </div>
+      )}
+
+      {selected && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-ink/40 p-4" onClick={() => setSelected(null)}>
+          <div className="max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-xl border border-line bg-surface p-6" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-start justify-between">
+              <h3 className="text-base font-semibold text-ink">Participant Profile</h3>
+              <button onClick={() => setSelected(null)} className="text-ink-muted">✕</button>
+            </div>
+            <div className="mt-4 space-y-2 text-sm">
+              <p>
+                <span className="font-semibold">Name:</span>{" "}
+                {selected.full_name ??
+                  profileByUserId.get(selected.user_id)?.full_name ??
+                  selected.profiles?.full_name ??
+                  selectedApplication?.applicant_name ??
+                  "Not provided"}
+              </p>
+              <p>
+                <span className="font-semibold">Email:</span>{" "}
+                {selected.email ??
+                  profileByUserId.get(selected.user_id)?.email ??
+                  selected.profiles?.email ??
+                  selectedApplication?.email ??
+                  "Not provided"}
+              </p>
+              <p>
+                <span className="font-semibold">Phone:</span>{" "}
+                {selectedApplication?.phone ?? "Not provided"}
+              </p>
+              <p>
+                <span className="font-semibold">Institution:</span>{" "}
+                {selectedApplication?.institution ?? "Not provided"}
+              </p>
+              <p>
+                <span className="font-semibold">Country:</span>{" "}
+                {(selectedApplication?.application_answers as any)?.country ??
+                  "Not provided"}
+              </p>
+              <p>
+                <span className="font-semibold">City:</span>{" "}
+                {selectedApplication?.city ?? "Not provided"}
+              </p>
+              <p>
+                <span className="font-semibold">Education level:</span>{" "}
+                {(selectedApplication?.application_answers as any)
+                  ?.educationLevel ?? "Not provided"}
+              </p>
+              <p>
+                <span className="font-semibold">Programme:</span>{" "}
+                {selected.program_name ?? selected.programs?.name ??
+                  "Not provided"}
+              </p>
+              <p>
+                <span className="font-semibold">Application status:</span>{" "}
+                {selectedApplication?.application_status ?? "Not provided"}
+              </p>
+              <p>
+                <span className="font-semibold">Membership status:</span>{" "}
+                {selected.participant_status}
+              </p>
+              <p>
+                <span className="font-semibold">Applied:</span>{" "}
+                {selectedApplication?.created_at
+                  ? new Date(selectedApplication.created_at).toLocaleDateString()
+                  : "Not provided"}
+              </p>
+              <p>
+                <span className="font-semibold">Joined:</span>{" "}
+                {selected.joined_at
+                  ? new Date(selected.joined_at).toLocaleDateString()
+                  : "Not provided"}
+              </p>
+              {selectedApplication?.referral_code && (
+                <p>
+                  <span className="font-semibold">Referred by:</span>{" "}
+                  {selectedApplication.referred_by_ambassador_name ??
+                  selectedApplication.referral_code}
+                </p>
+              )}
+            </div>
+            <div className="mt-4 flex flex-wrap gap-2">
+              {(["active", "inactive", "suspended", "graduated"] as const).map((s) => (
+                <Button key={s} size="sm" onClick={() => requestStatusChange(selected.id, s)} disabled={updateLoading === selected.id}>
+                  {s}
+                </Button>
+              ))}
+              <ConfirmationDialog
+                open={confirmOpen && confirmId === selected.id}
+                onClose={() => {
+                  setConfirmOpen(false);
+                  setPendingParticipantStatus((prev) => {
+                    const { [confirmId]: _removed, ...rest } = prev;
+                    return rest;
+                  });
                 }}
-                disabled={pageRef.current <= 1 || loading}
-                size="sm"
-              >
-                Prev
-              </Button>
-              <Button
-                onClick={() => {
-                  if (pageRef.current < meta.totalPages) void loadParticipants(pageRef.current + 1);
-                }}
-                disabled={pageRef.current >= meta.totalPages || loading}
-                size="sm"
-              >
-                Next
-              </Button>
+                title="Change membership status"
+                description={`Change the participant's status to ${confirmStatus.charAt(0).toUpperCase() + confirmStatus.slice(1)}?`}
+                confirmLabel={confirmStatus.charAt(0).toUpperCase() + confirmStatus.slice(1)}
+                onConfirm={() => void handleStatusUpdate(confirmId, confirmStatus)}
+                loading={updateLoading === confirmId}
+              />
+            </div>
+            <div className="mt-6">
+              <h4 className="text-sm font-semibold text-ink mb-2">Assigned tasks</h4>
+              {detailLoading ? (
+                <p className="text-sm text-ink-secondary">Loading…</p>
+              ) : detailTasks.length === 0 ? (
+                <p className="text-sm text-ink-secondary">No tasks assigned.</p>
+              ) : (
+                <ul className="space-y-2">
+                  {detailTasks.map((t: any) => (
+                    <li key={t.id} className="rounded-md border border-line p-3 text-sm">
+                      <div className="font-medium text-ink">{t.title}</div>
+                      <div className="text-xs text-ink-secondary">Status: {t.status} {t.due_date ? `· Due ${new Date(t.due_date).toLocaleDateString()}` : ""}</div>
+                      {t.feedback && <div className="mt-1 text-xs text-ink-secondary">Feedback: {t.feedback}</div>}
+                    </li>
+                  ))}
+                </ul>
+              )}
             </div>
           </div>
-        )}
-        {selected && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center bg-ink/40 p-4" onClick={() => setSelected(null)}>
-            <div className="max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-xl border border-line bg-surface p-6" onClick={(e) => e.stopPropagation()}>
-              <div className="flex items-start justify-between">
-                <h3 className="text-base font-semibold text-ink">Participant Profile</h3>
-                <button onClick={() => setSelected(null)} className="text-ink-muted">✕</button>
-              </div>
-              <div className="mt-4 space-y-2 text-sm">
-                <p>
-                  <span className="font-semibold">Name:</span>{" "}
-                  {selected.full_name ??
-                    profileByUserId.get(selected.user_id)?.full_name ??
-                    selected.profiles?.full_name ??
-                    selectedApplication?.applicant_name ??
-                    "Not provided"}
-                </p>
-                <p>
-                  <span className="font-semibold">Email:</span>{" "}
-                  {selected.email ??
-                    profileByUserId.get(selected.user_id)?.email ??
-                    selected.profiles?.email ??
-                    selectedApplication?.email ??
-                    "Not provided"}
-                </p>
-                <p>
-                  <span className="font-semibold">Phone:</span>{" "}
-                  {selectedApplication?.phone ?? "Not provided"}
-                </p>
-                <p>
-                  <span className="font-semibold">Institution:</span>{" "}
-                  {selectedApplication?.institution ?? "Not provided"}
-                </p>
-                <p>
-                  <span className="font-semibold">Country:</span>{" "}
-                  {(selectedApplication?.application_answers as any)?.country ??
-                    "Not provided"}
-                </p>
-                <p>
-                  <span className="font-semibold">City:</span>{" "}
-                  {selectedApplication?.city ?? "Not provided"}
-                </p>
-                <p>
-                  <span className="font-semibold">Education level:</span>{" "}
-                  {(selectedApplication?.application_answers as any)
-                    ?.educationLevel ?? "Not provided"}
-                </p>
-                <p>
-                  <span className="font-semibold">Programme:</span>{" "}
-                  {selected.program_name ?? selected.programs?.name ??
-                    "Not provided"}
-                </p>
-                <p>
-                  <span className="font-semibold">Application status:</span>{" "}
-                  {selectedApplication?.application_status ?? "Not provided"}
-                </p>
-                <p>
-                  <span className="font-semibold">Membership status:</span>{" "}
-                  {selected.participant_status}
-                </p>
-                <p>
-                  <span className="font-semibold">Applied:</span>{" "}
-                  {selectedApplication?.created_at
-                    ? new Date(selectedApplication.created_at).toLocaleDateString()
-                    : "Not provided"}
-                </p>
-                <p>
-                  <span className="font-semibold">Joined:</span>{" "}
-                  {selected.joined_at
-                    ? new Date(selected.joined_at).toLocaleDateString()
-                    : "Not provided"}
-                </p>
-                {selectedApplication?.referral_code && (
-                  <p>
-                    <span className="font-semibold">Referred by:</span>{" "}
-                    {selectedApplication.referred_by_ambassador_name ??
-                    selectedApplication.referral_code}
-                  </p>
-                )}
-              </div>
-              <div className="mt-4 flex flex-wrap gap-2">
-                {(["active", "inactive", "suspended", "graduated"] as const).map((s) => (
-                  <Button key={s} size="sm" onClick={() => void handleStatusUpdate(selected.id, s)} disabled={updateLoading === selected.id}>
-                    {s}
-                  </Button>
-                ))}
-              </div>
-              <div className="mt-6">
-                <h4 className="text-sm font-semibold text-ink mb-2">Assigned tasks</h4>
-                {detailLoading ? (
-                  <p className="text-sm text-ink-muted">Loading…</p>
-                ) : detailTasks.length === 0 ? (
-                  <p className="text-sm text-ink-muted">No tasks assigned.</p>
-                ) : (
-                  <ul className="space-y-2">
-                    {detailTasks.map((t: any) => (
-                      <li key={t.id} className="rounded-md border border-line p-3 text-sm">
-                        <div className="font-medium text-ink">{t.title}</div>
-                        <div className="text-xs text-ink-muted">Status: {t.status} {t.due_date ? `· Due ${new Date(t.due_date).toLocaleDateString()}` : ""}</div>
-                        {t.feedback && <div className="mt-1 text-xs text-ink-muted">Feedback: {t.feedback}</div>}
-                      </li>
-                    ))}
-                  </ul>
-                )}
-              </div>
-            </div>
-          </div>
-        )}
-
-      </SectionInner>
-    </Section>
+        </div>
+      )}
+    </div>
   );
 }

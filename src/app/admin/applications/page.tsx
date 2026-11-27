@@ -1,20 +1,23 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
+import Link from "next/link";
 
 import { useAuth } from "@/lib/api/auth";
 import { communityApi } from "@/lib/api/client";
 import { Button } from "@/components/ui/button";
 import { Field, Input, Select } from "@/components/ui/field";
-import { Section, SectionInner } from "@/components/ui/section";
-import { SectionHeading } from "@/components/ui/section-heading";
+import { DashboardPageHeader } from "@/components/dashboard/page-header";
+import { Breadcrumb } from "@/components/dashboard/page-header";
+import { StatisticCard } from "@/components/dashboard/statistic-card";
+import { StatusBadge } from "@/components/dashboard/status-badge";
+import { EmptyState } from "@/components/dashboard/empty-state";
+import { ConfirmationDialog } from "@/components/dashboard/confirmation-dialog";
 import {
-  StatCard,
-  EmptyState,
   ErrorState,
   LoadingState,
-  AdminStatusBadge,
 } from "@/components/admin/shared";
+import { ResponsiveTable, TableBody, TableCell, TableCellHeader, TableHeader, TableHead, TableRow } from "@/components/dashboard/responsive-table";
 
 export default function AdminApplicationsPage() {
   const { accessToken, isAuthenticated, isLoading, isAdmin } = useAuth();
@@ -28,6 +31,15 @@ export default function AdminApplicationsPage() {
   const [referralFilter, setReferralFilter] = useState<"all" | "referred" | "direct">("all");
   const [currentPage, setCurrentPage] = useState(1);
   const [statusUpdateLoading, setStatusUpdateLoading] = useState<string | null>(null);
+
+  // Pending (unconfirmed) status per application, so the select reflects the
+  // attempted value until the confirmation dialog is confirmed or cancelled.
+  const [pendingStatus, setPendingStatus] = useState<Record<string, string>>({});
+
+  // Confirmation dialog for status changes.
+  const [confirmOpen, setConfirmOpen] = useState(false);
+  const [confirmId, setConfirmId] = useState("");
+  const [confirmStatus, setConfirmStatus] = useState("");
 
   const loadApplications = useCallback(async (page = 1) => {
     if (!accessToken) {
@@ -69,13 +81,25 @@ export default function AdminApplicationsPage() {
     loadApplications(1);
   }, [loadApplications]);
 
+  const requestStatusChange = useCallback((id: string, status: string) => {
+    setPendingStatus((prev) => ({ ...prev, [id]: status }));
+    setConfirmId(id);
+    setConfirmStatus(status);
+    setConfirmOpen(true);
+  }, []);
+
   const handleStatusUpdate = useCallback(async (id: string, status: string) => {
+    setConfirmOpen(false);
     if (!accessToken) return;
     setStatusUpdateLoading(id);
     try {
       const res = await communityApi.updateApplicationStatus(accessToken, id, status);
       setStatusUpdateLoading(null);
       if (res.ok) {
+        setPendingStatus((prev) => {
+          const { [id]: _removed, ...rest } = prev;
+          return rest;
+        });
         setApplications((prev) =>
           prev.map((a) => (a.id === id ? { ...a, application_status: status, reviewed_at: new Date().toISOString() } : a)),
         );
@@ -109,195 +133,203 @@ export default function AdminApplicationsPage() {
     return null;
   }
 
+  const statusOptions = [
+    "pending",
+    "under_review",
+    "shortlisted",
+    "accepted",
+    "rejected",
+    "waitlisted",
+  ];
+
   return (
-    <Section padded>
-      <SectionInner>
-        <SectionHeading
-          eyebrow="Application Management"
-          title="All Applications"
-          description="Review, search, filter, and update application statuses."
-        />
+    <div className="space-y-8">
+      <DashboardPageHeader
+        title="All Applications"
+        description="Review, search, filter, and update application statuses."
+        breadcrumb={[{ label: "Dashboard", href: "/admin" }, { label: "Applications", href: "/admin/applications" }]}
+      />
 
-        {/* Stats summary */}
-        <div className="mt-8 grid gap-4 sm:grid-cols-4">
-          <StatCard title="Total" value={applications.length} />
-          <StatCard title="Pending" value={statusCounts["pending"] ?? 0} />
-          <StatCard title="Under Review" value={statusCounts["under_review"] ?? 0} />
-          <StatCard title="Accepted" value={statusCounts["accepted"] ?? 0} />
-          <StatCard title="Referred" value={referredCount} />
+      {/* Stats summary */}
+      <div className="grid gap-4 sm:grid-cols-4 lg:grid-cols-5">
+        <StatisticCard title="Total" value={applications.length} icon={<span className="size-5">📄</span>} />
+        <StatisticCard title="Pending" value={statusCounts["pending"] ?? 0} icon={<span className="size-5">⏳</span>} />
+        <StatisticCard title="Under Review" value={statusCounts["under_review"] ?? 0} icon={<span className="size-5">🔎</span>} />
+        <StatisticCard title="Accepted" value={statusCounts["accepted"] ?? 0} icon={<span className="size-5">✅</span>} />
+        <StatisticCard title="Referred" value={referredCount} icon={<span className="size-5">🔗</span>} />
+      </div>
+
+      {/* Error state with retry */}
+      {error && (
+        <div>
+          <ErrorState message={error} onRetry={() => void loadApplications(1)} />
         </div>
+      )}
 
-        {/* Error state with retry */}
-        {error && (
-          <div className="mt-8">
-            <ErrorState message={error} onRetry={() => void loadApplications(1)} />
-          </div>
-        )}
-
-        {/* Filters */}
-        <div className="mt-8 rounded-xl border border-line bg-surface p-5 sm:p-6">
-          <div className="grid gap-4 sm:grid-cols-4 lg:grid-cols-6">
-            <Field label="Search by name or email">
-              <Input
-                value={search}
-                onChange={(e) => setSearch(e.currentTarget.value)}
-                placeholder="Applicant name or email"
-              />
-            </Field>
-            <Field label="Program">
-              <Select
-                value={programFilter}
-                onChange={(e) => setProgramFilter(e.currentTarget.value)}
-              >
-                <option value="">All programs</option>
-                <option value="founding-cohort">Founding Cohort</option>
-                <option value="ambassador">Ambassador Program</option>
-              </Select>
-            </Field>
-            <Field label="Status">
-              <Select
-                value={statusFilter}
-                onChange={(e) => setStatusFilter(e.currentTarget.value)}
-              >
-                <option value="">All statuses</option>
-                <option value="pending">Pending</option>
-                <option value="under_review">Under Review</option>
-                <option value="shortlisted">Shortlisted</option>
-                <option value="accepted">Accepted</option>
-                <option value="rejected">Rejected</option>
-                <option value="waitlisted">Waitlisted</option>
-              </Select>
-            </Field>
-            <Field label="Referral type">
-              <Select
-                value={referralFilter}
-                onChange={(e) => setReferralFilter(e.currentTarget.value as "all" | "referred" | "direct")}
-              >
-                <option value="all">All applications</option>
-                <option value="referred">Referred applications</option>
-                <option value="direct">Direct applications</option>
-              </Select>
-            </Field>
-            <div className="flex items-end">
-              <Button
-                onClick={() => void loadApplications(1)}
-                disabled={loading}
-              >
-                Apply filters
-              </Button>
-            </div>
-          </div>
-        </div>
-
-        {/* Applications table */}
-        <div className="mt-8 rounded-xl border border-line bg-surface overflow-hidden">
-          {(applications || []).length === 0 ? (
-            <EmptyState
-              title="No applications found"
-              description="No applications match your current filters."
-              action={{ label: "Clear filters", href: "/admin/applications" }}
+      {/* Filters */}
+      <div className="rounded-xl border border-line bg-surface p-5 sm:p-6">
+        <div className="grid gap-3 sm:grid-cols-4 lg:grid-cols-6">
+          <Field label="Search by name or email">
+            <Input
+              value={search}
+              onChange={(e) => setSearch(e.currentTarget.value)}
+              placeholder="Applicant name or email"
             />
-          ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full text-left border-collapse">
-                <thead>
-                  <tr className="border-b border-line bg-surface-raised">
-                    <th className="px-4 py-3 text-[0.8125rem] font-semibold text-ink-muted">Applicant</th>
-                    <th className="px-4 py-3 text-[0.8125rem] font-semibold text-ink-muted">Email</th>
-                    <th className="px-4 py-3 text-[0.8125rem] font-semibold text-ink-muted">Program</th>
-                    <th className="px-4 py-3 text-[0.8125rem] font-semibold text-ink-muted">Referred by ambassador</th>
-                    <th className="px-4 py-3 text-[0.8125rem] font-semibold text-ink-muted">Referral code</th>
-                    <th className="px-4 py-3 text-[0.8125rem] font-semibold text-ink-muted">Status</th>
-                    <th className="px-4 py-3 text-[0.8125rem] font-semibold text-ink-muted">Submitted</th>
-                    <th className="px-4 py-3 text-[0.8125rem] font-semibold text-ink-muted text-right">Action</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {(applications || []).map((app: any) => (
-                    <tr
-                      key={app.id}
-                      className="border-b border-line hover:bg-surface-raised transition-colors cursor-pointer"
-                      onClick={() => {
-                        // Navigate to detail
-                      }}
-                    >
-                      <td className="px-4 py-3 text-sm text-ink">
-                        {app?.applicant_name || "—"}
-                      </td>
-                      <td className="px-4 py-3 text-sm text-ink-muted">
-                        {app?.email || "—"}
-                      </td>
-                      <td className="px-4 py-3 text-sm text-ink-muted">
-                        {app?.programs?.name || "—"}
-                      </td>
-                      <td className="px-4 py-3 text-sm text-ink-muted">
-                        {app?.referred_by_ambassador_name || "—"}
-                      </td>
-                      <td className="px-4 py-3 text-sm text-ink-muted font-mono">
-                        {app?.referral_code || "—"}
-                      </td>
-                      <td className="px-4 py-3 text-sm text-ink">
-                        <AdminStatusBadge status={app?.application_status || "pending"} />
-                      </td>
-                      <td className="px-4 py-3 text-sm text-ink-muted">
-                        {app?.created_at ? new Date(app.created_at).toLocaleDateString() : "—"}
-                      </td>
-                      <td className="px-4 py-3 text-sm text-right">
-                        <select
-                          defaultValue={app.application_status}
-                          onChange={(e) => void handleStatusUpdate(app.id, e.currentTarget.value)}
-                          disabled={statusUpdateLoading === app.id}
-                          className="text-xs bg-transparent border-none text-ink focus-visible:ring-0"
-                        >
-                          {["pending", "under_review", "shortlisted", "accepted", "rejected", "waitlisted"].map(
-                            (status) => (
-                              <option key={status} value={status}>
-                                {status.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase())}
-                              </option>
-                            ),
-                          )}
-                        </select>
-                        {statusUpdateLoading === app.id && (
-                          <span className="text-[0.75rem] text-ink-muted">Updating…</span>
-                        )}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
-        </div>
-
-        {/* Pagination */}
-        {meta && (
-          <div className="mt-6 flex items-center justify-between">
-            <p className="text-[0.8125rem] text-ink-muted">
-              {meta.total} applications &middot; Page {currentPage} of {meta.totalPages}
-            </p>
-            <div className="flex items-center gap-2">
-              <Button
-                onClick={() => {
-                  if (currentPage > 1) void loadApplications(currentPage - 1);
-                }}
-                disabled={currentPage <= 1 || loading}
-                size="sm"
-              >
-                Prev
-              </Button>
-              <Button
-                onClick={() => {
-                  if (currentPage < meta.totalPages) void loadApplications(currentPage + 1);
-                }}
-                disabled={currentPage >= meta.totalPages || loading}
-                size="sm"
-              >
-                Next
-              </Button>
-            </div>
+          </Field>
+          <Field label="Program">
+            <Select
+              value={programFilter}
+              onChange={(e) => setProgramFilter(e.currentTarget.value)}
+            >
+              <option value="">All programs</option>
+              <option value="founding-cohort">Founding Cohort</option>
+              <option value="ambassador">Ambassador Program</option>
+            </Select>
+          </Field>
+          <Field label="Status">
+            <Select
+              value={statusFilter}
+              onChange={(e) => setStatusFilter(e.currentTarget.value)}
+            >
+              <option value="">All statuses</option>
+              {statusOptions.map((status) => (
+                <option key={status} value={status}>
+                  {status.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase())}
+                </option>
+              ))}
+            </Select>
+          </Field>
+          <Field label="Referral type">
+            <Select
+              value={referralFilter}
+              onChange={(e) => setReferralFilter(e.currentTarget.value as "all" | "referred" | "direct")}
+            >
+              <option value="all">All applications</option>
+              <option value="referred">Referred applications</option>
+              <option value="direct">Direct applications</option>
+            </Select>
+          </Field>
+          <div className="flex items-end col-span-4 sm:col-span-1">
+            <Button
+              onClick={() => void loadApplications(1)}
+              disabled={loading}
+            >
+              Apply filters
+            </Button>
           </div>
+        </div>
+      </div>
+
+      {/* Applications table */}
+      <div className="rounded-xl border border-line bg-surface overflow-hidden">
+        {(applications || []).length === 0 ? (
+          <EmptyState
+            title="No applications found"
+            description="No applications match your current filters."
+            action={{ label: "Clear filters", href: "/admin/applications" }}
+          />
+        ) : (
+          <ResponsiveTable caption="Application register">
+            <TableHead>
+              <TableHeader>
+                <TableCellHeader>Applicant</TableCellHeader>
+                <TableCellHeader>Email</TableCellHeader>
+                <TableCellHeader>Program</TableCellHeader>
+                <TableCellHeader>Referred by</TableCellHeader>
+                <TableCellHeader>Referral code</TableCellHeader>
+                <TableCellHeader>Status</TableCellHeader>
+                <TableCellHeader>Submitted</TableCellHeader>
+                <TableCellHeader className="text-right">Action</TableCellHeader>
+              </TableHeader>
+            </TableHead>
+            <TableBody>
+              {(applications || []).map((app: any) => (
+                <TableRow key={app.id}>
+                  <TableCell>{app?.applicant_name || "—"}</TableCell>
+                  <TableCell className="text-ink-muted">{app?.email || "—"}</TableCell>
+                  <TableCell className="text-ink-muted">{app?.programs?.name || "—"}</TableCell>
+                  <TableCell className="text-ink-muted">{app?.referred_by_ambassador_name || "—"}</TableCell>
+                  <TableCell className="text-ink-muted font-mono">{app?.referral_code || "—"}</TableCell>
+                  <TableCell>
+                    <select
+                      value={pendingStatus[app.id] ?? app.application_status}
+                      onChange={(e) => void requestStatusChange(app.id, e.currentTarget.value)}
+                      disabled={statusUpdateLoading === app.id}
+                      className="text-xs bg-transparent border-none text-ink focus-visible:ring-0"
+                    >
+                      {statusOptions.map((status) => (
+                        <option key={status} value={status}>
+                          {status.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase())}
+                        </option>
+                      ))}
+                    </select>
+                    {statusUpdateLoading === app.id && (
+                      <span className="text-[0.75rem] text-ink-secondary">Updating…</span>
+                    )}
+                  </TableCell>
+                  <TableCell className="text-ink-muted">
+                    {app?.created_at ? new Date(app.created_at).toLocaleDateString() : "—"}
+                  </TableCell>
+                  <TableCell className="text-right">
+                    <Link
+                      href={`/admin/applications/detail?id=${app.id}`}
+                      className="inline-flex items-center gap-1.5 rounded-md border border-line bg-surface px-3 py-1.5 text-xs font-medium text-ink transition-colors hover:bg-surface-raised hover:text-emerald focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald"
+                    >
+                      Review <span className="size-3">→</span>
+                    </Link>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </ResponsiveTable>
         )}
-      </SectionInner>
-    </Section>
+      </div>
+
+      {/* Status confirmation dialog */}
+      <ConfirmationDialog
+        open={confirmOpen}
+        onClose={() => {
+          setConfirmOpen(false);
+          setPendingStatus((prev) => {
+            const { [confirmId]: _removed, ...rest } = prev;
+            return rest;
+          });
+        }}
+        title="Update application status"
+        description="Changing the status will notify the applicant."
+        confirmLabel="Update status"
+        onConfirm={() => void handleStatusUpdate(confirmId, confirmStatus)}
+        loading={statusUpdateLoading === confirmId}
+      />
+
+      {/* Pagination */}
+      {meta && (
+        <div className="mt-6 flex items-center justify-between">
+          <p className="text-[0.8125rem] text-ink-secondary">
+            {meta.total} applications &middot; Page {currentPage} of {meta.totalPages}
+          </p>
+          <div className="flex items-center gap-2">
+            <Button
+              onClick={() => {
+                if (currentPage > 1) void loadApplications(currentPage - 1);
+              }}
+              disabled={currentPage <= 1 || loading}
+              size="sm"
+            >
+              Prev
+            </Button>
+            <Button
+              onClick={() => {
+                if (currentPage < meta.totalPages) void loadApplications(currentPage + 1);
+              }}
+              disabled={currentPage >= meta.totalPages || loading}
+              size="sm"
+            >
+              Next
+            </Button>
+          </div>
+        </div>
+      )}
+    </div>
   );
 }

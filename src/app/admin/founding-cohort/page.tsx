@@ -6,15 +6,14 @@ import Link from "next/link";
 import { useAuth } from "@/lib/api/auth";
 import { communityApi } from "@/lib/api/client";
 import { Button } from "@/components/ui/button";
-import { Section, SectionInner } from "@/components/ui/section";
-import { SectionHeading } from "@/components/ui/section-heading";
-import {
-  StatCard,
-  EmptyState,
-  ErrorState,
-  LoadingState,
-  AdminStatusBadge,
-} from "@/components/admin/shared";
+import { DashboardPageHeader } from "@/components/dashboard/page-header";
+import { Breadcrumb } from "@/components/dashboard/page-header";
+import { StatisticCard } from "@/components/dashboard/statistic-card";
+import { StatusBadge } from "@/components/dashboard/status-badge";
+import { EmptyState } from "@/components/dashboard/empty-state";
+import { ErrorState, LoadingState } from "@/components/admin/shared";
+import { ResponsiveTable, TableBody, TableCell, TableCellHeader, TableHeader, TableHead, TableRow } from "@/components/dashboard/responsive-table";
+import { ArrowRight } from "lucide-react";
 
 export default function FoundingCohortPage() {
   const { accessToken, isAuthenticated, isLoading, isAdmin } = useAuth();
@@ -78,155 +77,139 @@ export default function FoundingCohortPage() {
   });
 
   return (
-    <Section padded>
-      <SectionInner>
-        <SectionHeading
-          eyebrow="Founding Cohort Management"
-          title="Founding Cohort 2026–27"
-          description="Manage applications and members for The First 100 founding cohort."
-        />
+    <div className="space-y-8">
+      <DashboardPageHeader
+        title="Founding Cohort 2026–27"
+        description="Manage applications and members for The First 100 founding cohort."
+        breadcrumb={[{ label: "Dashboard", href: "/admin" }, { label: "Founding Cohort", href: "/admin/founding-cohort" }]}
+      />
 
-        {/* Stats */}
-        <div className="mt-8 grid gap-4 sm:grid-cols-4">
-          <StatCard title="Applications" value={applications.length} />
-          <StatCard title="Pending" value={statusCounts["pending"] ?? 0} />
-          <StatCard title="Accepted" value={statusCounts["accepted"] ?? 0} />
-          <StatCard title="Members" value={participants.length} />
-        </div>
+      {/* Stats */}
+      <div className="grid gap-4 sm:grid-cols-4">
+        <StatisticCard title="Applications" value={applications.length} icon={<span className="size-5">📄</span>} />
+        <StatisticCard title="Pending" value={statusCounts["pending"] ?? 0} icon={<span className="size-5">⏳</span>} />
+        <StatisticCard title="Accepted" value={statusCounts["accepted"] ?? 0} icon={<span className="size-5">✅</span>} />
+        <StatisticCard title="Members" value={participants.length} icon={<span className="size-5">👥</span>} />
+      </div>
 
-        {/* Applications section */}
-        <div className="mt-10 rounded-xl border border-line bg-surface overflow-hidden">
-          <div className="border-b border-line bg-surface-raised px-6 py-4 flex items-center justify-between">
-            <div>
-              <p className="type-label">Founding Cohort Applications</p>
-              <p className="text-[0.8125rem] text-ink-muted">Applications for The First 100</p>
-            </div>
-            <Link
-              href="/admin/applications"
-              className="inline-flex items-center gap-2 rounded-md border border-line bg-surface px-3 py-1.5 text-xs font-medium text-ink transition-colors hover:bg-surface-raised hover:text-emerald focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald"
-            >
-              All applications <span className="size-3">→</span>
-            </Link>
+      {/* Applications section */}
+      <div className="rounded-xl border border-line bg-surface overflow-hidden">
+        <div className="border-b border-line bg-surface-raised px-6 py-4 flex items-center justify-between">
+          <div>
+            <p className="type-label">Founding Cohort Applications</p>
+            <p className="text-[0.8125rem] text-ink-secondary">Applications for The First 100</p>
           </div>
-          <div className="p-6 sm:p-8">
-            {error ? (
-              <ErrorState message={error} />
-            ) : applications.length === 0 ? (
-              <EmptyState title="No founding cohort applications" description="No applications have been submitted to the Founding Cohort programme." />
-            ) : (
-              <table className="w-full text-left border-collapse">
-                <thead>
-                  <tr className="border-b border-line text-left">
-                    <th className="px-6 py-3 text-[0.8125rem] font-semibold text-ink-muted">Applicant</th>
-                    <th className="px-6 py-3 text-[0.8125rem] font-semibold text-ink-muted">Email</th>
-                    <th className="px-6 py-3 text-[0.8125rem] font-semibold text-ink-muted">Status</th>
-                    <th className="px-6 py-3 text-[0.8125rem] font-semibold text-ink-muted text-right">Action</th>
+          <Link
+            href="/admin/applications"
+            className="inline-flex items-center gap-2 rounded-md border border-line bg-surface px-3 py-1.5 text-xs font-medium text-ink transition-colors hover:bg-surface-raised hover:text-emerald focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald"
+          >
+            All applications <ArrowRight className="size-3" />
+          </Link>
+        </div>
+        <div className="p-6 sm:p-8">
+          {error ? (
+            <ErrorState message={error} />
+          ) : applications.length === 0 ? (
+            <EmptyState title="No founding cohort applications" description="No applications have been submitted to the Founding Cohort programme." />
+          ) : (
+            <ResponsiveTable caption="Founding cohort applications">
+              <TableHead>
+                <TableHeader>
+                  <TableCellHeader>Applicant</TableCellHeader>
+                  <TableCellHeader>Email</TableCellHeader>
+                  <TableCellHeader>Status</TableCellHeader>
+                  <TableCellHeader className="text-right">Action</TableCellHeader>
+                </TableHeader>
+              </TableHead>
+              <TableBody>
+                {applications.slice(0, 10).map((app: any) => (
+                  <TableRow key={app.id}>
+                    <TableCell>{app.applicant_name || "—"}</TableCell>
+                    <TableCell className="text-ink-muted">{app.email || "—"}</TableCell>
+                    <TableCell>
+                      <StatusBadge status={app.application_status} />
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <Link
+                        href={`/admin/applications/detail?id=${app.id}`}
+                        className="inline-flex items-center gap-1.5 rounded-md border border-line bg-surface px-3 py-1.5 text-xs font-medium text-ink transition-colors hover:bg-surface-raised hover:text-emerald focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald"
+                      >
+                        Review <span className="size-3">→</span>
+                      </Link>
+                    </TableCell>
+                  </TableRow>
+                ))}
+                {applications.length > 10 && (
+                  <tr>
+                    <td colSpan={4} className="px-6 py-4 text-center text-ink-secondary">
+                      Showing 10 of {applications.length} applications.{" "}
+                      <Link
+                        href="/admin/applications"
+                        className="text-emerald hover:underline font-medium"
+                      >
+                        View all
+                      </Link>
+                    </td>
                   </tr>
-                </thead>
-                <tbody>
-                  {applications.slice(0, 10).map((app: any) => (
-                    <tr
-                      key={app.id}
-                      className="border-b border-line hover:bg-surface-raised transition-colors cursor-pointer"
-                    >
-                      <td className="px-6 py-3 text-sm text-ink">
-                        {app.applicant_name || "—"}
-                      </td>
-                      <td className="px-6 py-3 text-sm text-ink-muted">
-                        {app.email || "—"}
-                      </td>
-                      <td className="px-6 py-3 text-sm text-ink">
-                        <AdminStatusBadge status={app.application_status} />
-                      </td>
-                      <td className="px-6 py-3 text-sm text-right">
-                        <Button
-                          size="sm"
-                          variant="outline"
-                        >
-                          <Link href={`/admin/applications/detail?id=${app.id}`}>Review</Link>
-                        </Button>
-                      </td>
-                    </tr>
-                  ))}
-                  {applications.length > 10 && (
-                    <tr>
-                      <td colSpan={4} className="px-6 py-4 text-center text-ink-muted">
-                        Showing 10 of {applications.length} applications.{" "}
-                        <Link
-                          href="/admin/applications"
-                          className="text-emerald hover:underline font-medium"
-                        >
-                          View all
-                        </Link>
-                      </td>
-                    </tr>
-                  )}
-                </tbody>
-              </table>
-            )}
-          </div>
+                )}
+              </TableBody>
+            </ResponsiveTable>
+          )}
         </div>
+      </div>
 
-        {/* Members section */}
-        <div className="mt-10 rounded-xl border border-line bg-surface overflow-hidden">
-          <div className="border-b border-line bg-surface-raised px-6 py-4 flex items-center justify-between">
-            <div>
-              <p className="type-label">Founding Cohort Members</p>
-              <p className="text-[0.8125rem] text-ink-muted">Approved participants in the programme</p>
-            </div>
-            <Link
-              href="/admin/participants"
-              className="inline-flex items-center gap-2 rounded-md border border-line bg-surface px-3 py-1.5 text-xs font-medium text-ink transition-colors hover:bg-surface-raised hover:text-emerald focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald"
-            >
-              All participants <span className="size-3">→</span>
-            </Link>
+      {/* Members section */}
+      <div className="rounded-xl border border-line bg-surface overflow-hidden">
+        <div className="border-b border-line bg-surface-raised px-6 py-4 flex items-center justify-between">
+          <div>
+            <p className="type-label">Founding Cohort Members</p>
+            <p className="text-[0.8125rem] text-ink-secondary">Approved participants in the programme</p>
           </div>
-          <div className="p-6 sm:p-8">
-            {participants.length === 0 ? (
-              <EmptyState title="No founding cohort members" description="No participants have been added to the Founding Cohort programme yet." />
-            ) : (
-              <table className="w-full text-left border-collapse">
-                <thead>
-                  <tr className="border-b border-line text-left">
-                    <th className="px-6 py-3 text-[0.8125rem] font-semibold text-ink-muted">Name</th>
-                    <th className="px-6 py-3 text-[0.8125rem] font-semibold text-ink-muted">Email</th>
-                    <th className="px-6 py-3 text-[0.8125rem] font-semibold text-ink-muted">Status</th>
-                    <th className="px-6 py-3 text-[0.8125rem] font-semibold text-ink-muted">Joined</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {participants.map((p: any) => (
-                    <tr
-                      key={p.id}
-                      className="border-b border-line hover:bg-surface-raised transition-colors"
-                    >
-                      <td className="px-6 py-3 text-sm text-ink">
-                        {p.profiles?.full_name || "—"}
-                      </td>
-                      <td className="px-6 py-3 text-sm text-ink-muted">
-                        {p.profiles?.email || "—"}
-                      </td>
-                      <td className="px-6 py-3 text-sm text-ink">
-                        <AdminStatusBadge status={p.participant_status} />
-                      </td>
-                      <td className="px-6 py-3 text-sm text-ink-muted">
-                        {p.joined_at ? new Date(p.joined_at).toLocaleDateString() : "—"}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            )}
-          </div>
+          <Link
+            href="/admin/participants"
+            className="inline-flex items-center gap-2 rounded-md border border-line bg-surface px-3 py-1.5 text-xs font-medium text-ink transition-colors hover:bg-surface-raised hover:text-emerald focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald"
+          >
+            All participants <ArrowRight className="size-3" />
+          </Link>
         </div>
+        <div className="p-6 sm:p-8">
+          {participants.length === 0 ? (
+            <EmptyState title="No founding cohort members" description="No participants have been added to the Founding Cohort programme yet." />
+          ) : (
+            <ResponsiveTable caption="Founding cohort members">
+              <TableHead>
+                <TableHeader>
+                  <TableCellHeader>Name</TableCellHeader>
+                  <TableCellHeader>Email</TableCellHeader>
+                  <TableCellHeader>Status</TableCellHeader>
+                  <TableCellHeader>Joined</TableCellHeader>
+                </TableHeader>
+              </TableHead>
+              <TableBody>
+                {participants.map((p: any) => (
+                  <TableRow key={p.id}>
+                    <TableCell>{p.profiles?.full_name || "—"}</TableCell>
+                    <TableCell className="text-ink-muted">{p.profiles?.email || "—"}</TableCell>
+                    <TableCell>
+                      <StatusBadge status={p.participant_status} />
+                    </TableCell>
+                    <TableCell className="text-ink-muted">
+                      {p.joined_at ? new Date(p.joined_at).toLocaleDateString() : "—"}
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </ResponsiveTable>
+          )}
+        </div>
+      </div>
 
-        <div className="mt-6 rounded-lg border border-line bg-surface p-4">
-          <p className="type-label mb-2">Programme</p>
-          <p className="text-sm text-ink-muted">
-            Founding Cohort 2026–27 — The First 100 founding members of the Code Yaar community.
-          </p>
-        </div>
-      </SectionInner>
-    </Section>
+      <div className="rounded-lg border border-line bg-surface p-4">
+        <p className="type-label mb-2">Programme</p>
+        <p className="text-sm text-ink-secondary">
+          Founding Cohort 2026–27 — The First 100 founding members of the Code Yaar community.
+        </p>
+      </div>
+    </div>
   );
 }

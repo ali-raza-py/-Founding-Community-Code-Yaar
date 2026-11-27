@@ -7,9 +7,10 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { useAuth } from "@/lib/api/auth";
 import { communityApi } from "@/lib/api/client";
 import { Button } from "@/components/ui/button";
-import { Section, SectionInner } from "@/components/ui/section";
-import { SectionHeading } from "@/components/ui/section-heading";
-import { AdminStatusBadge, ErrorState, LoadingState } from "@/components/admin/shared";
+import { DashboardPageHeader } from "@/components/dashboard/page-header";
+import { Breadcrumb } from "@/components/dashboard/page-header";
+import { StatusBadge } from "@/components/dashboard/status-badge";
+import { ErrorState, LoadingState } from "@/components/admin/shared";
 
 export default function AdminApplicationDetailPage() {
   const { accessToken, isAuthenticated, isLoading, isAdmin } = useAuth();
@@ -70,16 +71,12 @@ export default function AdminApplicationDetailPage() {
   const answers = application.application_answers || {};
 
   return (
-    <Section padded>
-      <SectionInner>
-        <div className="flex items-start justify-between gap-4 mb-8">
-          <div>
-            <SectionHeading
-              eyebrow="Application Detail"
-              title={application.applicant_name || "Untitled Application"}
-              description={`Application ID: ${application.id}`}
-            />
-          </div>
+    <div className="space-y-8">
+      <DashboardPageHeader
+        title={application.applicant_name || "Untitled Application"}
+        description={`Application ID: ${application.id}`}
+        breadcrumb={[{ label: "Dashboard", href: "/admin" }, { label: "Applications", href: "/admin/applications" }, { label: "Detail", href: `/admin/applications/detail?id=${application.id}` }]}
+        actions={
           <div className="flex items-end gap-3">
             <Link
               href="/admin/applications"
@@ -87,9 +84,10 @@ export default function AdminApplicationDetailPage() {
             >
               <span className="size-3.5">←</span> Back to applications
             </Link>
-            <AdminStatusBadge status={application.application_status} />
+            <StatusBadge status={application.application_status} />
           </div>
-        </div>
+        }
+      />
 
         {/* Application info grid */}
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
@@ -119,7 +117,7 @@ export default function AdminApplicationDetailPage() {
           </div>
           <div className="rounded-lg border border-line bg-surface p-4 sm:p-6">
             <p className="type-label mb-1">Status</p>
-            <AdminStatusBadge status={application.application_status} />
+            <StatusBadge status={application.application_status} />
           </div>
           <div className="rounded-lg border border-line bg-surface p-4 sm:p-6">
             <p className="type-label mb-1">Submitted</p>
@@ -142,12 +140,13 @@ export default function AdminApplicationDetailPage() {
         {/* Application answers */}
         <div className="mt-10 rounded-xl border border-line bg-surface overflow-hidden">
           <div className="border-b border-line bg-surface-raised px-6 py-4">
-            <SectionHeading
-              eyebrow="Application Responses"
-              title="Submitted Answers"
-              description="All fields submitted by the applicant."
-              tag="h3"
-            />
+            <div className="flex flex-col gap-1">
+              <p className="type-label">Application Responses</p>
+              <h3 className="text-base font-semibold text-ink">Submitted Answers</h3>
+              <p className="type-caption mt-0.5 text-ink-secondary">
+                All fields submitted by the applicant.
+              </p>
+            </div>
           </div>
           <div className="p-6 sm:p-8">
             {Object.keys(answers).length === 0 ? (
@@ -172,12 +171,13 @@ export default function AdminApplicationDetailPage() {
 
         {/* Status update */}
         <div className="mt-10 rounded-xl border border-line bg-surface p-6 sm:p-8">
-          <SectionHeading
-            eyebrow="Review Action"
-            title="Update Application Status"
-            description="Changing the status will notify the applicant."
-            tag="h3"
-          />
+          <div className="flex flex-col gap-1">
+            <p className="type-label">Review Action</p>
+            <h3 className="text-base font-semibold text-ink">Update Application Status</h3>
+            <p className="type-caption mt-0.5 text-ink-secondary">
+              Changing the status will notify the applicant.
+            </p>
+          </div>
           <div className="mt-6 space-y-3">
             {["pending", "under_review", "shortlisted", "accepted", "rejected", "waitlisted"].map(
               (status) => (
@@ -200,7 +200,6 @@ export default function AdminApplicationDetailPage() {
             )}
           </div>
         </div>
-      </SectionInner>
-    </Section>
+      </div>
   );
 }

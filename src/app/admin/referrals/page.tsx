@@ -1,21 +1,18 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import Link from "next/link";
 
 import { useAuth } from "@/lib/api/auth";
 import { communityApi } from "@/lib/api/client";
 import { Button } from "@/components/ui/button";
 import { Field, Input } from "@/components/ui/field";
-import { Section, SectionInner } from "@/components/ui/section";
-import { SectionHeading } from "@/components/ui/section-heading";
-import {
-  StatCard,
-  EmptyState,
-  ErrorState,
-  LoadingState,
-  AdminStatusBadge,
-} from "@/components/admin/shared";
+import { DashboardPageHeader } from "@/components/dashboard/page-header";
+import { Breadcrumb } from "@/components/dashboard/page-header";
+import { StatisticCard } from "@/components/dashboard/statistic-card";
+import { StatusBadge } from "@/components/dashboard/status-badge";
+import { EmptyState } from "@/components/dashboard/empty-state";
+import { ErrorState, LoadingState } from "@/components/admin/shared";
+import { ResponsiveTable, TableBody, TableCell, TableCellHeader, TableHeader, TableHead, TableRow } from "@/components/dashboard/responsive-table";
 
 export default function AdminReferralsPage() {
   const { accessToken, isAuthenticated, isLoading, isAdmin } = useAuth();
@@ -76,121 +73,107 @@ export default function AdminReferralsPage() {
   const totalVerified = referrals.reduce((sum, r) => sum + (r.verified_registrations ?? 0), 0);
 
   return (
-    <Section padded>
-      <SectionInner>
-        <SectionHeading
-          eyebrow="Referral Management"
-          title="Referral Registrations"
-          description="Review and verify ambassador referral registrations."
-        />
+    <div className="space-y-8">
+      <DashboardPageHeader
+        title="Referral Registrations"
+        description="Review and verify ambassador referral registrations."
+        breadcrumb={[{ label: "Dashboard", href: "/admin" }, { label: "Referrals", href: "/admin/referrals" }]}
+      />
 
-        {/* Stats */}
-        <div className="mt-8 grid gap-4 sm:grid-cols-4">
-          <StatCard title="Referral Codes" value={referrals.length} />
-          <StatCard title="Total Registrations" value={totalRegistrations} />
-          <StatCard title="Verified" value={totalVerified} />
-          <StatCard title="Pending Verification" value={totalRegistrations - totalVerified} />
+      {/* Stats */}
+      <div className="grid gap-4 sm:grid-cols-4">
+        <StatisticCard title="Referral Codes" value={referrals.length} icon={<span className="size-5">🔗</span>} />
+        <StatisticCard title="Total Registrations" value={totalRegistrations} icon={<span className="size-5">👤</span>} />
+        <StatisticCard title="Verified" value={totalVerified} icon={<span className="size-5">✅</span>} />
+        <StatisticCard title="Pending Verification" value={totalRegistrations - totalVerified} icon={<span className="size-5">⏳</span>} />
+      </div>
+
+      {/* Search */}
+      <div className="rounded-xl border border-line bg-surface p-5 sm:p-6">
+        <div className="flex gap-3">
+          <Field label="Search by email or referral code">
+            <Input
+              value={search}
+              onChange={(e) => setSearch(e.currentTarget.value)}
+              placeholder="Email or referral code"
+            />
+          </Field>
         </div>
+        <p className="type-caption mt-3 text-ink-secondary">
+          Search is applied client-side across the currently loaded page.
+        </p>
+      </div>
 
-        {/* Search */}
-        <div className="mt-8 rounded-xl border border-line bg-surface p-5 sm:p-6">
-          <div className="flex gap-3">
-            <Field label="Search by email or referral code">
-              <Input
-                value={search}
-                onChange={(e) => setSearch(e.currentTarget.value)}
-                placeholder="Email or referral code"
-              />
-            </Field>
-          </div>
-        </div>
-
-        {/* Referrals table */}
-        <div className="mt-8 rounded-xl border border-line bg-surface overflow-hidden">
-          {error ? (
-            <ErrorState message={error} />
-          ) : referrals.length === 0 ? (
-            <EmptyState title="No referrals found" description="No referral registrations exist yet." />
-          ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full text-left border-collapse">
-                <thead>
-                  <tr className="border-b border-line bg-surface-raised">
-                    <th className="px-4 py-3 text-[0.8125rem] font-semibold text-ink-muted">Referral Code</th>
-                    <th className="px-4 py-3 text-[0.8125rem] font-semibold text-ink-muted">Registered Email</th>
-                    <th className="px-4 py-3 text-[0.8125rem] font-semibold text-ink-muted">Referral Owner</th>
-                    <th className="px-4 py-3 text-[0.8125rem] font-semibold text-ink-muted">Total</th>
-                    <th className="px-4 py-3 text-[0.8125rem] font-semibold text-ink-muted">Verified</th>
-                    <th className="px-4 py-3 text-[0.8125rem] font-semibold text-ink-muted text-right">Action</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {referrals.map((r: any) => (
-                    <tr
-                      key={r.id}
-                      className="border-b border-line hover:bg-surface-raised transition-colors"
+      {/* Referrals table */}
+      <div className="rounded-xl border border-line bg-surface overflow-hidden">
+        {error ? (
+          <ErrorState message={error} />
+        ) : referrals.length === 0 ? (
+          <EmptyState title="No referrals found" description="No referral registrations exist yet." />
+        ) : (
+          <ResponsiveTable caption="Referral registrations">
+            <TableHead>
+              <TableHeader>
+                <TableCellHeader>Referral Code</TableCellHeader>
+                <TableCellHeader>Registered Email</TableCellHeader>
+                <TableCellHeader>Referral Owner</TableCellHeader>
+                <TableCellHeader>Total</TableCellHeader>
+                <TableCellHeader>Verified</TableCellHeader>
+                <TableCellHeader className="text-right">Action</TableCellHeader>
+              </TableHeader>
+            </TableHead>
+            <TableBody>
+              {referrals.map((r: any) => (
+                <TableRow key={r.id}>
+                  <TableCell className="text-ink font-mono">{r.referral_code || "—"}</TableCell>
+                  <TableCell className="text-ink-muted">{r.participants?.profiles?.email || "—"}</TableCell>
+                  <TableCell className="text-ink-muted">{r.participants?.profiles?.full_name || "—"}</TableCell>
+                  <TableCell className="text-ink">{r.total_registrations ?? 0}</TableCell>
+                  <TableCell className="text-ink">{r.verified_registrations ?? 0}</TableCell>
+                  <TableCell className="text-right">
+                    <Button
+                      onClick={() => void handleVerify(r.id)}
+                      disabled={verifyLoading === r.id}
+                      size="sm"
+                      variant={(r.verified_registrations ?? 0) >= (r.total_registrations ?? 0) ? "outline" : "primary"}
                     >
-                      <td className="px-4 py-3 text-sm text-ink font-mono">
-                        {r.referral_code || "—"}
-                      </td>
-                      <td className="px-4 py-3 text-sm text-ink-muted">
-                        {r.participants?.profiles?.email || "—"}
-                      </td>
-                      <td className="px-4 py-3 text-sm text-ink-muted">
-                        {r.participants?.profiles?.full_name || "—"}
-                      </td>
-                      <td className="px-4 py-3 text-sm text-ink">
-                        {r.total_registrations ?? 0}
-                      </td>
-                      <td className="px-4 py-3 text-sm text-ink">
-                        {r.verified_registrations ?? 0}
-                      </td>
-                      <td className="px-4 py-3 text-sm text-right">
-                        <Button
-                          onClick={() => void handleVerify(r.id)}
-                          disabled={verifyLoading === r.id}
-                          size="sm"
-                          variant={r.verified_registrations === (r.total_registrations ?? 0) ? "outline" : "primary"}
-                        >
-                          {verifyLoading === r.id ? "Verifying…" : "Verify"}
-                        </Button>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
-        </div>
-
-        {meta && (
-          <div className="mt-6 flex items-center justify-between">
-            <p className="text-[0.8125rem] text-ink-muted">
-              {meta.total} referrals &middot; Page {meta.page} of {meta.totalPages}
-            </p>
-            <div className="flex items-center gap-2">
-              <Button
-                onClick={() => {
-                  if (pageRef.current > 1) void loadReferrals(pageRef.current - 1);
-                }}
-                disabled={pageRef.current <= 1 || loading}
-                size="sm"
-              >
-                Prev
-              </Button>
-              <Button
-                onClick={() => {
-                  if (pageRef.current < meta.totalPages) void loadReferrals(pageRef.current + 1);
-                }}
-                disabled={pageRef.current >= meta.totalPages || loading}
-                size="sm"
-              >
-                Next
-              </Button>
-            </div>
-          </div>
+                      {verifyLoading === r.id ? "Verifying…" : "Verify"}
+                    </Button>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </ResponsiveTable>
         )}
-      </SectionInner>
-    </Section>
+      </div>
+
+      {meta && (
+        <div className="mt-6 flex items-center justify-between">
+          <p className="text-[0.8125rem] text-ink-secondary">
+            {meta.total} referrals &middot; Page {meta.page} of {meta.totalPages}
+          </p>
+          <div className="flex items-center gap-2">
+            <Button
+              onClick={() => {
+                if (pageRef.current > 1) void loadReferrals(pageRef.current - 1);
+              }}
+              disabled={pageRef.current <= 1 || loading}
+              size="sm"
+            >
+              Prev
+            </Button>
+            <Button
+              onClick={() => {
+                if (pageRef.current < meta.totalPages) void loadReferrals(pageRef.current + 1);
+              }}
+              disabled={pageRef.current >= meta.totalPages || loading}
+              size="sm"
+            >
+              Next
+            </Button>
+          </div>
+        </div>
+      )}
+    </div>
   );
 }

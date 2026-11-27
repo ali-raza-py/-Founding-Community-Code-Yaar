@@ -8,7 +8,13 @@ import { communityApi } from "@/lib/api/client";
 import type { AdminProfile, TaskRecord } from "@/lib/api/types";
 import { Button } from "@/components/ui/button";
 import { Field, Input, Select, Textarea } from "@/components/ui/field";
-import { Section, SectionInner } from "@/components/ui/section";
+import { DashboardPageHeader } from "@/components/dashboard/page-header";
+import { Breadcrumb } from "@/components/dashboard/page-header";
+import { StatusBadge } from "@/components/dashboard/status-badge";
+import { EmptyState } from "@/components/dashboard/empty-state";
+import { Dialog } from "@/components/dashboard/dialog";
+import { ConfirmationDialog } from "@/components/dashboard/confirmation-dialog";
+import { ErrorState, LoadingState } from "@/components/admin/shared";
 import { cn } from "@/lib/utils";
 
 type ParticipantOption = {
@@ -30,11 +36,11 @@ const STATUS_LABELS: Record<TaskStatus, string> = {
   overdue: "Overdue",
 };
 
-const STATUS_VARIANT: Record<TaskStatus, string> = {
-  pending: "bg-surface-raised text-ink",
-  in_progress: "bg-emerald-soft text-emerald",
-  completed: "bg-success-soft text-success",
-  overdue: "bg-danger-soft text-danger",
+const STATUS_SEMANTIC: Record<TaskStatus, "success" | "pending" | "rejected" | "in_progress"> = {
+  pending: "pending",
+  in_progress: "in_progress",
+  completed: "success",
+  overdue: "rejected",
 };
 
 export default function AdminTasksPage() {
@@ -51,16 +57,12 @@ export default function AdminTasksPage() {
   const [filterStatus, setFilterStatus] = useState("");
   const [search, setSearch] = useState("");
 
-  // Resolve each task's assigned_to (participant record id) to readable
-  // names/emails. Tasks may be assigned to one or several participants.
   const participantById = useMemo(() => {
     const map = new Map<string, ParticipantOption>();
     for (const p of participants) map.set(p.id, p);
     return map;
   }, [participants]);
 
-  // Fallback lookup by auth user_id, in case the backend returns user ids
-  // instead of participant record ids on existing task rows.
   const participantByUserId = useMemo(() => {
     const map = new Map<string, ParticipantOption>();
     for (const p of participants) map.set(p.userId, p);
@@ -108,7 +110,6 @@ export default function AdminTasksPage() {
             programId: p.program_id,
             status: p.participant_status,
           })));
-          // Overlay profile names/emails when available (non-blocking).
           return communityApi.getAdminProfiles(accessToken).then((pr) => {
             if (!pr.ok || !pr.data) return;
             const profiles = pr.data as AdminProfile[];
@@ -142,7 +143,7 @@ export default function AdminTasksPage() {
   }, [accessToken, search, filterProgram, filterStatus, communityApi]);
 
   // ------------------------------------------------------------------
-  // Dialog state (declared before any early return so hooks run in order)
+  // Dialog state
   // ------------------------------------------------------------------
   const EMPTY_CREATE = {
     title: "",
@@ -167,9 +168,6 @@ export default function AdminTasksPage() {
     return participants.filter((p) => p.programId === createValues.program_id && p.status === "active");
   }, [createValues.program_id, participants]);
 
-  // ------------------------------------------------------------------
-  // Edit task dialog state
-  // ------------------------------------------------------------------
   const [editOpen, setEditOpen] = useState(false);
   const [editId, setEditId] = useState<string | null>(null);
   const [editValues, setEditValues] = useState<{
@@ -182,9 +180,6 @@ export default function AdminTasksPage() {
   } | undefined>(undefined);
   const [editError, setEditError] = useState("");
 
-  // ------------------------------------------------------------------
-  // Delete confirmation state
-  // ------------------------------------------------------------------
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [deleteError, setDeleteError] = useState("");
 
@@ -196,25 +191,21 @@ export default function AdminTasksPage() {
 
   if (isLoading) {
     return (
-      <Section padded>
-        <SectionInner className="text-center py-24">
-          <p className="type-body text-ink-muted">Loading task management…</p>
-        </SectionInner>
-      </Section>
+      <div className="py-12 text-center">
+        <LoadingState />
+      </div>
     );
   }
 
   if (!isAuthenticated) {
     return (
-      <Section padded>
-        <SectionInner className="max-w-[42rem] text-center">
-          <h2 className="mb-6">Task Management</h2>
-          <p className="type-body mb-6">Sign in to manage tasks.</p>
-          <Link href="/sign-in" className="inline-flex items-center justify-center gap-2 rounded-md bg-emerald px-8 py-3 text-base font-medium text-white transition-colors hover:bg-emerald-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald">
-            Sign in
-          </Link>
-        </SectionInner>
-      </Section>
+      <div className="py-12 max-w-[42rem] mx-auto text-center">
+        <h2 className="mb-6 text-base font-semibold text-ink">Task Management</h2>
+        <p className="type-body mb-6">Sign in to manage tasks.</p>
+        <Link href="/sign-in" className="inline-flex items-center justify-center gap-2 rounded-md bg-emerald px-8 py-3 text-base font-medium text-white transition-colors hover:bg-emerald-hover">
+          Sign in
+        </Link>
+      </div>
     );
   }
 
@@ -233,9 +224,7 @@ export default function AdminTasksPage() {
       fieldErrors.assigned_to = "Select at least one participant.";
     if (!values.due_date) fieldErrors.due_date = "Select a due date.";
     if (Object.keys(fieldErrors).length > 0) {
-      setCreateError(
-        Object.values(fieldErrors).join(" "),
-      );
+      setCreateError(Object.values(fieldErrors).join(" "));
       return;
     }
     setCreateError("");
@@ -308,348 +297,339 @@ export default function AdminTasksPage() {
   };
 
   return (
-    <Section padded>
-      <SectionInner className="max-w-7xl">
-        <div className="flex items-start justify-between mb-6 sm:mb-8">
-          <div>
-            <h2 className="text-base font-semibold text-ink">Task Management</h2>
-            <p className="type-caption text-ink-muted">
-              Create, assign, track and complete tasks across programs.
-              Assignees are shown by name — raw IDs stay internal.
-            </p>
-          </div>
+    <div className="space-y-8">
+      <DashboardPageHeader
+        title="Task Management"
+        description="Create, assign, track and complete tasks across programs. Assignees are shown by name — raw IDs stay internal."
+        breadcrumb={[{ label: "Dashboard", href: "/admin" }, { label: "Tasks", href: "/admin/tasks" }]}
+        actions={
           <Button
             onClick={() => {
               setCreateValues(EMPTY_CREATE);
               setCreateError("");
               setCreateOpen(true);
             }}
-            className="rounded-md bg-emerald px-4 py-2.5 text-sm font-medium text-white transition-colors hover:bg-emerald-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald"
           >
             Create task
           </Button>
+        }
+      />
+
+      {error && (
+        <div className="rounded-lg border border-danger-soft bg-danger-soft p-4">
+          <p className="text-sm font-semibold text-danger">{error}</p>
         </div>
+      )}
 
-        {error && (
-          <div className="mb-6 rounded-lg border border-danger-soft bg-danger-soft p-4">
-            <p className="text-sm font-semibold text-danger">{error}</p>
+      <div className="rounded-xl border border-line bg-surface p-5 sm:p-6 mb-4">
+        <div className="flex flex-col sm:flex-row gap-3 sm:items-end">
+          <div className="flex-1 sm:w-[200px]">
+            <Field label="Program">
+              <Select
+                value={filterProgram}
+                onChange={(e) => setFilterProgram(e.currentTarget.value)}
+              >
+                <option value="">All programs</option>
+                {programs.map((p) => (
+                  <option key={p.id} value={p.id}>{p.name}</option>
+                ))}
+              </Select>
+            </Field>
           </div>
-        )}
-
-        <div className="rounded-lg border border-line bg-surface p-5 sm:p-6 mb-6">
-          <div className="flex flex-col sm:flex-row gap-3 sm:items-end">
-            <div className="flex-1 sm:w-[200px]">
-              <Field label="Program" >
-                <Select
-                  value={filterProgram}
-                  onChange={(e) => setFilterProgram(e.currentTarget.value)}
-                >
-                  <option value="">All programs</option>
-                  {programs.map((p) => (
-                    <option key={p.id} value={p.id}>
-                      {p.name}
-                    </option>
-                  ))}
-                </Select>
-              </Field>
-            </div>
-            <div className="flex-1 sm:w-[160px]">
-              <Field label="Status">
-                <Select value={filterStatus} onChange={(e) => setFilterStatus(e.currentTarget.value)}>
-                  <option value="">All statuses</option>
-                  {Object.entries(STATUS_LABELS).map(([key, label]) => (
-                    <option key={key} value={key}>{label}</option>
-                  ))}
-                </Select>
-              </Field>
-            </div>
-            <div className="flex-1">
-              <Field label="Search" hint="Search by title or assignee name">
-                <Input
-                  value={search}
-                  onChange={(e) => setSearch(e.currentTarget.value)}
-                  placeholder="Search tasks…"
-                />
-              </Field>
-            </div>
+          <div className="flex-1 sm:w-[160px]">
+            <Field label="Status">
+              <Select value={filterStatus} onChange={(e) => setFilterStatus(e.currentTarget.value)}>
+                <option value="">All statuses</option>
+                {Object.entries(STATUS_LABELS).map(([key, label]) => (
+                  <option key={key} value={key}>{label}</option>
+                ))}
+              </Select>
+            </Field>
+          </div>
+          <div className="flex-1">
+            <Field label="Search" hint="Search by title or assignee name">
+              <Input
+                value={search}
+                onChange={(e) => setSearch(e.currentTarget.value)}
+                placeholder="Search tasks…"
+              />
+            </Field>
           </div>
         </div>
+      </div>
 
-        <div className="rounded-lg border border-line bg-surface overflow-hidden">
-          <table className="w-full text-left border-collapse">
-            <thead>
-              <tr className="border-b border-line bg-surface-raised text-xs font-semibold text-ink-muted">
-                <th className="p-4">Task</th>
-                <th className="p-4">Assigned to</th>
-                <th className="p-4">Program</th>
-                <th className="p-4">Due date</th>
-                <th className="p-4">Status</th>
-                <th className="p-4 text-right">Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {tasks.map((task) => {
-                const assignees = resolveAssignees(task.assigned_to);
-                const statusKey = (task.status as TaskStatus) ?? "pending";
-                return (
-                  <tr key={task.id} className="border-b border-line/50 hover:bg-surface-raised/50 transition-colors">
-                    <td className="p-4">
-                      <div className="font-medium text-ink">{task.title}</div>
-                      {task.description && (
-                        <p className="mt-1 text-xs text-ink-muted">{task.description}</p>
-                      )}
-                    </td>
-                    <td className="p-4">
-                      {assignees.length > 0 ? (
-                        <div className="space-y-1">
-                          {assignees.map((a, idx) => (
-                            <div key={idx} className="font-medium text-ink">
-                              {escapeHtml(a.name)}
-                            </div>
-                          ))}
-                          <div className="text-xs text-ink-muted font-mono">
-                            {assignees.map((a) => escapeHtml(a.email)).join(", ")}
+      <div className="rounded-xl border border-line bg-surface overflow-hidden">
+        <table className="w-full text-left border-collapse">
+          <thead>
+            <tr className="border-b border-line bg-surface-raised text-xs font-semibold text-ink-secondary">
+              <th className="p-4">Task</th>
+              <th className="p-4">Assigned to</th>
+              <th className="p-4">Program</th>
+              <th className="p-4">Due date</th>
+              <th className="p-4">Status</th>
+              <th className="p-4 text-right">Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            {tasks.map((task) => {
+              const assignees = resolveAssignees(task.assigned_to);
+              const statusKey = ((task.status as TaskStatus) ?? "pending") as TaskStatus;
+              return (
+                <tr key={task.id} className="border-b border-line/50 hover:bg-surface-raised/50 transition-colors">
+                  <td className="p-4">
+                    <div className="font-medium text-ink">{task.title}</div>
+                    {task.description && (
+                      <p className="mt-1 text-xs text-ink-secondary">{task.description}</p>
+                    )}
+                  </td>
+                  <td className="p-4">
+                    {assignees.length > 0 ? (
+                      <div className="space-y-1">
+                        {assignees.map((a, idx) => (
+                          <div key={idx} className="font-medium text-ink truncate">
+                            {escapeHtml(a.name)}
                           </div>
+                        ))}
+                        <div className="text-xs text-ink-secondary font-mono">
+                          {assignees.map((a) => escapeHtml(a.email)).join(", ")}
                         </div>
-                      ) : (
-                        <div className="text-xs text-ink-muted">Unknown participant</div>
-                      )}
-                    </td>
-                    <td className="p-4 text-xs text-ink-muted">
-                      {programs.find((p) => p.id === task.program_id)?.name ?? "—"}
-                    </td>
-                    <td className="p-4 text-xs font-mono text-ink-muted">
-                      {task.due_date ?? "—"}
-                    </td>
-                    <td className="p-4">
-                      <span
-                        className={`inline-flex items-center rounded-md px-2.5 py-0.5 text-xs font-medium ${STATUS_VARIANT[statusKey]}`}
-                      >
-                        {STATUS_LABELS[statusKey]}
-                      </span>
-                    </td>
-                    <td className="p-4 text-right">
+                      </div>
+                    ) : (
+                      <div className="text-xs text-ink-secondary">Unknown participant</div>
+                    )}
+                  </td>
+                  <td className="p-4 text-xs text-ink-secondary">
+                    {programs.find((p) => p.id === task.program_id)?.name ?? "—"}
+                  </td>
+                  <td className="p-4 text-xs font-mono text-ink-secondary">
+                    {task.due_date ?? "—"}
+                  </td>
+                  <td className="p-4">
+                    <span className="inline-flex items-center rounded-md border px-2.5 py-0.5 text-xs font-medium border-transparent">
+                      <StatusBadge status={task.status} />
+                    </span>
+                  </td>
+                  <td className="p-4 text-right">
+                    <Button
+                      size="sm"
+                      onClick={() => {
+                        setEditId(task.id);
+                        setEditValues({
+                          title: task.title,
+                          description: task.description,
+                          program_id: task.program_id,
+                          assigned_to: Array.isArray(task.assigned_to)
+                            ? task.assigned_to
+                            : task.assigned_to
+                              ? [task.assigned_to]
+                              : [],
+                          due_date: task.due_date ?? "",
+                        });
+                        setEditError("");
+                        setEditOpen(true);
+                      }}
+                      className="mr-2 text-xs text-ink-secondary hover:text-emerald"
+                    >
+                      Edit
+                    </Button>
+                    {statusKey !== "completed" ? (
                       <Button
                         size="sm"
-                        onClick={() => {
-                          setEditId(task.id);
-                          setEditValues({
-                            title: task.title,
-                            description: task.description,
-                            program_id: task.program_id,
-                            assigned_to: Array.isArray(task.assigned_to)
-                              ? task.assigned_to
-                              : task.assigned_to
-                                ? [task.assigned_to]
-                                : [],
-                            due_date: task.due_date ?? "",
-                          });
-                          setEditError("");
-                          setEditOpen(true);
-                        }}
-                        className="mr-2 text-xs text-ink-muted hover:text-emerald"
+                        onClick={() => void handleComplete(task.id)}
+                        className="mr-2 text-xs text-emerald border border-emerald hover:bg-emerald hover:text-white"
                       >
-                        Edit
+                        Complete
                       </Button>
-                      {statusKey !== "completed" ? (
-                        <Button
-                          size="sm"
-                          onClick={() => void handleComplete(task.id)}
-                          className="mr-2 text-xs bg-emerald-soft text-emerald hover:bg-emerald"
-                        >
-                          Complete
-                        </Button>
-                      ) : null}
-                      <Button
-                        size="sm"
-                        onClick={() => {
-                          setDeleteId(task.id);
-                          setDeleteError("");
-                        }}
-                        className="text-xs text-ink-muted hover:text-danger"
-                      >
-                        Delete
-                      </Button>
-                    </td>
-                  </tr>
-                );
-              })}
-              {tasks.length === 0 && (
-                <tr>
-                  <td colSpan={6} className="p-8 text-center text-ink-muted">
-                    No tasks found.
+                    ) : null}
+                    <Button
+                      size="sm"
+                      onClick={() => {
+                        setDeleteId(task.id);
+                        setDeleteError("");
+                      }}
+                      className="text-xs text-ink-secondary hover:text-danger"
+                    >
+                      Delete
+                    </Button>
                   </td>
                 </tr>
-              )}
-            </tbody>
-          </table>
-        </div>
+              );
+            })}
+            {tasks.length === 0 && (
+              <tr>
+                <td colSpan={6} className="p-8 text-center text-ink-secondary">
+                  No tasks found.
+                </td>
+              </tr>
+            )}
+          </tbody>
+        </table>
+      </div>
 
-        {meta && (
-          <div className="mt-4 flex items-center justify-between text-xs text-ink-muted">
-            <p>Showing {tasks.length} of {meta.total} task(s) — page {meta.page} of {meta.totalPages}</p>
+      {meta && (
+        <div className="mt-4 flex items-center justify-between text-xs text-ink-secondary">
+          <p>Showing {tasks.length} of {meta.total} task(s) — page {meta.page} of {meta.totalPages}</p>
+        </div>
+      )}
+
+      {/* Create task dialog */}
+      <Dialog
+        open={createOpen}
+        onClose={() => setCreateOpen(false)}
+        title="Create task"
+        submitLabel="Create task"
+        onSubmit={() => handleCreate(createValues)}
+      >
+        <Field label="Title" required error={createValues.title ? undefined : "Title is required"}>
+          <Input
+            value={createValues.title}
+            onChange={(e) => setCreateValues({ ...createValues, title: e.currentTarget.value })}
+            required
+          />
+        </Field>
+        <Field label="Description">
+          <Textarea
+            value={createValues.description}
+            onChange={(e) => setCreateValues({ ...createValues, description: e.currentTarget.value })}
+            rows={3}
+          />
+        </Field>
+        <Field label="Program" required>
+          <Select
+            value={createValues.program_id}
+            onChange={(e) => {
+              setCreateValues({ ...createValues, program_id: e.currentTarget.value, assigned_to: [] });
+            }}
+            required
+          >
+            <option value="">Select a program</option>
+            {programs.map((p) => (
+              <option key={p.id} value={p.id}>{p.name}</option>
+            ))}
+          </Select>
+        </Field>
+        <Field label="Assign to" required hint="Select one or more active participants in the selected program">
+          <Select
+            multiple
+            value={createValues.assigned_to}
+            onChange={(e) => {
+              setCreateValues({
+                ...createValues,
+                assigned_to: Array.from(e.currentTarget.selectedOptions, (o) => o.value),
+              });
+            }}
+            required
+          >
+            <option value="">Select participants</option>
+            {eligibleParticipants.map((p) => (
+              <option key={p.id} value={p.id}>
+                {p.name} — {p.email}
+              </option>
+            ))}
+            {eligibleParticipants.length === 0 && createValues.program_id && (
+              <option value="" disabled>
+                No eligible participants in this program
+              </option>
+            )}
+          </Select>
+        </Field>
+        <Field label="Due date" required hint="ISO date, e.g. 2026-12-13">
+          <Input
+            type="date"
+            value={createValues.due_date}
+            onChange={(e) => setCreateValues({ ...createValues, due_date: e.currentTarget.value })}
+            required
+          />
+        </Field>
+        {createError && (
+          <div className="rounded-md border border-danger-soft bg-danger-soft p-3 mt-2">
+            <p className="text-sm text-danger">{createError}</p>
           </div>
         )}
+      </Dialog>
 
-        {/* Create task dialog */}
-        <Dialog
-          open={createOpen}
-          onClose={() => setCreateOpen(false)}
-          title="Create task"
-          submitLabel="Create task"
-          submitting={false}
-          error={createError}
-          onSubmit={() => handleCreate(createValues)}
-        >
-          <Field label="Title" required error={createValues.title ? undefined : "Title is required"}>
-            <Input
-              value={createValues.title}
-              onChange={(e) => setCreateValues({ ...createValues, title: e.currentTarget.value })}
-              required
-            />
-          </Field>
-          <Field label="Description">
-            <Textarea
-              value={createValues.description}
-              onChange={(e) => setCreateValues({ ...createValues, description: e.currentTarget.value })}
-              rows={3}
-            />
-          </Field>
-          <Field label="Program" required>
-              <Select
-                value={createValues.program_id}
-                onChange={(e) => {
-                  setCreateValues({ ...createValues, program_id: e.currentTarget.value, assigned_to: [] });
-                }}
-                required
-              >
-              <option value="">Select a program</option>
-              {programs.map((p) => (
-                <option key={p.id} value={p.id}>{p.name}</option>
-              ))}
-            </Select>
-          </Field>
-          <Field label="Assign to" required hint="Select one or more active participants in the selected program">
-            <Select
-              multiple
-              value={createValues.assigned_to}
-              onChange={(e) => {
-                setCreateValues({
-                  ...createValues,
-                  assigned_to: Array.from(e.currentTarget.selectedOptions, (o) => o.value),
-                });
-              }}
-              required
-            >
-              <option value="">Select participants</option>
-              {eligibleParticipants.map((p) => (
-                <option key={p.id} value={p.id}>
-                  {p.name} — {p.email}
-                </option>
-              ))}
-              {eligibleParticipants.length === 0 && createValues.program_id && (
-                <option value="" disabled>
-                  No eligible participants in this program
-                </option>
-              )}
-            </Select>
-          </Field>
-          <Field label="Due date" required hint="ISO date, e.g. 2026-12-13">
-            <Input
-              type="date"
-              value={createValues.due_date}
-              onChange={(e) => setCreateValues({ ...createValues, due_date: e.currentTarget.value })}
-              required
-            />
-          </Field>
-        </Dialog>
-
-        {/* Edit task dialog */}
-        <Dialog
-          open={editOpen}
-          onClose={() => setEditOpen(false)}
-          title="Edit task"
-          submitLabel="Save changes"
-          submitting={false}
-          error={editError}
-          onSubmit={() => {
-            if (editId && editValues) {
-              handleUpdate(editId, {
-                ...editValues,
-                status: editValues.status ?? "pending",
-              });
-            }
-          }}
-        >
-          <Field label="Title" required>
-            <Input
-              value={editValues?.title ?? ""}
-              onChange={(e) => setEditValues({ ...editValues!, title: e.currentTarget.value })}
-              required
-            />
-          </Field>
-          <Field label="Description">
-            <Textarea
-              value={editValues?.description ?? ""}
-              onChange={(e) => setEditValues({ ...editValues!, description: e.currentTarget.value })}
-              rows={3}
-            />
-          </Field>
-          <Field label="Due date" hint="ISO date, e.g. 2026-12-13">
-            <Input
-              type="date"
-              value={editValues?.due_date ?? ""}
-              onChange={(e) => setEditValues({ ...editValues!, due_date: e.currentTarget.value })}
-            />
-          </Field>
-          <Field label="Status">
-            <Select
-              value={(editValues as any)?.status ?? taskForEdit?.status ?? "pending"}
-              onChange={(e) => setEditValues({ ...editValues!, status: e.currentTarget.value as TaskStatus })}
-            >
-              {Object.entries(STATUS_LABELS).map(([key, label]) => (
-                <option key={key} value={key}>{label}</option>
-              ))}
-            </Select>
-          </Field>
-          <Field label="Reassign to">
-            <Select
-              multiple
-              value={editValues?.assigned_to ?? (taskForEdit ? normalizeAssignees(taskForEdit.assigned_to) : [])}
-              onChange={(e) => {
-                setEditValues({
-                  ...editValues!,
-                  assigned_to: Array.from(e.currentTarget.selectedOptions, (o) => o.value),
-                });
-              }}
-            >
-              <option value="">Keep current</option>
-              {eligibleParticipants.map((p) => (
-                <option key={p.id} value={p.id}>{p.name} — {p.email}</option>
-              ))}
-            </Select>
-          </Field>
-        </Dialog>
-
-        {/* Delete confirmation dialog */}
-        {deleteId && (
-          <Dialog
-            open={true}
-            onClose={() => setDeleteId(null)}
-            title="Delete task"
-            submitLabel="Delete"
-            submitting={false}
-            error={deleteError}
-            variant="danger"
-            onSubmit={() => void handleDelete(deleteId!)}
+      {/* Edit task dialog */}
+      <Dialog
+        open={editOpen}
+        onClose={() => setEditOpen(false)}
+        title="Edit task"
+        submitLabel="Save changes"
+        onSubmit={() => {
+          if (editId && editValues) {
+            handleUpdate(editId, {
+              ...editValues,
+              status: editValues.status ?? "pending",
+            });
+          }
+        }}
+      >
+        <Field label="Title" required>
+          <Input
+            value={editValues?.title ?? ""}
+            onChange={(e) => setEditValues({ ...editValues!, title: e.currentTarget.value })}
+            required
+          />
+        </Field>
+        <Field label="Description">
+          <Textarea
+            value={editValues?.description ?? ""}
+            onChange={(e) => setEditValues({ ...editValues!, description: e.currentTarget.value })}
+            rows={3}
+          />
+        </Field>
+        <Field label="Due date" hint="ISO date, e.g. 2026-12-13">
+          <Input
+            type="date"
+            value={editValues?.due_date ?? ""}
+            onChange={(e) => setEditValues({ ...editValues!, due_date: e.currentTarget.value })}
+          />
+        </Field>
+        <Field label="Status">
+          <Select
+            value={(editValues as any)?.status ?? taskForEdit?.status ?? "pending"}
+            onChange={(e) => setEditValues({ ...editValues!, status: e.currentTarget.value as TaskStatus })}
           >
-            <p className="type-body mb-4">
-              Are you sure you want to delete this task? This cannot be undone.
-            </p>
-          </Dialog>
+            {Object.entries(STATUS_LABELS).map(([key, label]) => (
+              <option key={key} value={key}>{label}</option>
+            ))}
+          </Select>
+        </Field>
+        <Field label="Reassign to">
+          <Select
+            multiple
+            value={editValues?.assigned_to ?? (taskForEdit ? normalizeAssignees(taskForEdit.assigned_to) : [])}
+            onChange={(e) => {
+              setEditValues({
+                ...editValues!,
+                assigned_to: Array.from(e.currentTarget.selectedOptions, (o) => o.value),
+              });
+            }}
+          >
+            <option value="">Keep current</option>
+            {eligibleParticipants.map((p) => (
+              <option key={p.id} value={p.id}>{p.name} — {p.email}</option>
+            ))}
+          </Select>
+        </Field>
+        {editError && (
+          <div className="rounded-md border border-danger-soft bg-danger-soft p-3 mt-2">
+            <p className="text-sm text-danger">{editError}</p>
+          </div>
         )}
-      </SectionInner>
-    </Section>
+      </Dialog>
+
+      {/* Delete confirmation dialog */}
+      <ConfirmationDialog
+        open={!!deleteId}
+        onClose={() => setDeleteId(null)}
+        title="Delete task"
+        description="Are you sure you want to delete this task? This cannot be undone."
+        confirmLabel="Delete"
+        variant="danger"
+        onConfirm={() => void handleDelete(deleteId!)}
+        loading={deleteError ? false : undefined}
+      />
+    </div>
   );
 }
 
@@ -661,84 +641,4 @@ function escapeHtml(value: unknown): string {
     .replace(/>/g, "&gt;")
     .replace(/"/g, "&quot;")
     .replace(/'/g, "&#039;");
-}
-
-interface DialogProps {
-  open: boolean;
-  onClose: () => void;
-  title: string;
-  submitLabel: string;
-  submitting: boolean;
-  error: string;
-  variant?: "default" | "danger";
-  onSubmit: () => void;
-  children: React.ReactNode;
-}
-
-function Dialog({
-  open,
-  onClose,
-  title,
-  submitLabel,
-  submitting,
-  error,
-  variant = "default",
-  onSubmit,
-  children,
-}: DialogProps) {
-  if (!open) return null;
-  return (
-    <>
-      <div
-        className="fixed inset-0 z-50 bg-ink/40 backdrop-blur-sm"
-        onClick={onClose}
-        aria-hidden="true"
-      />
-      <div
-        role="dialog"
-        aria-modal="true"
-        aria-label={title}
-        className="fixed left-1/2 top-1/2 z-50 w-full max-w-[480px] -translate-x-1/2 -translate-y-1/2 rounded-xl border border-line bg-surface shadow-lg"
-      >
-        <div className="flex items-start justify-between p-6 sm:p-8">
-          <h2 className="text-base font-semibold text-ink">{title}</h2>
-          <button
-            onClick={onClose}
-            className="rounded-md p-2 text-ink-muted hover:bg-surface-raised transition-colors"
-            aria-label="Close"
-          >
-            <span className="size-5">✕</span>
-          </button>
-        </div>
-        <div className="border-t border-line p-6 sm:p-8 space-y-4">
-          {error && (
-            <div className="rounded-md border border-danger-soft bg-danger-soft p-3">
-              <p className="text-sm text-danger">{error}</p>
-            </div>
-          )}
-          {children}
-          <div className="flex justify-end gap-2 pt-4 border-t border-line/50">
-            <Button
-              type="button"
-              onClick={onClose}
-              className="text-sm text-ink-muted hover:bg-surface-raised"
-            >
-              Cancel
-            </Button>
-            <Button
-              onClick={onSubmit}
-              disabled={submitting}
-              className={`text-sm font-medium transition-colors hover:bg-surface-raised ${
-                variant === "danger"
-                  ? "text-danger border border-danger hover:bg-danger-soft"
-                  : "bg-emerald text-white hover:bg-emerald-hover"
-              }`}
-            >
-              {submitting ? "Working…" : submitLabel}
-            </Button>
-          </div>
-        </div>
-      </div>
-    </>
-  );
 }

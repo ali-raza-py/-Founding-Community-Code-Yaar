@@ -13,8 +13,8 @@ import {
 } from "lucide-react";
 
 import { useAuth } from "@/lib/api/auth";
-import { Section, SectionInner } from "@/components/ui/section";
-import { SectionHeading } from "@/components/ui/section-heading";
+import { DashboardPageHeader } from "@/components/dashboard/page-header";
+import { Breadcrumb } from "@/components/dashboard/page-header";
 import { EmailDashboard } from "@/components/admin/emails/email-dashboard";
 import { EmailCompose } from "@/components/admin/emails/email-compose";
 import { EmailRecipients } from "@/components/admin/emails/email-recipients";
@@ -92,14 +92,12 @@ export default function AdminMailCenterPage() {
   if (!mailSectionActive) return null;
 
   return (
-    <Section padded>
-      <SectionInner>
-        <SectionHeading
-          eyebrow="Mail Center"
-          title="Mail Center"
-          description="Send emails to the community, manage recipient lists, and review delivery history through the Code Yaar email provider."
-          tag="h2"
-        />
+    <div className="space-y-6">
+      <DashboardPageHeader
+        title="Mail Center"
+        description="Send emails to the community, manage recipient lists, and review delivery history through the Code Yaar email provider."
+        breadcrumb={[{ label: "Dashboard", href: "/admin" }, { label: "Mail Center", href: "/admin/mail" }]}
+      />
 
         {/* Tab navigation */}
         <div className="mt-8 flex gap-1 border-b border-line overflow-x-auto pb-2 sm:pb-0 sm:overflow-visible">
@@ -142,8 +140,7 @@ export default function AdminMailCenterPage() {
           {activeTab === "history" && <EmailLogs />}
           {activeTab === "failed" && <FailedEmails />}
           {activeTab === "configuration" && <EmailConfig />}
-        </div>
-      </SectionInner>
-    </Section>
+      </div>
+    </div>
   );
 }

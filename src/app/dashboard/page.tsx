@@ -37,6 +37,7 @@ export default function DashboardPage() {
     isLoading,
     isAdmin,
     isSuperAdmin,
+    isAmbassador,
     backendUnavailable,
     signOut,
   } = useAuth();
@@ -107,6 +108,10 @@ export default function DashboardPage() {
     }
     if (isAdmin || isSuperAdmin) {
       void router.push("/admin");
+      return;
+    }
+    if (isAmbassador) {
+      void router.push("/ambassador/dashboard");
       return;
     }
 
