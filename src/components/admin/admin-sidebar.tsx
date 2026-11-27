@@ -326,7 +326,7 @@ export function AdminSidebar({
           )}
 
           {/* Main scrollable navigation */}
-          <div className="flex-1 overflow-y-auto sidebar-scrollable">
+          <div className="flex-1 min-h-0 overflow-y-auto sidebar-scrollable">
             <nav className="p-3 space-y-0.5">
               {visibleSections.map((section) => (
                 <div key={section.label}>
