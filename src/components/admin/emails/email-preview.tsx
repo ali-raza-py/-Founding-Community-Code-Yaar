@@ -305,31 +305,10 @@ export function EmailFooter({ optOut = true }: EmailFooterProps) {
         </div>
         <p style={{ margin: '2px 0', fontSize: '12.5px', color: '#9ca3af', lineHeight: '1.5' }}>
           {FROM_NAME}<br />
-          <a
-            href={BASE_URL}
-            style={{ color: '#9ca3af', textDecoration: 'none' }}
-          >
-            {BASE_URL}
-          </a>{' '}
-          <br />
           {FROM_EMAIL}
         </p>
-        {optOut && (
-          <div style={{ marginTop: '24px', borderTop: '1px solid #e2e8f0', paddingTop: '24px' }}>
-            <p style={{ margin: '0', fontSize: '11px', color: '#94a3b8', lineHeight: '1.5', textAlign: 'center' }}>
-              You received this email because of your relationship with Code Yaar.{' '}
-              <a href={UNSUBSCRIBE_URL} style={{ color: '#94a3b8', textDecoration: 'underline' }}>
-                Manage communication preferences
-              </a>{' '}
-              or{' '}
-              <a href={UNSUBSCRIBE_URL} style={{ color: '#94a3b8', textDecoration: 'underline' }}>
-                unsubscribe
-              </a>.
-            </p>
-          </div>
-        )}
         <p style={{ marginTop: '14px', fontSize: '11px', color: '#94a3b8', textAlign: 'center' }}>
-          {PRIVACY_URL}
+          You received this email because of your relationship with Code Yaar.
         </p>
       </div>
     </div>

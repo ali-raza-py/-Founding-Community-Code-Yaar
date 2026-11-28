@@ -185,12 +185,11 @@ const shell = (params: {
                     <td align="center" style="padding-top:12px;">
                       <p style="margin:2px 0;font-size:12.5px;color:#9ca3af;line-height:1.5;">
                         Code Yaar Founding Community<br />
-                        <a href="${escapeHtml(BASE_URL)}" style="color:#9ca3af;text-decoration:none;">${escapeHtml(BASE_URL)}</a><br />
                         ${escapeHtml(FROM_EMAIL)}
                       </p>
                     </td>
                   </tr>
-                  ${optOutHtml}
+                  
                 </table>
               </td>
             </tr>
