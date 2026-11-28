@@ -92,6 +92,7 @@
   scrollbar-width: thin;
   scrollbar-color: var(--admin-sidebar-scrollbar-thumb)
     var(--admin-sidebar-scrollbar-track);
+  overscroll-behavior-y: contain;
 }
 
 .sidebar-scrollable::-webkit-scrollbar {

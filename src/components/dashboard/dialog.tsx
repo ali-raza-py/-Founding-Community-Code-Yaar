@@ -42,10 +42,17 @@ export function Dialog({
   );
 
   useEffect(() => {
-    if (open) {
-      document.addEventListener("keydown", handleKeyDown);
-      return () => document.removeEventListener("keydown", handleKeyDown);
-    }
+    if (!open) return;
+    document.addEventListener("keydown", handleKeyDown);
+
+    // Lock background scroll while the dialog is open, restoring on close.
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+
+    return () => {
+      document.removeEventListener("keydown", handleKeyDown);
+      document.body.style.overflow = previousOverflow;
+    };
   }, [open, handleKeyDown]);
 
   if (!open) return null;
@@ -63,7 +70,7 @@ export function Dialog({
         aria-label={title}
         className="fixed left-1/2 top-1/2 z-50 flex max-h-[calc(100dvh-2rem)] w-[calc(100%-2rem)] max-w-[520px] -translate-x-1/2 -translate-y-1/2 flex-col overflow-hidden rounded-xl border border-line bg-surface shadow-lg"
       >
-        <div className="flex items-start justify-between p-6 sm:p-8">
+        <div className="flex shrink-0 items-start justify-between p-6 sm:p-8">
           <h2 className="text-base font-semibold text-ink">{title}</h2>
           {showCloseButton && (
             <button
@@ -76,7 +83,7 @@ export function Dialog({
             </button>
           )}
         </div>
-        <div className="min-h-0 flex-1 overflow-y-auto border-t border-line p-6 sm:p-8 space-y-4">
+        <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain border-t border-line p-6 sm:p-8 space-y-4">
           {error && (
             <div className="rounded-md border border-danger-soft bg-danger-soft p-3">
               <p className="text-sm text-danger">{error}</p>

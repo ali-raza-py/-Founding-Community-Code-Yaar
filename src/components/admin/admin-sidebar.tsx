@@ -215,14 +215,14 @@ export function AdminSidebar({
       >
         <div
           className={cn(
-            "flex flex-col border border-admin-sidebar-border bg-admin-sidebar-bg shadow-admin-sidebar-shadow backdrop-blur-md",
+            "flex flex-1 min-h-0 flex-col overflow-hidden border border-admin-sidebar-border bg-admin-sidebar-bg shadow-admin-sidebar-shadow backdrop-blur-md",
             "rounded-[var(--sidebar-radius)] transition-all duration-300 ease-in-out",
             `width-[var(--sidebar-width)]`,
             collapsed ? `width-[var(--sidebar-width-collapsed)]` : "",
           )}
         >
           {/* Brand header */}
-          <div className="flex items-center justify-between px-5 py-4 border-b border-admin-sidebar-border">
+          <div className="flex shrink-0 items-center justify-between px-5 py-4 border-b border-admin-sidebar-border">
             <Link
               href="/admin"
               className="flex items-center gap-2.5 group"
@@ -266,7 +266,7 @@ export function AdminSidebar({
 
           {/* Account profile section */}
           {!collapsed && (
-            <div className="px-4 py-3">
+            <div className="shrink-0 px-4 py-3">
               <button
                 onClick={() => setAccountOpen(!accountOpen)}
                 className="flex items-center gap-3 rounded-xl border border-admin-sidebar-border bg-admin-sidebar-surface px-3 py-2 text-left transition-colors hover:bg-admin-sidebar-surface-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald"
@@ -369,7 +369,7 @@ export function AdminSidebar({
           </div>
 
           {/* Bottom account actions */}
-          <div className="p-3 border-t border-admin-sidebar-border/50">
+          <div className="shrink-0 p-3 border-t border-admin-sidebar-border/50">
             <div className="space-y-2">
               {!collapsed && sidebarUser.email && (
                 <div className="flex items-center gap-3 rounded-xl border border-transparent bg-admin-sidebar-surface px-3 py-2 text-left transition-colors hover:bg-admin-sidebar-surface-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald">
