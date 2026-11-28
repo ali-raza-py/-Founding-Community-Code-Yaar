@@ -18,21 +18,21 @@ const TEST_SUBJECT = 'Code Yaar — Email Integration Test';
 export function buildTestEmailHtml(recipient: string, subject: string): string {
   const timestamp = new Date().toISOString();
   return `
-<table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="max-width:600px; margin:0 auto; background-color:#ffffff;">
+<table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="max-width:600px; margin:0 auto; background-color:#111827;">
   <tr>
-    <td align="center" style="padding:40px 24px; background-color:#ffffff;">
-      <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="max-width:560px; margin:0 auto; background-color:#ffffff;">
+    <td align="center" style="padding:40px 24px; background-color:#111827;">
+      <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="max-width:560px; margin:0 auto; background-color:#111827;">
         <tr>
-          <td align="left" style="font-size:20px; font-weight:700; color:#0f172a; padding-bottom:16px; line-height:1.4;">Email Integration Test</td>
+          <td align="left" style="font-size:20px; font-weight:700; color:#f9fafb; padding-bottom:16px; line-height:1.4;">Email Integration Test</td>
         </tr>
         <tr>
-          <td align="left" style="font-size:15px; color:#334155; line-height:1.7; padding-bottom:24px;">
+          <td align="left" style="font-size:15px; color:#e5e7eb; line-height:1.7; padding-bottom:24px;">
             <p style="margin:0 0 12px 0;">This is a test email from Code Yaar.</p>
             <p style="margin:0 0 12px 0;">If you received this message, the test request reached the email provider and delivery was accepted.</p>
           </td>
         </tr>
         <tr>
-          <td align="left" style="padding-top:24px; border-top:1px solid #f1f5f9;">
+          <td align="left" style="padding-top:24px; border-top:1px solid #1f2937;">
             <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0">
               <tr>
                 <td align="left" style="font-size:14px; color:#64748b; line-height:1.6;">

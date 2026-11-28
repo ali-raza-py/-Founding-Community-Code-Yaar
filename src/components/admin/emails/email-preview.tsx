@@ -330,12 +330,12 @@ export function BrandedEmail({
   optOut = true,
 }: BrandedEmailProps) {
   return (
-    <div style={{ background: '#ffffff', fontFamily: '"-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,Helvetica,Arial,sans-serif"', lineHeight: '1.6', color: '#f9fafb', margin: 0, padding: 0 }}>
+    <div style={{ background: '#0a0f1a', fontFamily: '"-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,Helvetica,Arial,sans-serif"', lineHeight: '1.6', color: '#f9fafb', margin: 0, padding: 0 }}>
       <div style={{ display: 'none', maxHeight: 0, overflow: 'hidden', fontSize: '1px', color: '#ffffff', lineHeight: '1px' }} />
       <table role="presentation" cellSpacing={0} cellPadding={0} border={0} width="100%">
         <tr>
           <td align="center" style={{ padding: '24px 16px' }}>
-            <table role="presentation" cellSpacing={0} cellPadding={0} border={0} width="100%" style={{ maxWidth: '640px', background: '#ffffff', borderRadius: '10px', overflow: 'hidden', border: '1px solid #1f2937' }}>
+            <table role="presentation" cellSpacing={0} cellPadding={0} border={0} width="100%" style={{ maxWidth: '600px', background: '#111827', borderRadius: '12px', overflow: 'hidden', border: '1px solid #1f2937' }}>
               <tr>
                 <td>
                   <EmailHeader campaignLabel={campaignLabel} />
