@@ -42,7 +42,7 @@ const escapeHtml = (value: unknown): string => {
 }
 
 const logotypeHtml = ({ size = 22 }: { size?: number } = {}) => `
-  <span style="font-size:${size}px; font-weight:800; letter-spacing:-0.5px; color:#0f172a; text-transform:uppercase;">code</span>
+  <span style="font-size:${size}px; font-weight:800; letter-spacing:-0.5px; color:#f9fafb; text-transform:uppercase;">code</span>
   <span style="font-size:${size}px; font-weight:800; letter-spacing:-0.5px; color:${BRAND_COLOR}; text-transform:uppercase;">yaar</span>
 `
 
@@ -76,7 +76,7 @@ const shell = (params: {
             <table role="presentation" cellspacing="0" cellpadding="0" border="0">
               <tr>
                 <td align="center" style="border-radius:6px;">
-                  <a href="${escapeHtml(button.url)}" target="_blank" style="background:${BRAND_COLOR};color:#ffffff;border:none;border-radius:6px;padding:14px 30px;font-family:'Times New Roman',Times,serif;font-size:16px;font-weight:600;text-decoration:none;display:block;">
+                  <a href="${escapeHtml(button.url)}" target="_blank" style="background:${BRAND_COLOR};color:#ffffff;border:none;border-radius:6px;padding:14px 30px;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;font-size:16px;font-weight:600;text-decoration:none;display:block;">
                     ${escapeHtml(button.label)}
                   </a>
                 </td>
@@ -92,7 +92,7 @@ const shell = (params: {
     ? `
       <tr>
         <td align="center" style="padding:0 0 10px 0;">
-          <span style="display:inline-block;padding:4px 10px;border-radius:4px;background:${BRAND_COLOR};color:#ffffff;font-family:'Times New Roman',Times,serif;font-size:11px;font-weight:700;letter-spacing:0.6px;text-transform:uppercase;">
+          <span style="display:inline-block;padding:4px 10px;border-radius:4px;background:${BRAND_COLOR};color:#ffffff;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;font-size:11px;font-weight:700;letter-spacing:0.6px;text-transform:uppercase;">
             ${escapeHtml(campaignLabel)}
           </span>
         </td>
@@ -121,20 +121,20 @@ const shell = (params: {
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>${escapeHtml(title)}</title>
   </head>
-  <body style="margin:0;padding:0;background:#ffffff;font-family:'Times New Roman',Times,serif;line-height:1.6;color:#0f172a;">
+  <body style="margin:0;padding:0;background:#0a0f1a;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;line-height:1.6;color:#0f172a;">
     <div style="display:none;max-height:0;overflow:hidden;mso-hide:all;font-size:1px;color:#ffffff;line-height:1px;">
       ${escapeHtml(preview)}
     </div>
     <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%">
       <tr>
         <td align="center" style="padding:24px 16px;">
-          <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="max-width:640px;background:#ffffff;border-radius:10px;overflow:hidden;border:1px solid #e2e8f0;">
+          <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="max-width:640px;background:#0a0f1a;border-radius:10px;overflow:hidden;border:1px solid #1f2937;">
             <tr>
               <td align="center" style="background:#0f172a;padding:28px 22px;border-top:4px solid ${BRAND_COLOR};">
                 <table role="presentation" cellspacing="0" cellpadding="0" border="0">
                   <tr>
                     <td align="center" style="padding-right:10px;">
-                      <img src="${LOGO_URL}" alt="${logotypeAlt}" width="32" height="32" style="display:block;border-radius:6px;width:32px;height:32px;" />
+                      
                     </td>
                     <td align="center">
                       <table role="presentation" cellspacing="0" cellpadding="0" border="0">
@@ -146,7 +146,7 @@ const shell = (params: {
                         ${campaignLabelHtml}
                         <tr>
                           <td align="center" style="padding-top:6px;">
-                            <span style="font-size:12.5px;color:#94a3b8;font-family:'Times New Roman',Times,serif;letter-spacing:0.4px;text-transform:uppercase;">
+                            <span style="font-size:12.5px;color:#94a3b8;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;letter-spacing:0.4px;text-transform:uppercase;">
                               ${escapeHtml(BRAND_TAGLINE)}
                             </span>
                           </td>
@@ -161,18 +161,18 @@ const shell = (params: {
               <td style="padding:30px 26px;">
                 ${body}
                 ${buttonHtml}
-                <p style="margin:26px 0 0 0;font-size:14px;color:#475569;border-top:1px solid #f1f5f9;padding-top:16px;">${escapeHtml(signature)}</p>
+                <p style="margin:26px 0 0 0;font-size:14px;color:#e5e7eb;border-top:1px solid #1f2937;padding-top:16px;">${escapeHtml(signature)}</p>
               </td>
             </tr>
             <tr>
-              <td align="center" style="padding:22px 22px 26px 22px; border-top:1px solid #f1f5f9;">
+              <td align="center" style="padding:22px 22px 26px 22px; border-top:1px solid #1f2937;">
                 <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%">
                   <tr>
                     <td align="center">
                       <table role="presentation" cellspacing="0" cellpadding="0" border="0">
                         <tr>
                           <td align="center" style="padding-right:8px;">
-                            <img src="${LOGO_URL}" alt="${logotypeAlt}" width="24" height="24" style="display:block;border-radius:4px;width:24px;height:24px;" />
+                            
                           </td>
                           <td align="center">
                             <div style="font-size:17px;font-weight:800;letter-spacing:-0.5px;color:#0f172a;text-transform:uppercase;">code<span style="color:${BRAND_COLOR};">yaar</span></div>
@@ -183,9 +183,9 @@ const shell = (params: {
                   </tr>
                   <tr>
                     <td align="center" style="padding-top:12px;">
-                      <p style="margin:2px 0;font-size:12.5px;color:#64748b;line-height:1.5;">
+                      <p style="margin:2px 0;font-size:12.5px;color:#9ca3af;line-height:1.5;">
                         Code Yaar Founding Community<br />
-                        <a href="${escapeHtml(BASE_URL)}" style="color:#64748b;text-decoration:none;">${escapeHtml(BASE_URL)}</a><br />
+                        <a href="${escapeHtml(BASE_URL)}" style="color:#9ca3af;text-decoration:none;">${escapeHtml(BASE_URL)}</a><br />
                         ${escapeHtml(FROM_EMAIL)}
                       </p>
                     </td>
@@ -226,10 +226,10 @@ export const applicationReceived = (params: {
   const body = `
     <p>Hi ${escapeHtml(applicantName)},</p>
     <p>Thank you for applying to <strong>${escapeHtml(programName)}</strong>. Your application has been received and is pending review.</p>
-    <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="margin:22px 0;background:#f8fafc;border-radius:6px;">
+    <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="margin:22px 0;background:#1f2937;border-radius:6px;">
       <tr>
         <td style="padding:16px;">
-          <p style="margin:4px 0;font-size:12.5px;color:#64748b;">Application ID</p>
+          <p style="margin:4px 0;font-size:12.5px;color:#9ca3af;">Application ID</p>
           <p style="margin:0;font-size:14px;font-weight:600;color:#0f172a;font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Cascadia Code,monospace;">${escapeHtml(applicationId)}</p>
         </td>
       </tr>
@@ -260,10 +260,10 @@ export const applicationApproved = (params: {
   const body = `
     <p>Hi ${escapeHtml(applicantName)},</p>
     <p>Great news! Your application to <strong>${escapeHtml(programName)}</strong> has been accepted.</p>
-    <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="margin:22px 0;background:#f8fafc;border-radius:6px;">
+    <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="margin:22px 0;background:#1f2937;border-radius:6px;">
       <tr>
         <td style="padding:16px;">
-          <p style="margin:4px 0;font-size:12.5px;color:#64748b;">Application ID</p>
+          <p style="margin:4px 0;font-size:12.5px;color:#9ca3af;">Application ID</p>
           <p style="margin:0;font-size:14px;font-weight:600;color:#0f172a;font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Cascadia Code,monospace;">${escapeHtml(applicationId)}</p>
         </td>
       </tr>
@@ -295,10 +295,10 @@ export const applicationRejected = (params: {
   const body = `
     <p>Hi ${escapeHtml(applicantName)},</p>
     <p>Thank you for your interest in <strong>${escapeHtml(programName)}</strong>. After careful review, we are unable to accept your application at this time.</p>
-    <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="margin:22px 0;background:#f8fafc;border-radius:6px;">
+    <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="margin:22px 0;background:#1f2937;border-radius:6px;">
       <tr>
         <td style="padding:16px;">
-          <p style="margin:4px 0;font-size:12.5px;color:#64748b;">Application ID</p>
+          <p style="margin:4px 0;font-size:12.5px;color:#9ca3af;">Application ID</p>
           <p style="margin:0;font-size:14px;font-weight:600;color:#0f172a;font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Cascadia Code,monospace;">${escapeHtml(applicationId)}</p>
         </td>
       </tr>
@@ -331,14 +331,14 @@ export const applicationSubmittedAdmin = (params: {
   const body = `
     <p>Hi ${escapeHtml(adminName ?? 'Administrator')},</p>
     <p>A new application has been submitted to <strong>${escapeHtml(programName)}</strong> and is ready for review.</p>
-    <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="margin:22px 0;background:#f8fafc;border-radius:6px;">
+    <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="margin:22px 0;background:#1f2937;border-radius:6px;">
       <tr>
         <td style="padding:16px;">
-          <p style="margin:4px 0;font-size:12.5px;color:#64748b;">Applicant</p>
+          <p style="margin:4px 0;font-size:12.5px;color:#9ca3af;">Applicant</p>
           <p style="margin:0;font-size:14px;font-weight:600;color:#0f172a;">${escapeHtml(applicantName)}</p>
-          <p style="margin:8px 0 0 0;font-size:12.5px;color:#64748b;">Email</p>
+          <p style="margin:8px 0 0 0;font-size:12.5px;color:#9ca3af;">Email</p>
           <p style="margin:0;font-size:14px;color:#0f172a;">${escapeHtml(applicantEmail)}</p>
-          <p style="margin:12px 0 0 0;font-size:12.5px;color:#64748b;">Application ID</p>
+          <p style="margin:12px 0 0 0;font-size:12.5px;color:#9ca3af;">Application ID</p>
           <p style="margin:0;font-size:14px;font-weight:600;color:#0f172a;font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Cascadia Code,monospace;">${escapeHtml(applicationId)}</p>
         </td>
       </tr>
@@ -441,7 +441,7 @@ export const communityAnnouncement = (params: {
   const body = `
     <p>Hi ${escapeHtml(recipientName ?? '')},</p>
     <p>Here is the latest announcement from <strong>${escapeHtml(programName)}</strong>.</p>
-    <div style="background:#f8fafc;border-radius:6px;padding:16px;margin:16px 0;border-left:4px solid ${BRAND_COLOR};">
+    <div style="background:#1f2937;border-radius:6px;padding:16px;margin:16px 0;border-left:4px solid ${BRAND_COLOR};">
       <p style="margin:0 0 8px 0;font-size:15px;font-weight:600;color:#0f172a;">${escapeHtml(announcementTitle)}</p>
       <p style="margin:0;color:#334155;">${escapeHtml(announcementBody)}</p>
     </div>

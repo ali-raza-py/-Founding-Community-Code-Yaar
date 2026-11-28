@@ -37,7 +37,7 @@ const brandTextStyles = 'font-weight:800;letter-spacing:-0.5px;text-transform:up
 const logoMark = () => (
   <>
     <span
-      className="text-slate-900 font-extrabold tracking-tighter uppercase"
+      className="text-white font-extrabold tracking-tighter uppercase"
       style={{ fontSize: '26px', letterSpacing: '-0.5px', ...styleFromCss(brandTextStyles) }}
     >
       code
@@ -54,7 +54,7 @@ const logoMark = () => (
 const logoSmall = () => (
   <>
     <span
-      className="text-slate-900 font-extrabold tracking-tighter uppercase"
+      className="text-white font-extrabold tracking-tighter uppercase"
       style={{ fontSize: '17px', letterSpacing: '-0.5px', ...styleFromCss(brandTextStyles) }}
     >
       code
@@ -85,31 +85,9 @@ interface EmailLogoProps {
 }
 export function EmailLogo({ size = 'lg' }: EmailLogoProps) {
   return (
-    <div
-      style={{
-        display: 'inline-flex',
-        alignItems: 'center',
-        gap: size === 'lg' ? 10 : 8,
-      }}
-    >
-      <img
-        src={LOGO_URL}
-        alt="Code Yaar"
-        width={size === 'lg' ? 32 : 24}
-        height={size === 'lg' ? 32 : 24}
-        style={{
-          display: 'block',
-          borderRadius: size === 'lg' ? 6 : 4,
-          width: size === 'lg' ? 32 : 24,
-          height: size === 'lg' ? 32 : 24,
-        }}
-        loading="lazy"
-        decoding="async"
-      />
-      <span style={{ ...styleFromCss(brandTextStyles), fontSize: size === 'lg' ? '26px' : '17px' }}>
-        {size === 'lg' ? logoMark() : logoSmall()}
-      </span>
-    </div>
+    <span style={{ ...styleFromCss(brandTextStyles), fontSize: size === 'lg' ? '26px' : '17px', color: '#f9fafb' }}>
+      {size === 'lg' ? logoMark() : logoSmall()}
+    </span>
   )
 }
 
@@ -118,7 +96,7 @@ interface EmailHeaderProps {
 }
 export function EmailHeader({ campaignLabel }: EmailHeaderProps) {
   return (
-    <div style={{ background: '#0f172a', padding: '28px 22px', borderTop: `4px solid ${BRAND_COLOR}` }}>
+    <div style={{ background: '#0f172a', padding: '28px 22px', borderTop: `3px solid ${BRAND_COLOR}` }}>
       <div style={{ maxWidth: '640px', margin: '0 auto', padding: '0 16px' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px', justifyContent: 'center' }}>
           <EmailLogo size="lg" />
@@ -133,7 +111,7 @@ export function EmailHeader({ campaignLabel }: EmailHeaderProps) {
                 background: BRAND_COLOR,
                 color: '#ffffff',
                 fontFamily:
-                  '"Times New Roman",Times,serif',
+                  '"-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,Helvetica,Arial,sans-serif"',
                 fontSize: '11px',
                 fontWeight: '700',
                 letterSpacing: '0.6px',
@@ -150,7 +128,7 @@ export function EmailHeader({ campaignLabel }: EmailHeaderProps) {
               fontSize: '12.5px',
               color: '#94a3b8',
               fontFamily:
-                '"Times New Roman",Times,serif',
+                '"-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,Helvetica,Arial,sans-serif"',
               letterSpacing: '0.4px',
               textTransform: 'uppercase',
             }}
@@ -224,7 +202,7 @@ export function EmailButton({ label, url }: EmailButtonProps) {
           borderRadius: '6px',
           padding: '14px 30px',
           fontFamily:
-            '"Times New Roman",Times,serif',
+            '"-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,Helvetica,Arial,sans-serif"',
           fontSize: '16px',
           fontWeight: '600',
           textDecoration: 'none',
@@ -246,10 +224,10 @@ interface EmailCTASectionProps {
 export function EmailCTASection({ heading, body, buttonLabel, buttonUrl }: EmailCTASectionProps) {
   return (
     <div>
-      <p style={{ margin: '0 0 12px 0', fontSize: '15px', fontWeight: '600', color: '#0f172a' }}>
+      <p style={{ margin: '0 0 12px 0', fontSize: '15px', fontWeight: '600', color: '#f9fafb' }}>
         {escapeHtml(heading)}
       </p>
-      <p style={{ margin: '0 0 16px 0', color: '#334155' }}>{escapeHtml(body)}</p>
+      <p style={{ margin: '0 0 16px 0', color: '#e5e7eb' }}>{escapeHtml(body)}</p>
       <div style={{ margin: '28px 0', textAlign: 'center' }}>
         <a
           href={buttonUrl}
@@ -262,7 +240,7 @@ export function EmailCTASection({ heading, body, buttonLabel, buttonUrl }: Email
             borderRadius: '6px',
             padding: '14px 30px',
             fontFamily:
-              '"Times New Roman",Times,serif',
+              '"-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,Helvetica,Arial,sans-serif"',
             fontSize: '16px',
             fontWeight: '600',
             textDecoration: 'none',
@@ -280,7 +258,7 @@ export function EmailDivider() {
   return (
     <div
       style={{
-        borderTop: '1px solid #f1f5f9',
+        borderTop: '1px solid #1f2937',
         margin: '26px 0',
         height: '1px',
       }}
@@ -298,7 +276,7 @@ export function EmailSignature({ signature }: EmailSignatureProps) {
         margin: '26px 0 0 0',
         fontSize: '14px',
         color: '#475569',
-        borderTop: '1px solid #f1f5f9',
+        borderTop: '1px solid #1f2937',
         paddingTop: '16px',
       }}
     >
@@ -315,30 +293,21 @@ export function EmailFooter({ optOut = true }: EmailFooterProps) {
     <div
       style={{
         padding: '22px 22px 26px 22px',
-        borderTop: '1px solid #f1f5f9',
-        background: '#ffffff',
+        borderTop: '1px solid #1f2937',
+        background: '#0f172a',
       }}
     >
       <div style={{ maxWidth: '640px', margin: '0 auto', padding: '0 16px' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', justifyContent: 'center', marginBottom: '12px' }}>
-          <img
-            src={LOGO_URL}
-            alt="Code Yaar"
-            width={24}
-            height={24}
-            style={{ display: 'block', borderRadius: '4px', width: 24, height: 24 }}
-            loading="lazy"
-            decoding="async"
-          />
-          <span style={{ ...styleFromCss(brandTextStyles), fontSize: '17px' }}>
+        <div style={{ marginBottom: '12px' }}>
+          <span style={{ ...styleFromCss(brandTextStyles), fontSize: '18px', color: '#f9fafb' }}>
             {logoSmall()}
           </span>
         </div>
-        <p style={{ margin: '2px 0', fontSize: '12.5px', color: '#64748b', lineHeight: '1.5' }}>
+        <p style={{ margin: '2px 0', fontSize: '12.5px', color: '#9ca3af', lineHeight: '1.5' }}>
           {FROM_NAME}<br />
           <a
             href={BASE_URL}
-            style={{ color: '#64748b', textDecoration: 'none' }}
+            style={{ color: '#9ca3af', textDecoration: 'none' }}
           >
             {BASE_URL}
           </a>{' '}
@@ -382,12 +351,12 @@ export function BrandedEmail({
   optOut = true,
 }: BrandedEmailProps) {
   return (
-    <div style={{ background: '#ffffff', fontFamily: '"Times New Roman",Times,serif', lineHeight: '1.6', color: '#0f172a', margin: 0, padding: 0 }}>
+    <div style={{ background: '#ffffff', fontFamily: '"-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,Helvetica,Arial,sans-serif"', lineHeight: '1.6', color: '#f9fafb', margin: 0, padding: 0 }}>
       <div style={{ display: 'none', maxHeight: 0, overflow: 'hidden', fontSize: '1px', color: '#ffffff', lineHeight: '1px' }} />
       <table role="presentation" cellSpacing={0} cellPadding={0} border={0} width="100%">
         <tr>
           <td align="center" style={{ padding: '24px 16px' }}>
-            <table role="presentation" cellSpacing={0} cellPadding={0} border={0} width="100%" style={{ maxWidth: '640px', background: '#ffffff', borderRadius: '10px', overflow: 'hidden', border: '1px solid #e2e8f0' }}>
+            <table role="presentation" cellSpacing={0} cellPadding={0} border={0} width="100%" style={{ maxWidth: '640px', background: '#ffffff', borderRadius: '10px', overflow: 'hidden', border: '1px solid #1f2937' }}>
               <tr>
                 <td>
                   <EmailHeader campaignLabel={campaignLabel} />
@@ -451,9 +420,9 @@ export function BrandedEmailPreview({ templateKey, data }: BrandedEmailPreviewPr
             <EmailParagraph>
               Thank you for applying to <strong>{escapeHtml(data.programName ?? 'the program')}</strong>. Your application has been received and is pending review.
             </EmailParagraph>
-            <div style={{ background: '#f8fafc', borderRadius: '6px', padding: '16px', margin: '22px 0' }}>
-              <p style={{ margin: '4px 0 0 0', fontSize: '12.5px', color: '#64748b' }}>Application ID</p>
-              <p style={{ margin: 0, fontSize: '14px', fontWeight: '600', color: '#0f172a', fontFamily: 'ui-monospace,SFMono-Regular,Menlo,Monaco,Cascadia Code,monospace' }}>
+            <div style={{ background: '#1f2937', borderRadius: '6px', padding: '16px', margin: '22px 0' }}>
+              <p style={{ margin: '4px 0 0 0', fontSize: '12.5px', color: '#9ca3af' }}>Application ID</p>
+              <p style={{ margin: 0, fontSize: '14px', fontWeight: '600', color: '#f9fafb', fontFamily: 'ui-monospace,SFMono-Regular,Menlo,Monaco,Cascadia Code,monospace' }}>
                 {escapeHtml(data.applicationId ?? '')}
               </p>
             </div>
@@ -474,9 +443,9 @@ export function BrandedEmailPreview({ templateKey, data }: BrandedEmailPreviewPr
             <EmailParagraph>
               Great news! Your application to <strong>{escapeHtml(data.programName ?? 'the program')}</strong> has been accepted.
             </EmailParagraph>
-            <div style={{ background: '#f8fafc', borderRadius: '6px', padding: '16px', margin: '22px 0' }}>
-              <p style={{ margin: '4px 0 0 0', fontSize: '12.5px', color: '#64748b' }}>Application ID</p>
-              <p style={{ margin: 0, fontSize: '14px', fontWeight: '600', color: '#0f172a', fontFamily: 'ui-monospace,SFMono-Regular,Menlo,Monaco,Cascadia Code,monospace' }}>
+            <div style={{ background: '#1f2937', borderRadius: '6px', padding: '16px', margin: '22px 0' }}>
+              <p style={{ margin: '4px 0 0 0', fontSize: '12.5px', color: '#9ca3af' }}>Application ID</p>
+              <p style={{ margin: 0, fontSize: '14px', fontWeight: '600', color: '#f9fafb', fontFamily: 'ui-monospace,SFMono-Regular,Menlo,Monaco,Cascadia Code,monospace' }}>
                 {escapeHtml(data.applicationId ?? '')}
               </p>
             </div>
@@ -499,9 +468,9 @@ export function BrandedEmailPreview({ templateKey, data }: BrandedEmailPreviewPr
             <EmailParagraph>
               Thank you for your interest in <strong>{escapeHtml(data.programName ?? 'the program')}</strong>. After careful review, we are unable to accept your application at this time.
             </EmailParagraph>
-            <div style={{ background: '#f8fafc', borderRadius: '6px', padding: '16px', margin: '22px 0' }}>
-              <p style={{ margin: '4px 0 0 0', fontSize: '12.5px', color: '#64748b' }}>Application ID</p>
-              <p style={{ margin: 0, fontSize: '14px', fontWeight: '600', color: '#0f172a', fontFamily: 'ui-monospace,SFMono-Regular,Menlo,Monaco,Cascadia Code,monospace' }}>
+            <div style={{ background: '#1f2937', borderRadius: '6px', padding: '16px', margin: '22px 0' }}>
+              <p style={{ margin: '4px 0 0 0', fontSize: '12.5px', color: '#9ca3af' }}>Application ID</p>
+              <p style={{ margin: 0, fontSize: '14px', fontWeight: '600', color: '#f9fafb', fontFamily: 'ui-monospace,SFMono-Regular,Menlo,Monaco,Cascadia Code,monospace' }}>
                 {escapeHtml(data.applicationId ?? '')}
               </p>
             </div>
@@ -522,13 +491,13 @@ export function BrandedEmailPreview({ templateKey, data }: BrandedEmailPreviewPr
             <EmailParagraph>
               A new application has been submitted to <strong>{escapeHtml(data.programName ?? 'the program')}</strong> and is ready for review.
             </EmailParagraph>
-            <div style={{ background: '#f8fafc', borderRadius: '6px', padding: '16px', margin: '22px 0' }}>
-              <p style={{ margin: '4px 0 0 0', fontSize: '12.5px', color: '#64748b' }}>Applicant</p>
-              <p style={{ margin: 0, fontSize: '14px', fontWeight: '600', color: '#0f172a' }}>{escapeHtml(data.applicantName ?? '')}</p>
-              <p style={{ margin: '8px 0 0 0', fontSize: '12.5px', color: '#64748b' }}>Email</p>
-              <p style={{ margin: 0, fontSize: '14px', color: '#0f172a' }}>{escapeHtml(data.applicantEmail ?? '')}</p>
-              <p style={{ margin: '12px 0 0 0', fontSize: '12.5px', color: '#64748b' }}>Application ID</p>
-              <p style={{ margin: 0, fontSize: '14px', fontWeight: '600', color: '#0f172a', fontFamily: 'ui-monospace,SFMono-Regular,Menlo,Monaco,Cascadia Code,monospace' }}>
+            <div style={{ background: '#1f2937', borderRadius: '6px', padding: '16px', margin: '22px 0' }}>
+              <p style={{ margin: '4px 0 0 0', fontSize: '12.5px', color: '#9ca3af' }}>Applicant</p>
+              <p style={{ margin: 0, fontSize: '14px', fontWeight: '600', color: '#f9fafb' }}>{escapeHtml(data.applicantName ?? '')}</p>
+              <p style={{ margin: '8px 0 0 0', fontSize: '12.5px', color: '#9ca3af' }}>Email</p>
+              <p style={{ margin: 0, fontSize: '14px', color: '#f9fafb' }}>{escapeHtml(data.applicantEmail ?? '')}</p>
+              <p style={{ margin: '12px 0 0 0', fontSize: '12.5px', color: '#9ca3af' }}>Application ID</p>
+              <p style={{ margin: 0, fontSize: '14px', fontWeight: '600', color: '#f9fafb', fontFamily: 'ui-monospace,SFMono-Regular,Menlo,Monaco,Cascadia Code,monospace' }}>
                 {escapeHtml(data.applicationId ?? '')}
               </p>
             </div>
@@ -585,11 +554,11 @@ export function BrandedEmailPreview({ templateKey, data }: BrandedEmailPreviewPr
             <EmailParagraph>
               Here is the latest announcement from <strong>{escapeHtml(data.programName ?? 'Code Yaar')}</strong>.
             </EmailParagraph>
-            <div style={{ background: '#f8fafc', borderRadius: '6px', padding: '16px', margin: '16px 0', borderLeft: `4px solid ${BRAND_COLOR}` }}>
-              <p style={{ margin: '0 0 8px 0', fontSize: '15px', fontWeight: '600', color: '#0f172a' }}>
+            <div style={{ background: '#1f2937', borderRadius: '6px', padding: '16px', margin: '16px 0', borderLeft: `4px solid ${BRAND_COLOR}` }}>
+              <p style={{ margin: '0 0 8px 0', fontSize: '15px', fontWeight: '600', color: '#f9fafb' }}>
                 {escapeHtml(data.announcementTitle ?? 'Announcement')}
               </p>
-              <p style={{ margin: 0, color: '#334155' }}>{escapeHtml(data.announcementBody ?? '')}</p>
+              <p style={{ margin: 0, color: '#e5e7eb' }}>{escapeHtml(data.announcementBody ?? '')}</p>
             </div>
             {data.url && (
               <EmailCTASection
@@ -619,7 +588,7 @@ export function BrandedEmailPreview({ templateKey, data }: BrandedEmailPreviewPr
             <EmailParagraph>
               As an ambassador, you would:
             </EmailParagraph>
-            <ul style={{ margin: '14px 0 0 0', paddingLeft: '20px', color: '#334155' }}>
+            <ul style={{ margin: '14px 0 0 0', paddingLeft: '20px', color: '#e5e7eb' }}>
               <li style={{ marginBottom: '8px' }}>
                 Introduce Code Yaar to relevant universities, societies and developer communities.
               </li>

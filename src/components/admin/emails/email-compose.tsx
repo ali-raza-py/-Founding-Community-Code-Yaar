@@ -18,6 +18,7 @@ import {
   EMAIL_SENDER_NAME,
 } from "./constants";
 import { cn } from "@/lib/utils";
+import { BrandedEmail } from "./email-preview";
 import { buildTestEmailContent } from "@/lib/test-email-content";
 import {
   Mail,
@@ -584,10 +585,12 @@ export function EmailCompose({
               </Button>
             </div>
             <div
-              className="flex-1 overflow-y-auto rounded-md border border-line bg-surface-raised p-4 text-sm text-ink-muted leading-relaxed"
+              className="flex-1 overflow-y-auto rounded-md border border-line bg-surface-raised p-2 text-sm leading-relaxed"
             >
               {sanitizedBody ? (
-                <div dangerouslySetInnerHTML={{ __html: sanitizedBody }} />
+                <BrandedEmail signature="Code Yaar" optOut={true}>
+                  <div dangerouslySetInnerHTML={{ __html: sanitizedBody }} />
+                </BrandedEmail>
               ) : (
                 <p className="text-ink-subtle">Preview appears here.</p>
               )}
