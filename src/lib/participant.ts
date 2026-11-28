@@ -63,15 +63,9 @@ export function normalizeParticipant(
     programme: item.programs?.name ?? null,
     programmeSlug: item.programs?.slug ?? null,
     displayName:
-      item.full_name ??
-      embedded?.full_name ??
-      lookup?.full_name ??
-      "",
+      item.full_name || embedded?.full_name || lookup?.full_name || "",
     email:
-      item.email ??
-      embedded?.email ??
-      lookup?.email ??
-      "",
+      item.email || embedded?.email || lookup?.email || "",
     role: embedded?.role ?? lookup?.role ?? null,
     status: item.participant_status ?? null,
     joinedAt: item.joined_at ?? null,

@@ -13,8 +13,8 @@ import { cn } from "@/lib/utils";
 interface ParticipantSelectorProps {
   participants: AdminParticipantItem[];
   profilesByUserId: Map<string, { full_name: string | null; email: string | null; role: string | null }>;
-  value: string[];
-  onChange: (ids: string[]) => void;
+  value: string;
+  onChange: (id: string) => void;
   programFilter?: string;
   disabled?: boolean;
   className?: string;
@@ -52,9 +52,8 @@ export function ParticipantSelector({
     });
   }, [options, search, programFilter]);
 
-  const selectedOptions = useMemo(() => {
-    const selectedSet = new Set(value);
-    return options.filter((opt) => selectedSet.has(opt.id));
+  const selectedOption = useMemo(() => {
+    return options.find((opt) => opt.id === value);
   }, [options, value]);
 
   const handleToggle = () => {
@@ -63,13 +62,13 @@ export function ParticipantSelector({
   };
 
   const handleSelect = (id: string) => {
-    onChange(value.includes(id) ? value.filter((participantId) => participantId !== id) : [...value, id]);
+    onChange(id === value ? "" : id);
     setIsOpen(false);
     if (inputRef.current) inputRef.current.focus();
   };
 
-  const handleRemove = (id: string) => {
-    onChange(value.filter((participantId) => participantId !== id));
+  const handleRemove = () => {
+    onChange("");
   };
 
   const handleSearchChange = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -77,8 +76,7 @@ export function ParticipantSelector({
   };
 
   const handleClear = () => {
-    onChange([]);
-    setSearch("");
+    onChange("");
   };
 
   // Close on outside click
@@ -99,9 +97,9 @@ export function ParticipantSelector({
 
   const placeholderText = disabled
     ? "Select a programme first"
-    : value.length === 0
-      ? "Select participants…"
-      : `${value.length} selected`;
+    : !value
+      ? "Select a participant…"
+      : selectedOption?.name ?? "Selected";
 
   return (
     <div className={cn("relative w-full", className)}>
@@ -123,34 +121,20 @@ export function ParticipantSelector({
         )}
       >
         <div className="flex-1 min-w-0 overflow-hidden">
-          {selectedOptions.length > 0 ? (
-            <div className="flex flex-wrap gap-1.5 mb-1.5 max-h-24 overflow-y-auto pb-1">
-              {selectedOptions.map((opt) => (
-                <span
-                  key={opt.id}
-                  className={cn(
-                    "inline-flex items-center gap-1.5 rounded-md border border-emerald bg-emerald-soft px-2 py-1 text-xs text-emerald",
-                  )}
-                >
-                  <span className="truncate max-w-[120px]">{opt.name}</span>
-                  <button
-                    type="button"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleRemove(opt.id);
-                    }}
-                    className="rounded-md hover:bg-emerald/20 p-1"
-                    aria-label={`Remove ${opt.name}`}
-                  >
-                    <X className="size-3.5 shrink-0" />
-                  </button>
-                </span>
-              ))}
-              {selectedOptions.length < value.length && (
-                <span className="rounded-md border border-line bg-surface-raised px-2 py-1 text-xs text-ink-muted">
-                  +{value.length - selectedOptions.length} more
-                </span>
-              )}
+          {selectedOption ? (
+            <div className="flex items-center gap-1.5 max-w-full truncate">
+              <span className="truncate max-w-[120px]">{selectedOption.name}</span>
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleRemove();
+                }}
+                className="rounded-md hover:bg-emerald/20 p-1"
+                aria-label={`Remove ${selectedOption.name}`}
+              >
+                <X className="size-3.5 shrink-0" />
+              </button>
             </div>
           ) : (
             <span className="text-ink-muted">{placeholderText}</span>
@@ -202,7 +186,7 @@ export function ParticipantSelector({
               role="listbox"
             >
               {filteredOptions.map((opt) => {
-                const isSelected = value.includes(opt.id);
+                const isSelected = opt.id === value;
                 return (
                   <li
                     key={opt.id}
@@ -248,10 +232,10 @@ export function ParticipantSelector({
                                 : "bg-surface-raised text-ink-secondary",
                         )}
                       >
-                          {(opt.status ? opt.status.charAt(0).toUpperCase() + opt.status.slice(1) : "—")}
-                        </span>
-                      </div>
-                    </li>
+                        {(opt.status ? opt.status.charAt(0).toUpperCase() + opt.status.slice(1) : "—")}
+                      </span>
+                    </div>
+                  </li>
                 );
               })}
             </ul>
@@ -262,9 +246,9 @@ export function ParticipantSelector({
               variant="outline"
               size="sm"
               onClick={handleClear}
-              disabled={value.length === 0}
+              disabled={!value}
             >
-              Clear all
+              Clear
             </Button>
           </div>
         </div>

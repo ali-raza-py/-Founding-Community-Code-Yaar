@@ -302,7 +302,7 @@ export const ambassadorSchema = ambassadorPersonalSchema
 /* ========================================================================
    Task management validation schemas
    Matches the backend contract for POST /api/v1/admin/tasks:
-   { title, description, program_id, assigned_to: string[], due_date, status? }
+   { title, description, program_id, assigned_to: string, due_date, status? }
    ======================================================================== */
 
 export const taskCreationSchema = z.object({
@@ -321,9 +321,7 @@ export const taskCreationSchema = z.object({
     .trim()
     .min(1, "Select a programme.")
     .uuid("The selected programme is invalid."),
-  assigned_to: z
-    .array(z.string().uuid('Invalid participant selection.'))
-    .min(1, "Select at least one eligible participant."),
+  assigned_to: z.string().uuid('Invalid participant selection.'),
   due_date: z
     .string()
     .trim()

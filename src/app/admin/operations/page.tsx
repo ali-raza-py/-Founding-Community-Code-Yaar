@@ -80,7 +80,7 @@ export default function AdminOperationsPage() {
   const [createTitle, setCreateTitle] = useState("");
   const [createDescription, setCreateDescription] = useState("");
   const [createProgram, setCreateProgram] = useState("");
-  const [createAssignedTo, setCreateAssignedTo] = useState<string[]>([]);
+  const [createAssignedTo, setCreateAssignedTo] = useState<string>("");
   const [createDueDate, setCreateDueDate] = useState("");
   const [createError, setCreateError] = useState<string | null>(null);
   const [createErrors, setCreateErrors] = useState<Record<string, string>>({});
@@ -203,7 +203,7 @@ export default function AdminOperationsPage() {
       setCreateTitle("");
       setCreateDescription("");
       setCreateProgram("");
-      setCreateAssignedTo([]);
+      setCreateAssignedTo("");
       setCreateDueDate("");
       void load();
     } else {
@@ -390,7 +390,7 @@ export default function AdminOperationsPage() {
                 value={createProgram}
                 onChange={(event) => {
                   setCreateProgram(event.currentTarget.value);
-                  setCreateAssignedTo([]);
+                  setCreateAssignedTo("");
                 }}
                 className="w-full"
               >
